@@ -1,2 +1,84 @@
-# neko-anime
-一个采用“现代 Android 应用架构”的在线动漫番剧观看 App
+<div align="center">
+
+<img width="150px" src="./docs/images/app_icon.png" />
+
+<h1>Neko Anime</h1>
+<p>一个可以在线看番的 Android App</p>
+<p>
+
+[![Android](https://img.shields.io/badge/android-12.0+-green)](https://developer.android.com/about/versions/12)
+[![Release](https://img.shields.io/github/v/release/xioneko/neko-anime)](https://github.com/xioneko/neko-anime/releases/tag/v0.1.0)
+[![Downloads](https://img.shields.io/github/downloads/xioneko/neko-anime/total)](https://github.com/xioneko/neko-anime/releases/)
+[![Powered-by](https://img.shields.io/badge/powered%20by-%E6%A8%B1%E8%8A%B1%E5%8A%A8%E6%BC%AB-ea5c7b)](http://www.yinghuacd.com/)
+[![License](https://img.shields.io/badge/License-GPL-yellow)](https://www.gnu.org/licenses/gpl-3.0.html)
+
+</p>
+</div>
+
+## 介绍
+<p>
+
+Neko Anime 使用樱花动漫「[地址Ⅰ](http://www.yinghuacd.com/)丨[地址Ⅱ](https://www.yhdmz2.com/)」作为数据源，灵感来源于项目 [Imomoe](https://github.com/androiddevnotesforks/Imomoe)。技术栈方面采用了 Kotlin 搭配 Jetpack Compose，遵循了官方指南中的“[现代 Android 应用架构](https://developer.android.com/topic/architecture)”最佳实践。同时，为尽可能地提高用户体验，Neko Anime 在 UI/UX 设计上广泛借鉴了相关优秀 app。
+
+</p>
+
+<p>
+
+由于本项目**并不是**由一个拥有丰富经验的开发者从 0 到 1 构建起来的，更准确地讲是一个初学者的练习项目，所以肯定存在些许不成熟、不规范或有待改进的地方，欢迎在 [Issues](https://github.com/xioneko/neko-anime/issues) 中讨论。
+
+</p>
+
+### 功能特色
+
+- 海量番剧在线观看，无任何广告
+- 丰富的搜索和分类检索功能，快速找到你想要观看的番剧
+- 新番动态展示，以及每日更新表
+- 一键追番，收藏你喜爱的番剧
+- 本地观看历史，以及播放进度记忆
+- ...
+
+### 应用截图
+| 首页                                | 搜索                             | 分类                           | 播放                            | 时间表                             |
+|-------------------------------------|-------------------------------------|---------------------------------|-----------------------------------|-------------------------------------|
+| ![Home](./docs/images/home.png) | ![Search](./docs/images/search.png) | ![Category](./docs/images/category.png) | ![Player](./docs/images/player.png) | ![Schedule](./docs/images/schedule.png) |
+
+## 技术特性
+ - 参考了[官方指南](https://developer.android.com/topic/architecture)，并借鉴了项目 [nowinandroid](https://github.com/android/nowinandroid/) 的架构设计，UI Layer、Domain Layer 和 Data Layer 三层分离。
+ - Data Layer 层使用了 Room (database)、Retrofit (http client)、jsoup (HTML 解析器)、jetpack datastore (数据存储)、kotlinx-serialization (数据结构化/序列化) 以及 store5 (“离线优先”解决方案)
+ - UI Layer 层基于 Jetpack Compose，使用了 media3 (视频播放器)、coil (图片异步加载) 和 lottie-compose (矢量图形动画)，并在 Accompanist 的支持下实现了 navigation compose 动画以及对 Systerm UI 的控制
+ - 使用 Hilt 实现依赖注入
+ - ...
+
+## 构建
+- Android Studio Flamingo | 2022.2.1
+- compileSdk 33
+- Gradle JDK 17
+
+## 更新日志
+
+### v0.1.0 (2023-5-24)
+- 第一个发布版本，大多数功能基本实现
+- 待实现功能包括但不限于，番剧下载、明亮/暗黑模式切换、个性化番剧推荐、触摸滑动改变播放时间条。
+
+## FAQ
+- **番剧数据加载失败了怎么办？**
+
+  目前 App 使用的番剧信息数据基本上来自于 https://www.yhdmz2.com/ ，因此加载失败很可能是由于此网站无法正常访问（或许更换了域名）
+
+- **视频加载失败了怎么办？**
+
+  目前 App 以 http://www.yinghuacd.com/ 作为主视频源，以 https://www.yhdmz2.com/ 作为备用视频源
+  - 对于主视频源，需要指出的是，App 内部在从主视频源请求视频地址的时候，使用的是备用视频源网站获取的番剧名，而不是某一固定统一的番剧ID，因此会有一定概率失败
+  - 对于备用视频源，App 会请求其提供的前两个视频线路，并且优先使用线路1，如果出现加载超时，再切换成线路2
+
+
+## 许可证
+
+[GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.html)
+
+## 免责声明
+
+1. 此软件所展示的所有内容均来自互联网。
+2. 此软件只提供服务，不存储、不制作任何数据内容，不承担任何由于内容的合法性及健康性所引起的争议和法律责任。
+3. 若此软件收录的内容侵犯了您的权益，请联系邮箱 [stnecat@gmail.com](mailto:stnecat@gmail.com)。
+4. 此软件仅可用作学习交流，不得用于商业用途。
