@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
@@ -51,6 +52,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xioneko.android.nekoanime.data.model.AnimeShell
 import com.xioneko.android.nekoanime.ui.component.LoadingDots
+import com.xioneko.android.nekoanime.ui.component.NekoAnimeSnackBar
+import com.xioneko.android.nekoanime.ui.component.NekoAnimeSnackbarHost
 import com.xioneko.android.nekoanime.ui.component.TransparentTopBar
 import com.xioneko.android.nekoanime.ui.component.WorkingInProgressDialog
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
@@ -65,6 +68,7 @@ import com.xioneko.android.nekoanime.ui.theme.pink60
 import com.xioneko.android.nekoanime.ui.theme.pink70
 import com.xioneko.android.nekoanime.ui.theme.pink80
 import com.xioneko.android.nekoanime.ui.theme.pink99
+import com.xioneko.android.nekoanime.ui.util.LoadingState
 import kotlinx.coroutines.launch
 import okhttp3.internal.format
 import java.time.DayOfWeek
@@ -87,6 +91,7 @@ fun ScheduleScreen(
     val pagerState = rememberPagerState(localDate.dayOfWeek.ordinal)
     val scrollState = rememberScrollState()
     val weeklySchedule by viewModel.weeklySchedule.collectAsStateWithLifecycle()
+    val loadingState by viewModel.loadingState.collectAsStateWithLifecycle()
 
     Scaffold(
         modifier = Modifier.padding(padding),
@@ -96,6 +101,17 @@ fun ScheduleScreen(
                 iconId = NekoAnimeIcons.filter2,
                 onIconClick = { shouldShowFilterMenu = true }
             )
+        },
+        snackbarHost = {
+            NekoAnimeSnackbarHost(
+                visible = loadingState is LoadingState.FAILURE,
+                message = { (loadingState as LoadingState.FAILURE).message }
+            ) {
+                NekoAnimeSnackBar(
+                    modifier = Modifier.requiredWidth(200.dp),
+                    snackbarData = it
+                )
+            }
         },
         containerColor = pink99,
         contentWindowInsets = WindowInsets(0),
