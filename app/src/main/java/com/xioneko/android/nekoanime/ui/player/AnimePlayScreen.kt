@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,17 +19,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +38,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.SpanStyle
@@ -49,6 +46,8 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.model.AnimeShell
@@ -80,6 +79,28 @@ fun AnimePlayScreen(
 ) {
 
     LaunchedEffect(Unit) { viewModel.init(animeId) }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(Unit) {
+        val lifecycleObserver = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_PAUSE -> {
+                    viewModel.isPausedBeforeLeave = !viewModel.player.playWhenReady
+                    viewModel.player.pause()
+                }
+                Lifecycle.Event.ON_RESUME -> {
+                    if (!viewModel.isPausedBeforeLeave)  viewModel.player.play()
+                }
+
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(lifecycleObserver)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(lifecycleObserver)
+        }
+    }
 
     val onEpisodeChange: (Int) -> Unit = remember {
         { // 只有获取了 uiState 中 episode 相关信息才可能被调用
@@ -154,7 +175,7 @@ fun AnimePlayScreen(
             NekoAnimeSnackbarHost(
                 modifier = Modifier.align(Alignment.BottomCenter),
                 visible = loadingState is LoadingState.FAILURE,
-                message = (loadingState as LoadingState.FAILURE).message
+                message = { (loadingState as LoadingState.FAILURE).message }
             ) {
                 NekoAnimeSnackBar(
                     modifier = Modifier.requiredWidth(220.dp),
@@ -256,7 +277,7 @@ private fun AnimeDetail(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
-                modifier = Modifier.width(120.dp),
+                modifier = Modifier.weight(1f),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
@@ -298,34 +319,35 @@ private fun AnimeDetail(
                 painter = painterResource(NekoAnimeIcons.tag),
                 contentDescription = "genre"
             )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                contentPadding = PaddingValues(end = 5.dp)
             ) {
                 for (genre in anime.genres) {
-                    Row(
-                        modifier = Modifier
-                            .background(neutral01, CircleShape)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                role = Role.Button,
-                                onClick = { onGenreClick(genre) }
+                    item(genre) {
+                        Row(
+                            modifier = Modifier
+                                .background(neutral01, CircleShape)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    role = Role.Button,
+                                    onClick = { onGenreClick(genre) }
+                                )
+                                .padding(8.dp, 5.dp, 4.dp, 5.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = genre,
+                                style = MaterialTheme.typography.labelSmall
                             )
-                            .padding(8.dp, 5.dp, 4.dp, 5.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = genre,
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                        Icon(
-                            modifier = Modifier.size(12.dp),
-                            painter = painterResource(NekoAnimeIcons.arrowRight),
-                            contentDescription = "more"
-                        )
+                            Icon(
+                                modifier = Modifier.size(12.dp),
+                                painter = painterResource(NekoAnimeIcons.arrowRight),
+                                contentDescription = "more"
+                            )
+                        }
                     }
                 }
             }

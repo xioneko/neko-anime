@@ -73,7 +73,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -81,8 +80,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
@@ -110,12 +107,10 @@ fun NekoAnimePlayer(
 ) {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
-    val lifecycleOwner = LocalLifecycleOwner.current
     val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     val systemUiController = rememberSystemUiController()
 
     var isPaused by rememberSaveable { mutableStateOf(!player.playWhenReady) }
-    var isPausedBeforeLeave = rememberSaveable { isPaused }
     var isLoading by rememberSaveable { mutableStateOf(false) }
     var isPlaying by rememberSaveable { mutableStateOf(false) }
     var isEnded by rememberSaveable { mutableStateOf(false) }
@@ -171,7 +166,7 @@ fun NekoAnimePlayer(
             }
 
         systemUiController.run {
-            statusBarDarkContentEnabled = false
+            setStatusBarColor(Color.Transparent, false)
 
             when (currentOrientation) {
                 ORIENTATION_PORTRAIT -> {
@@ -250,26 +245,9 @@ fun NekoAnimePlayer(
         }
         player.addListener(playerListener)
 
-        val lifecycleObserver = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_PAUSE -> {
-                    isPausedBeforeLeave = isPaused
-                    player.pause()
-                }
-                Lifecycle.Event.ON_RESUME -> {
-                    if (!isPausedBeforeLeave)  player.play()
-                }
-
-                else -> {}
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(lifecycleObserver)
-
         onDispose {
-            systemUiController.statusBarDarkContentEnabled = true
             backCallback.remove()
             orientationListener.disable()
-            lifecycleOwner.lifecycle.removeObserver(lifecycleObserver)
         }
     }
 
