@@ -25,7 +25,7 @@ import com.xioneko.android.nekoanime.util.NetworkMonitor
 fun NekoAnimeApp(
     networkMonitor: NetworkMonitor
 ) {
-    val isOffline by networkMonitor.isOffline.collectAsStateWithLifecycle(false)
+    val isOffline by networkMonitor.isOffline.collectAsStateWithLifecycle(true)
     val navController: NavHostController = rememberAnimatedNavController()
 
     Scaffold(
@@ -33,7 +33,7 @@ fun NekoAnimeApp(
         snackbarHost = {
             NekoAnimeSnackbarHost(
                 visible = isOffline,
-                message = "🥹 网络似乎不在状态..."
+                message = { "🥹 网络似乎不在状态..." }
             ) {
                 NekoAnimeSnackBar(
                     modifier = Modifier

@@ -32,9 +32,6 @@ import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -219,7 +216,7 @@ fun HomeScreen(
         NekoAnimeSnackbarHost(
             modifier = Modifier.align(Alignment.BottomCenter),
             visible = loadingState is LoadingState.FAILURE,
-            message = (loadingState as LoadingState.FAILURE).message
+            message = { (loadingState as LoadingState.FAILURE).message }
         ) {
             NekoAnimeSnackBar(
                 modifier = Modifier.requiredWidth(200.dp),

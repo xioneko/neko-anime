@@ -29,7 +29,7 @@ fun NekoAnimeSnackBar(
 fun NekoAnimeSnackbarHost(
     modifier: Modifier = Modifier,
     visible: Boolean,
-    message: String,
+    message: () -> String,
     duration: SnackbarDuration = SnackbarDuration.Short,
     snackbar: @Composable (SnackbarData) -> Unit,
 ) {
@@ -38,7 +38,7 @@ fun NekoAnimeSnackbarHost(
     LaunchedEffect(visible) {
         if (visible) {
             snackbarHostState.showSnackbar(
-                message = message,
+                message = message(),
                 duration = duration,
             )
         }
