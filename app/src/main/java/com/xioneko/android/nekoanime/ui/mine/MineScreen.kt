@@ -65,9 +65,7 @@ fun MineScreen(
     }
 
     Scaffold(
-        modifier = Modifier
-            .padding(padding)
-            .background(pink99),
+        modifier = Modifier.padding(padding),
         topBar = {
             TransparentTopBar(
                 title = greeting(LocalTime.now()),
@@ -75,6 +73,7 @@ fun MineScreen(
                 onIconClick = { /* TODO: 主题模式切换 */  showWorkingInProgressDialog = true }
             )
         },
+        containerColor = pink99,
         contentWindowInsets = WindowInsets(0)
     ) {
 

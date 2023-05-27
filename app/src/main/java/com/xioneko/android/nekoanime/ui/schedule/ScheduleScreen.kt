@@ -89,9 +89,7 @@ fun ScheduleScreen(
     val weeklySchedule by viewModel.weeklySchedule.collectAsStateWithLifecycle()
 
     Scaffold(
-        modifier = Modifier
-            .padding(padding)
-            .background(pink99),
+        modifier = Modifier.padding(padding),
         topBar = {
             TransparentTopBar(
                 title = "时间表",
@@ -99,7 +97,8 @@ fun ScheduleScreen(
                 onIconClick = { shouldShowFilterMenu = true }
             )
         },
-        contentWindowInsets = WindowInsets(0)
+        containerColor = pink99,
+        contentWindowInsets = WindowInsets(0),
     ) { padding ->
         Column(
             Modifier
