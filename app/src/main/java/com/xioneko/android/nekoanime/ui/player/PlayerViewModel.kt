@@ -54,6 +54,7 @@ class AnimePlayViewModel @Inject constructor(
         playWhenReady = true
         pauseAtEndOfMediaItems = true
     }
+    var isPausedBeforeLeave: Boolean = player.playWhenReady
 
     var uiState: AnimePlayUiState by mutableStateOf(AnimePlayUiState.Loading)
 
