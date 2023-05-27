@@ -6,7 +6,7 @@ import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 import java.time.DayOfWeek
-import java.util.*
+import java.util.Calendar
 
 internal object HtmlParser {
 
@@ -24,6 +24,8 @@ internal object HtmlParser {
                     .filter { it.isDigit() }
                     .toInt()
                 val imgUrl = li.child(0).child(0).attr("src")
+                    .let { if (it.startsWith("//")) "https:$it" else it }
+
                 val name = li.child(1).child(0).ownText()
 
                 val episodeInfo = li.child(2).child(0).ownText()
@@ -68,6 +70,8 @@ internal object HtmlParser {
 
         val name = animeInfoElement.select("h1").first()!!.ownText()
         val imageUrl = document.select("div.thumb.l > img").attr("src")
+            .let { if (it.startsWith("//")) "https:$it" else it }
+
         val description = document.select("div.info").first()!!.ownText()
 
         val year: Int
