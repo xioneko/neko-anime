@@ -17,8 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.zIndex
 import com.xioneko.android.nekoanime.ui.search.screen.CandidatesView
-import com.xioneko.android.nekoanime.ui.search.screen.SearchHistoryView
 import com.xioneko.android.nekoanime.ui.search.screen.ResultsView
+import com.xioneko.android.nekoanime.ui.search.screen.SearchHistoryView
 
 @Composable
 fun SearchScreen(

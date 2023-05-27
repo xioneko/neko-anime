@@ -4,9 +4,7 @@ import android.util.Log
 import okhttp3.Interceptor
 import okhttp3.Protocol
 import okhttp3.Response
-import okhttp3.ResponseBody
 import okhttp3.ResponseBody.Companion.toResponseBody
-import java.lang.Exception
 
 object ErrorHandlerInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {

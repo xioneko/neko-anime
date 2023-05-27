@@ -5,7 +5,10 @@ import com.xioneko.android.nekoanime.data.UserDataRepository
 import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.model.WatchRecord
 import com.xioneko.android.nekoanime.domain.model.FollowedAnime
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 

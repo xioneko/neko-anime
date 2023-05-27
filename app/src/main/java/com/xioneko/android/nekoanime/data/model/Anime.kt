@@ -1,7 +1,7 @@
 package com.xioneko.android.nekoanime.data.model
 
 import com.xioneko.android.nekoanime.data.db.model.AnimeEntity
-import java.util.*
+import java.util.Calendar
 
 data class Anime(
     val id: Int,

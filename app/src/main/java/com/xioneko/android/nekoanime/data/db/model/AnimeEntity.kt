@@ -7,7 +7,7 @@ import com.xioneko.android.nekoanime.data.db.util.CalendarConverter
 import com.xioneko.android.nekoanime.data.db.util.ListConverter
 import com.xioneko.android.nekoanime.data.db.util.MapConverter
 import com.xioneko.android.nekoanime.data.model.Anime
-import java.util.*
+import java.util.Calendar
 
 @Entity(tableName = "Anime")
 @TypeConverters(ListConverter::class, MapConverter::class, CalendarConverter::class)

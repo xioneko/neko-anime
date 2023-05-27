@@ -23,8 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xioneko.android.nekoanime.data.ANIME_LIST_PAGE_SIZE
-import com.xioneko.android.nekoanime.ui.component.LoadingDots
 import com.xioneko.android.nekoanime.data.model.Anime
+import com.xioneko.android.nekoanime.ui.component.LoadingDots
 import com.xioneko.android.nekoanime.ui.search.SearchResult
 import com.xioneko.android.nekoanime.ui.theme.basicWhite
 import kotlinx.coroutines.flow.Flow

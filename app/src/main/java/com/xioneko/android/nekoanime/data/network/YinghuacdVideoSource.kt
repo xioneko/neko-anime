@@ -2,8 +2,8 @@ package com.xioneko.android.nekoanime.data.network
 
 import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.network.api.VideoSourceApi
-import com.xioneko.android.nekoanime.data.network.util.JsoupConverterFactory
 import com.xioneko.android.nekoanime.data.network.util.HtmlParser
+import com.xioneko.android.nekoanime.data.network.util.JsoupConverterFactory
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import okhttp3.OkHttpClient

@@ -5,7 +5,7 @@ import com.xioneko.android.nekoanime.data.db.model.asAnime
 import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.model.AnimeKey
 import com.xioneko.android.nekoanime.data.model.asEntity
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.flow
 import org.mobilenativefoundation.store.store5.SourceOfTruth
 import javax.inject.Inject
 import javax.inject.Singleton

@@ -6,7 +6,6 @@ import com.xioneko.android.nekoanime.data.model.DownloadRecord
 import com.xioneko.android.nekoanime.data.model.SearchRecord
 import com.xioneko.android.nekoanime.data.model.ThemeConfig
 import com.xioneko.android.nekoanime.data.model.WatchRecord
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
