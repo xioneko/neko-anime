@@ -26,11 +26,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.xioneko.android.nekoanime.R
 import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.model.AnimeShell
 import com.xioneko.android.nekoanime.data.model.asAnimeShell
@@ -69,11 +71,7 @@ fun NarrowAnimeCard(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Box(Modifier.clip(MaterialTheme.shapes.small)) {
-            AsyncImage(
-                modifier = Modifier.aspectRatio(ratio = 0.72f),
-                model = anime.imageUrl,
-                contentDescription = null,
-            )
+            AnimeImage(anime.imageUrl)
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -120,13 +118,7 @@ fun ExpandAnimeCard(
             onClick = { onClick(anime.id) }
         ),
     ) {
-        AsyncImage(
-            modifier = Modifier
-                .aspectRatio(ratio = 0.72f)
-                .clip(MaterialTheme.shapes.small),
-            model = anime.imageUrl,
-            contentDescription = null,
-        )
+        AnimeImage(anime.imageUrl)
         Text(
             modifier = Modifier.padding(top = 6.dp),
             text = anime.name,
@@ -250,13 +242,7 @@ fun FollowedAnimeCard(
             onClick = { onClick(anime.id) }
         ),
     ) {
-        AsyncImage(
-            modifier = Modifier
-                .aspectRatio(ratio = 0.72f)
-                .clip(MaterialTheme.shapes.small),
-            model = anime.imageUrl,
-            contentDescription = null,
-        )
+        AnimeImage(anime.imageUrl)
         Text(
             modifier = Modifier.padding(top = 6.dp),
             text = anime.name,
@@ -273,4 +259,16 @@ fun FollowedAnimeCard(
             style = MaterialTheme.typography.bodySmall,
         )
     }
+}
+
+@Composable
+private fun AnimeImage(imageUrl: String? ) {
+    AsyncImage(
+        modifier = Modifier
+            .aspectRatio(ratio = 0.72f)
+            .clip(MaterialTheme.shapes.small),
+        model = imageUrl,
+        contentDescription = null,
+        error = painterResource(R.drawable.broken_image)
+    )
 }
