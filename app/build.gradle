@@ -13,7 +13,7 @@ android {
 
     defaultConfig {
         applicationId "com.xioneko.android.nekoanime"
-        minSdk 31
+        minSdk 30
         targetSdk 33
         versionCode 1
         versionName "0.1.1"
