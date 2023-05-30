@@ -43,7 +43,7 @@ fun SearchScreen(
         shouldShowResults = true
         viewModel.addSearchRecord(searchText)
     }
-    val onBack = {
+    val onExit = {
         onEnterExit(false)
         shouldShowResults = false
         focusManager.clearFocus()
@@ -56,7 +56,12 @@ fun SearchScreen(
         DisposableEffect(backDispatcher) {
             val backCallback = object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
-                    onBack()
+                    if (shouldShowResults) {
+                        shouldShowResults = false
+                        searchText = ""
+                        uiState.focusRequester.requestFocus()
+                    }
+                    else onExit()
                 }
             }
             backDispatcher?.addCallback(backCallback)
@@ -71,6 +76,7 @@ fun SearchScreen(
                 .zIndex(1f),
             text = searchText,
             searching = uiState.searching,
+            focusRequester = uiState.focusRequester,
             searchBarState = uiState,
             onLeftIconClick = onHistoryClick,
             onRightIconClick = onCategoryClick,
@@ -80,7 +86,7 @@ fun SearchScreen(
                     shouldShowResults = false
                     onEnterExit(true)
                 } else {
-                    onBack()
+                    onExit()
                 }
             },
             onSearch = onSearch,

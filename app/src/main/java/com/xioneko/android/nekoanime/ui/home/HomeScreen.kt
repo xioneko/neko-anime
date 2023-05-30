@@ -44,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -92,6 +93,7 @@ fun HomeScreen(
     navigateToCategory: (genre: String) -> Unit,
 ) {
     var searching by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
     val lazyListState = rememberLazyListState()
     val scrollProgress by remember {
         derivedStateOf {
@@ -101,7 +103,7 @@ fun HomeScreen(
         }
     }
 
-    val searchBarState = rememberSearchBarState(searching, scrollProgress)
+    val searchBarState = rememberSearchBarState(searching, focusRequester, scrollProgress)
     val systemUiController = rememberSystemUiController()
 
     val loadingState by viewModel.loadingState.collectAsStateWithLifecycle()

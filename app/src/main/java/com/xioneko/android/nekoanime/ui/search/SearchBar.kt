@@ -29,7 +29,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -63,6 +62,7 @@ fun NekoAnimeSearchBar(
     modifier: Modifier,
     text: String,
     searching: Boolean,
+    focusRequester: FocusRequester,
     searchBarState: SearchBarState,
     leftIconId: Int = NekoAnimeIcons.history,
     rightIconId: Int = NekoAnimeIcons.category,
@@ -73,10 +73,6 @@ fun NekoAnimeSearchBar(
     onSearch: () -> Unit,
 ) {
     val interactionResource = remember { MutableInteractionSource() }
-    val focusRequester = remember { FocusRequester() }
-
-    // 若第一次进入 Composition 时, Searching 的初始状态已为 true，则立即使 input box 获得焦点
-    LaunchedEffect(Unit) { if (searching) focusRequester.requestFocus() }
 
     Surface(modifier = modifier, color = searchBarState.surfaceColor) {
         Row(
@@ -305,14 +301,22 @@ private fun RightAnimatedIcon(
 @Composable
 fun rememberSearchBarState(
     searching: Boolean,
+    focusRequester: FocusRequester,
     scrollProgress: Float
 ): SearchBarState {
-    return remember(scrollProgress, searching) { SearchBarState(searching, scrollProgress) }
+    return remember(scrollProgress, focusRequester, searching) {
+        SearchBarState(
+            searching,
+            focusRequester,
+            scrollProgress
+        )
+    }
 }
 
 @Stable
 class SearchBarState(
     var searching: Boolean,
+    val focusRequester: FocusRequester,
     private val scrollProgress: Float,
 ) {
     val surfaceColor
