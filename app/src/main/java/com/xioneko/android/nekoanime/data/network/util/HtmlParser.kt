@@ -12,8 +12,8 @@ internal object HtmlParser {
 
     /**
      * 适配页面：
-     * - https://www.yhpdm.net/s_all
-     * - https:/ww.yhpdm.net/list/
+     * - https://www.yhdmz2.com/s_all
+     * - https:/ww.yhdmz2.com/list/
      */
     fun parseAnimeList(document: Document): List<AnimeShell> =
         buildList {
@@ -62,7 +62,7 @@ internal object HtmlParser {
 
     /**
      * 适配页面：
-     * - https://www.yhpdm.net/showp/{animeId}.html
+     * - https://www.yhdmz2.com/showp/{animeId}.html
      */
     fun parseAnime(document: Document, animeId: Int): Anime {
         val animeInfoElement: Element = document.select("div.rate.r").first()!!
@@ -127,7 +127,7 @@ internal object HtmlParser {
     }
 
     /**
-     * 适配页面：https://www.yhpdm.net/
+     * 适配页面：https://www.yhdmz2.com/
      */
     fun parseWeeklySchedule(document: Document): Map<DayOfWeek, List<AnimeShell>> = buildMap {
         document.select(("div.tlist")).first()!!.children()
