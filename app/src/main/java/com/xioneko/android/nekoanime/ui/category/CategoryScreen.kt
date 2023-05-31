@@ -62,6 +62,8 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.airbnb.lottie.compose.rememberLottieDynamicProperties
 import com.airbnb.lottie.compose.rememberLottieDynamicProperty
 import com.xioneko.android.nekoanime.data.ANIME_LIST_PAGE_SIZE
+import com.xioneko.android.nekoanime.data.model.Category
+import com.xioneko.android.nekoanime.data.model.defaultLabel
 import com.xioneko.android.nekoanime.ui.component.LoadingDots
 import com.xioneko.android.nekoanime.ui.component.NarrowAnimeCard
 import com.xioneko.android.nekoanime.ui.component.SolidTopBar

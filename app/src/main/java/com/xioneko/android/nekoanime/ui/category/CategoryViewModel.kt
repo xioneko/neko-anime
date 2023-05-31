@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xioneko.android.nekoanime.data.AnimeRepository
 import com.xioneko.android.nekoanime.data.model.AnimeShell
+import com.xioneko.android.nekoanime.data.model.Category
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.collect

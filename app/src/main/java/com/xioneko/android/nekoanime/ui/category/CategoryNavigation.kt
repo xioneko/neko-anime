@@ -6,6 +6,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.navArgument
 import androidx.navigation.navOptions
 import com.google.accompanist.navigation.animation.composable
+import com.xioneko.android.nekoanime.data.model.Category
+import com.xioneko.android.nekoanime.data.model.labelValueOf
 
 const val CategoryNavRoute = "category_route"
 
