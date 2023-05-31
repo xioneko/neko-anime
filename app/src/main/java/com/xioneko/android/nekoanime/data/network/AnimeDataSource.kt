@@ -13,7 +13,7 @@ import retrofit2.Retrofit
 import java.time.DayOfWeek
 import javax.inject.Inject
 
-private const val BASE_URL = "https://www.yhdmz.net/"
+private const val BASE_URL = "https://www.yhdmz2.com/"
 
 
 class AnimeDataSource @Inject constructor(
