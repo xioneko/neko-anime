@@ -67,6 +67,7 @@ import com.xioneko.android.nekoanime.ui.theme.pink60
 import com.xioneko.android.nekoanime.ui.theme.pink70
 import com.xioneko.android.nekoanime.ui.theme.pink97
 import com.xioneko.android.nekoanime.ui.util.LoadingState
+import kotlinx.coroutines.delay
 
 @SuppressLint("SourceLockedOrientationActivity")
 @Composable
@@ -104,6 +105,17 @@ fun AnimePlayScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(3000)
+            if (viewModel.uiState is AnimePlayUiState.Data) {
+                viewModel.upsertWatchRecord(
+                    (viewModel.uiState as AnimePlayUiState.Data).episode.value
+                )
+            }
+        }
+    }
+
     val onEpisodeChange: (Int) -> Unit = remember {
         {
             with(viewModel) {
@@ -135,14 +147,7 @@ fun AnimePlayScreen(
                     uiState = viewModel.uiState,
                     playerState = playerState,
                     onEpisodeChange = onEpisodeChange,
-                    onBack = {
-                        if (viewModel.uiState is AnimePlayUiState.Data) {
-                            viewModel.upsertWatchRecord(
-                                (viewModel.uiState as AnimePlayUiState.Data).episode.value
-                            )
-                        }
-                        onBackClick()
-                    }
+                    onBack = onBackClick
                 )
                 if (viewModel.uiState is AnimePlayUiState.Loading) AnimePlayBodySkeleton()
                 else {
