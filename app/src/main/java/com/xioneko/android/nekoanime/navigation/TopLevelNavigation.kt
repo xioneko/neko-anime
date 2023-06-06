@@ -5,7 +5,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,8 +40,6 @@ fun NavGraphBuilder.topLevelScreen(
         Scaffold(
             bottomBar = {
                 NekoAnimeBottomAppBar(
-                    modifier = Modifier
-                        .windowInsetsPadding(WindowInsets.navigationBars),
                     currentDestination = currentDestination,
                     onNavigateTo = {
                         navController.navigate(

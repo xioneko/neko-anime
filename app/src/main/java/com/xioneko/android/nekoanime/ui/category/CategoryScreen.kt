@@ -85,6 +85,7 @@ fun CategoryScreen(
     onSearchClick: () -> Unit,
     onBackClick: () -> Unit,
 ) {
+    LaunchedEffect(Unit) { viewModel.initFilterState(filter) }
 
     val lazyGridState = rememberLazyGridState()
 
@@ -99,8 +100,7 @@ fun CategoryScreen(
             }
         }
     }
-    LaunchedEffect(Unit) { viewModel.init(filter) }
-    if (shouldFetchMore) viewModel.fetchAnime(1)
+    if (shouldFetchMore) viewModel.fetchAnime()
 
     Scaffold(
         topBar = {
@@ -120,7 +120,7 @@ fun CategoryScreen(
                 with(viewModel) {
                     viewModel.fetcherState.reset()
                     viewModel.filter[category] = input
-                    fetchAnime(1)
+                    fetchAnime()
                 }
             }
         )
@@ -227,7 +227,7 @@ fun FiltersBar(
             }
             for (category in mainCategories) {
                 AnimatedDrawer(drawer == category) {
-                    CommonFilterDrawer(
+                    MainFilterDrawer(
                         filter = filter,
                         onFilter = { category, option ->
                             onFilter(category, option)
@@ -238,7 +238,7 @@ fun FiltersBar(
                 }
             }
             AnimatedDrawer(visible = drawer == otherCategories.first()) {
-                MoreFilterDrawer(filter = filter, onFilter = { category, option ->
+                ExtraFilterDrawer(filter = filter, onFilter = { category, option ->
                     onFilter(category, option)
                     hideDrawer()
                 })
@@ -248,7 +248,7 @@ fun FiltersBar(
 }
 
 @Composable
-fun CategoryHead(
+private fun CategoryHead(
     modifier: Modifier = Modifier,
     expand: Boolean,
     active: Boolean,
@@ -293,7 +293,7 @@ fun CategoryHead(
 }
 
 @Composable
-fun AnimatedDrawer(
+private fun AnimatedDrawer(
     visible: Boolean,
     content: @Composable () -> Unit,
 ) {
@@ -329,7 +329,7 @@ fun AnimatedDrawer(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun CommonFilterDrawer(
+private fun MainFilterDrawer(
     filter: Map<Category, Pair<String, String>>,
     onFilter: (Category, Pair<String, String>) -> Unit,
     drawer: Category
@@ -360,7 +360,7 @@ fun CommonFilterDrawer(
 }
 
 @Composable
-fun MoreFilterDrawer(
+private fun ExtraFilterDrawer(
     filter: Map<Category, Pair<String, String>>,
     categories: List<Category> = listOf(Category.Region, Category.Type, Category.Quarter),
     onFilter: (Category, Pair<String, String>) -> Unit,
@@ -399,7 +399,7 @@ fun MoreFilterDrawer(
 }
 
 @Composable
-fun OptionChip(
+private fun OptionChip(
     modifier: Modifier,
     text: String,
     fontColor: Color,

@@ -6,7 +6,7 @@ import com.xioneko.android.nekoanime.ui.schedule.ScheduleNavRoute
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
 
 
-enum class NekoAnimeScreen(
+enum class TopLevelScreen(
     val route: String,
     val iconId: Int,
     val label: String,

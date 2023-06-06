@@ -7,9 +7,12 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.Surface
@@ -28,7 +31,7 @@ import androidx.navigation.NavDestination
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
-import com.xioneko.android.nekoanime.navigation.NekoAnimeScreen
+import com.xioneko.android.nekoanime.navigation.TopLevelScreen
 import com.xioneko.android.nekoanime.ui.theme.basicWhite
 import com.xioneko.android.nekoanime.ui.theme.darkPink30
 import com.xioneko.android.nekoanime.ui.theme.pink50
@@ -37,10 +40,11 @@ import com.xioneko.android.nekoanime.ui.theme.pink50
 fun NekoAnimeBottomAppBar(
     modifier: Modifier = Modifier,
     currentDestination: NavDestination?,
-    onNavigateTo: (NekoAnimeScreen) -> Unit,
+    onNavigateTo: (TopLevelScreen) -> Unit,
 ) {
     Surface(
         modifier = modifier
+            .windowInsetsPadding(WindowInsets.navigationBars)
             .alpha(0.95f)
             .fillMaxWidth()
             .selectableGroup(),
@@ -50,7 +54,7 @@ fun NekoAnimeBottomAppBar(
         Row(
             modifier = Modifier.padding(8.dp)
         ) {
-            NekoAnimeScreen.values().forEach { destination ->
+            TopLevelScreen.values().forEach { destination ->
                 BottomAppBarItem(
                     modifier = Modifier
                         .fillMaxWidth()

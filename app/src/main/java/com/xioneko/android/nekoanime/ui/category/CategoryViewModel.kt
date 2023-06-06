@@ -29,6 +29,9 @@ class CategoryViewModel @Inject constructor(
 
     val animeList = mutableStateListOf<AnimeShell>()
 
+    /**
+     * Category - <OutputValue, LabelValue>
+     */
     val filter = mutableStateMapOf(
         Category.Region to ("" to "日本"),
         Category.Type to ("" to "全部"),
@@ -53,39 +56,34 @@ class CategoryViewModel @Inject constructor(
         animeList.clear()
     }
 
-    fun init(filter: Map<Category, Pair<String, String>>) {
+    fun initFilterState(filter: Map<Category, Pair<String, String>>) {
         filter.forEach {
             this.filter.apply { set(it.key, it.value) }
         }
-        fetchAnime(1)
+        fetchAnime()
     }
 
-    fun fetchAnime(pageCount: Int) {
+    fun fetchAnime() {
         viewModelScope.launch {
-            repeat(pageCount) {
-                Log.d("Category", "Fetch Page: ${fetcherState.page}")
-                launch {
-                    animeRepository.getAnimeBy(
-                        region = filter[Category.Region]!!.first,
-                        type = filter[Category.Type]!!.first,
-                        year = filter[Category.Year]!!.first,
-                        quarter = filter[Category.Quarter]!!.first,
-                        status = filter[Category.Status]!!.first,
-                        genre = filter[Category.Genre]!!.first,
-                        orderBy = filter[Category.Order]!!.first,
-                        pageIndex = fetcherState.page++
-                    )
-                        .onEach { animeShells -> animeList.addAll(animeShells) }
-                        .onStart { fetcherState.loadingPageCount++ }
-                        .onCompletion { fetcherState.loadingPageCount-- }
-                        .onEmpty {
-                            fetcherState.hasMore = false
-                            Log.d("Category", "hasMore = false")
-                        }
-                        .collect()
+            Log.d("Category", "Fetch Page: ${fetcherState.page}")
+            animeRepository.getAnimeBy(
+                region = filter[Category.Region]!!.first,
+                type = filter[Category.Type]!!.first,
+                year = filter[Category.Year]!!.first,
+                quarter = filter[Category.Quarter]!!.first,
+                status = filter[Category.Status]!!.first,
+                genre = filter[Category.Genre]!!.first,
+                orderBy = filter[Category.Order]!!.first,
+                pageIndex = fetcherState.page++
+            )
+                .onEach { animeShells -> animeList.addAll(animeShells) }
+                .onStart { fetcherState.loadingPageCount++ }
+                .onCompletion { fetcherState.loadingPageCount-- }
+                .onEmpty {
+                    fetcherState.hasMore = false
+                    Log.d("Category", "hasMore = false")
                 }
-                    .join()
-            }
+                .collect()
         }
     }
 }

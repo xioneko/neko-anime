@@ -13,7 +13,7 @@ internal object HtmlParser {
     /**
      * 适配页面：
      * - https://www.yhdmz2.com/s_all
-     * - https:/ww.yhdmz2.com/list/
+     * - https:/www.yhdmz2.com/list/
      */
     fun parseAnimeList(document: Document): List<AnimeShell> =
         buildList {

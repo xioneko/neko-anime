@@ -50,24 +50,27 @@ class AnimePlayViewModel @Inject constructor(
     private val userDataRepository: UserDataRepository
 ) : ViewModel() {
 
-    lateinit var followed: StateFlow<Boolean>
+    private val _loadingState = MutableStateFlow<LoadingState>(LoadingState.IDLE)
+
+    private val _playerState = MutableStateFlow(NekoAnimePlayerState())
+
+    var uiState: AnimePlayUiState by mutableStateOf(AnimePlayUiState.Loading)
 
     @SuppressLint("UnsafeOptInUsageError")
     val player: ExoPlayer = ExoPlayer.Builder(context).build().apply {
         playWhenReady = true
         pauseAtEndOfMediaItems = true
     }
+
+    val playerState = _playerState.asStateFlow()
+
     var isPausedBeforeLeave: Boolean = player.playWhenReady
 
-    var uiState: AnimePlayUiState by mutableStateOf(AnimePlayUiState.Loading)
-
-    private val _loadingState = MutableStateFlow<LoadingState>(LoadingState.IDLE)
     val loadingState: StateFlow<LoadingState> = _loadingState.asStateFlow()
 
     val forYouAnimeStream = MutableStateFlow(List<AnimeShell?>(FOR_YOU_ANIME_GRID_SIZE) { null })
 
-    private val _playerState = MutableStateFlow(NekoAnimePlayerState())
-    val playerState = _playerState.asStateFlow()
+    lateinit var followed: StateFlow<Boolean>
 
     init {
         viewModelScope.launch {
@@ -91,7 +94,7 @@ class AnimePlayViewModel @Inject constructor(
                         episode = mutableStateOf(watchRecords[animeId]?.recentEpisode ?: 1)
                     )
 
-                    updatePlayer()
+                    player.update()
 
                     followed = userDataRepository.followedAnimeIds
                         .map { animeId in it }
@@ -108,29 +111,27 @@ class AnimePlayViewModel @Inject constructor(
     }
 
 
-    fun updatePlayer() {
+    fun ExoPlayer.update() {
         with(uiState as AnimePlayUiState.Data) {
-            player.apply {
-                clearMediaItems()
-                viewModelScope.launch {
-                    fetchVideoUrl(episode.value)
-                        .onStart { _loadingState.emit(LoadingState.LOADING) }
-                        .onEmpty {
-                            _loadingState.emit(LoadingState.FAILURE("😣 找不到可用的播放地址"))
-                            Log.d("Video", "未找到可用的播放地址")
-                        }
-                        .combine(
-                            userDataRepository.watchHistory.take(1)
-                        ) { urls, watchRecords ->
-                            urls.forEach { addMediaItem(MediaItem.fromUri(it)) }
-                            Log.d("Video", "视频地址加载成功<$urls>")
-                            prepare()
-                            watchRecords[anime.id]?.positions?.get(episode.value)?.let {
-                                player.seekTo(it)
-                            } ?: player.seekToDefaultPosition()
-                        }
-                        .collect()
-                }
+            clearMediaItems()
+            viewModelScope.launch {
+                fetchVideoUrl(episode.value)
+                    .onStart { _loadingState.emit(LoadingState.LOADING) }
+                    .onEmpty {
+                        _loadingState.emit(LoadingState.FAILURE("😣 找不到可用的播放地址"))
+                        Log.d("Video", "未找到可用的播放地址")
+                    }
+                    .combine(
+                        userDataRepository.watchHistory.take(1)
+                    ) { urls, watchRecords ->
+                        urls.forEach { addMediaItem(MediaItem.fromUri(it)) }
+                        Log.d("Video", "视频地址加载成功<$urls>")
+                        prepare()
+                        watchRecords[anime.id]?.positions?.get(episode.value)?.let {
+                            player.seekTo(it)
+                        } ?: player.seekToDefaultPosition()
+                    }
+                    .collect()
             }
         }
     }

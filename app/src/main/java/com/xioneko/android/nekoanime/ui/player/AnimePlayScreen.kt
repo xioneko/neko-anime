@@ -105,12 +105,15 @@ fun AnimePlayScreen(
     }
 
     val onEpisodeChange: (Int) -> Unit = remember {
-        { // 只有获取了 uiState 中 episode 相关信息才可能被调用
-            with(viewModel.uiState as AnimePlayUiState.Data) {
-                viewModel.upsertWatchRecord(episode.value)
-                episode.value = it
+        {
+            with(viewModel) {
+                with(uiState as AnimePlayUiState.Data) {
+                    // 只有获取了 uiState 中 episode 相关信息才可能被调用
+                    upsertWatchRecord(episode.value)
+                    episode.value = it
+                }
+                player.update()
             }
-            viewModel.updatePlayer()
         }
     }
 

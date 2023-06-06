@@ -35,8 +35,8 @@ fun SearchScreen(
 
     var searchText by remember { mutableStateOf("") }
     var shouldShowResults by remember { mutableStateOf(false) }
-    val shouldShowCandidates = searchText.isNotBlank() /*&& !shouldShowResults */
-    val shouldShowHistory = uiState.searching /* && !(shouldShowCandidates || shouldShowResults)*/
+    val shouldShowCandidates = searchText.isNotBlank()
+    val shouldShowHistory = uiState.searching
 
     val onSearch = {
         focusManager.clearFocus()
