@@ -110,7 +110,7 @@ fun NekoAnimePlayer(
     val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     val systemUiController = rememberSystemUiController()
 
-    var realPosition by rememberSaveable { mutableStateOf(playerState.position) }
+    var realPosition by remember(playerState) { mutableStateOf(playerState.position) } // sync
 
     if (playerState.isPlaying) {
         LaunchedEffect(Unit) {
@@ -308,7 +308,10 @@ fun NekoAnimePlayer(
                 onPlay = player::play,
                 onPause = player::pause,
                 onOrientationChange = changeOrientationTo,
-                seekTo = player::seekTo,
+                seekTo = {
+                    player.seekTo(it)
+                    realPosition = it
+                },
                 onEpisodeChange = onEpisodeChange
             )
         }
@@ -402,7 +405,7 @@ private fun BottomController(
                     onPlay = onPlay,
                     onPause = onPause
                 )
-                TimeLine(
+                SeekBar(
                     modifier = Modifier.weight(1f),
                     currentPosition = currentPosition,
                     totalDurationMs = totalDurationMs,
@@ -452,7 +455,7 @@ private fun BottomController(
                         color = basicWhite,
                         style = MaterialTheme.typography.labelSmall
                     )
-                    TimeLine(
+                    SeekBar(
                         modifier = Modifier.weight(1f),
                         currentPosition = currentPosition,
                         totalDurationMs = totalDurationMs,
@@ -568,7 +571,7 @@ private fun AnimatedPlayPauseButton(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TimeLine(
+private fun SeekBar(
     modifier: Modifier = Modifier,
     currentPosition: Long,
     bufferedPercentage: Int,

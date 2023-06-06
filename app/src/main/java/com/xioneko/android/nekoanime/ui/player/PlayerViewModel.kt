@@ -217,7 +217,7 @@ class AnimePlayViewModel @Inject constructor(
             val playerListener = object : Player.Listener {
                 override fun onEvents(player: Player, events: Player.Events) {
                     super.onEvents(player, events)
-                    val currentPosition = player.currentPosition
+                    val position = player.currentPosition
                     val isPaused = !player.playWhenReady
                     val isPlaying = player.isPlaying
                     val totalDurationMs = player.duration.coerceAtLeast(0L)
@@ -251,7 +251,7 @@ class AnimePlayViewModel @Inject constructor(
                             isPaused,
                             isEnded,
                             totalDurationMs,
-                            currentPosition,
+                            position,
                             bufferedPercentage
                         )
                     )
