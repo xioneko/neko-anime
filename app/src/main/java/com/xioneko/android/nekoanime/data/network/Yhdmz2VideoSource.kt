@@ -18,7 +18,7 @@ import java.net.URLDecoder
 import javax.inject.Inject
 
 
-private const val BASE_URL = "https://m.yhdmz2.com/"
+private const val BASE_URL = "https://www.yhdmz2.com/"
 
 class Yhdmz2VideoSource @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -44,6 +44,10 @@ class Yhdmz2VideoSource @Inject constructor(
                 override fun onPageFinished(view: WebView, url: String) {
                     parseAndSend(view, url)
                 }
+            }.apply {
+                settings.userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+                        "AppleWebKit/537.36 (KHTML, like Gecko) " +
+                        "Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.37"
             }
             Log.d("Video", "开始加载页面")
             loadUrl("${BASE_URL}vp/${animeId}-${channels.first()}-${episode - 1}.html")
@@ -58,7 +62,7 @@ class Yhdmz2VideoSource @Inject constructor(
         val channel = url.substringAfter('-').substringBefore('-').toInt()
 
         view.evaluateJavascript(
-            "document.querySelector('#m_yh_playfram').src"
+            "document.querySelector('#yh_playfram').src"
         ) { it ->
             val frameSrc = it.trim('"')
             Log.d("Video", "解析得到src<$frameSrc>")
