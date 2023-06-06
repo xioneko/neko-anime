@@ -6,11 +6,11 @@
 <p>一个可以在线看番的 Android App</p>
 <p>
 
-[![Android](https://img.shields.io/badge/android-12.0+-green)](https://developer.android.com/about/versions/12)
-[![Release](https://img.shields.io/github/v/release/xioneko/neko-anime)](https://github.com/xioneko/neko-anime/releases/tag/v0.1.0)
+[![Android](https://img.shields.io/badge/android-11+-green)](https://developer.android.com/about/versions/12)
+[![Release](https://img.shields.io/github/v/release/xioneko/neko-anime)](https://github.com/xioneko/neko-anime/releases/)
 [![Downloads](https://img.shields.io/github/downloads/xioneko/neko-anime/total)](https://github.com/xioneko/neko-anime/releases/)
 [![Powered-by](https://img.shields.io/badge/powered%20by-%E6%A8%B1%E8%8A%B1%E5%8A%A8%E6%BC%AB-ea5c7b)](http://www.yinghuacd.com/)
-[![License](https://img.shields.io/badge/License-GPL-yellow)](https://www.gnu.org/licenses/gpl-3.0.html)
+[![License](https://img.shields.io/badge/license-GPLv3-yellow)](https://www.gnu.org/licenses/gpl-3.0.html)
 
 </p>
 </div>
@@ -56,6 +56,17 @@ Neko Anime 使用樱花动漫「[地址Ⅰ](http://www.yinghuacd.com/)丨[地址
 
 ## 更新日志
 
+### v0.1.2 (2023-6-6)
+**改进功能**
+- 支持 Android 11
+- 在搜索结果页使用系统返回键只会返回到历史搜索页而
+
+**缺陷修复**
+- 视频源 www.yinghuacd.com 无法使用的问题
+- 视频源 m.yhdmz2.com 偶尔不可用的问题
+- App 直接退出导致播放记录无法保存的问题
+- 获取番剧信息时，集数解析问题
+
 ### v0.1.1 (2023-5-27)
 **改进功能**
 - 图片加载失败显示占位图
@@ -79,7 +90,7 @@ Neko Anime 使用樱花动漫「[地址Ⅰ](http://www.yinghuacd.com/)丨[地址
 ## FAQ
 - **番剧数据加载失败了怎么办？**
 
-  目前 App 使用的番剧信息数据基本上来自于 https://www.yhdmz2.com/ ，因此加载失败很可能是由于此网站无法正常访问（或许更换了域名）
+  目前 App 使用的番剧信息数据全部来自于 https://www.yhdmz2.com/ ，请检查该网站是否可以访问，若无法访问可在 [GitHub Issues](https://github.com/xioneko/neko-anime/issues) 中反馈。
 
 - **视频加载失败了怎么办？**
 
