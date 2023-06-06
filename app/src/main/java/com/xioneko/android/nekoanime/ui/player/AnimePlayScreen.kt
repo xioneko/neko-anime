@@ -78,7 +78,9 @@ fun AnimePlayScreen(
     onBackClick: () -> Unit
 ) {
 
-    LaunchedEffect(Unit) { viewModel.init(animeId) }
+    LaunchedEffect(Unit) { viewModel.loadingUiState(animeId) }
+
+    val playerState by viewModel.playerState.collectAsStateWithLifecycle()
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(Unit) {
@@ -128,6 +130,7 @@ fun AnimePlayScreen(
                 NekoAnimePlayer(
                     player = viewModel.player,
                     uiState = viewModel.uiState,
+                    playerState = playerState,
                     onEpisodeChange = onEpisodeChange,
                     onBack = {
                         if (viewModel.uiState is AnimePlayUiState.Data) {

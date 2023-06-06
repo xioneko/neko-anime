@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.xioneko.android.nekoanime.data.AnimeRepository
 import com.xioneko.android.nekoanime.data.UserDataRepository
@@ -20,10 +21,12 @@ import com.xioneko.android.nekoanime.data.model.Category
 import com.xioneko.android.nekoanime.ui.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
@@ -63,7 +66,19 @@ class AnimePlayViewModel @Inject constructor(
 
     val forYouAnimeStream = MutableStateFlow(List<AnimeShell?>(FOR_YOU_ANIME_GRID_SIZE) { null })
 
-    fun init(animeId: Int) {
+    private val _playerState = MutableStateFlow(NekoAnimePlayerState())
+    val playerState = _playerState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            producePlayerState()
+                .collect {
+                    _playerState.emit(it)
+                }
+        }
+    }
+
+    fun loadingUiState(animeId: Int) {
         if (uiState is AnimePlayUiState.Data) return
 
         viewModelScope.launch {
@@ -195,6 +210,56 @@ class AnimePlayViewModel @Inject constructor(
             }
         }
     }
+
+    private fun producePlayerState() =
+        callbackFlow {
+            val playerListener = object : Player.Listener {
+                override fun onEvents(player: Player, events: Player.Events) {
+                    super.onEvents(player, events)
+                    val currentPosition = player.currentPosition
+                    val isPaused = !player.playWhenReady
+                    val isPlaying = player.isPlaying
+                    val totalDurationMs = player.duration.coerceAtLeast(0L)
+                    val bufferedPercentage = player.bufferedPercentage
+
+                    val isLoading: Boolean
+                    val isEnded: Boolean
+                    when (player.playbackState) {
+                        Player.STATE_IDLE, Player.STATE_BUFFERING -> {
+                            isLoading = true
+                            isEnded = false
+                        }
+
+                        Player.STATE_READY -> {
+                            isLoading = false
+                            isEnded = false
+                        }
+
+                        Player.STATE_ENDED -> {
+                            isEnded = true
+                            isLoading = player.mediaItemCount == 0
+                        }
+
+                        else -> error("Unreachable.")
+                    }
+
+                    trySend(
+                        NekoAnimePlayerState(
+                            isLoading,
+                            isPlaying,
+                            isPaused,
+                            isEnded,
+                            totalDurationMs,
+                            currentPosition,
+                            bufferedPercentage
+                        )
+                    )
+                }
+            }
+            player.addListener(playerListener)
+
+            awaitClose { player.removeListener(playerListener) }
+        }
 }
 
 @Stable
@@ -205,3 +270,13 @@ sealed interface AnimePlayUiState {
         var episode: MutableState<Int>,
     ) : AnimePlayUiState
 }
+
+data class NekoAnimePlayerState(
+    val isLoading: Boolean = true,
+    val isPlaying: Boolean = false,
+    val isPaused: Boolean = false,
+    val isEnded: Boolean = false,
+    val totalDurationMs: Long = 0L,
+    val position: Long = 0L,
+    val bufferedPercentage: Int = 0
+)

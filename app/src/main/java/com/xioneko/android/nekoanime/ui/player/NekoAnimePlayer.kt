@@ -80,7 +80,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -102,6 +101,7 @@ const val ORIENTATION_SENSOR = ActivityInfo.SCREEN_ORIENTATION_SENSOR
 fun NekoAnimePlayer(
     player: ExoPlayer,
     uiState: AnimePlayUiState,
+    playerState : NekoAnimePlayerState,
     onEpisodeChange: (Int) -> Unit,
     onBack: () -> Unit,
 ) {
@@ -110,24 +110,18 @@ fun NekoAnimePlayer(
     val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     val systemUiController = rememberSystemUiController()
 
-    var isPaused by rememberSaveable { mutableStateOf(!player.playWhenReady) }
-    var isLoading by rememberSaveable { mutableStateOf(false) }
-    var isPlaying by rememberSaveable { mutableStateOf(false) }
-    var isEnded by rememberSaveable { mutableStateOf(false) }
-    var totalDurationMs by rememberSaveable { mutableStateOf(0L) }
-    var currentPosition by rememberSaveable { mutableStateOf(0L) }
-    var bufferedPercentage by rememberSaveable { mutableStateOf(0) }
+    var realPosition by rememberSaveable { mutableStateOf(playerState.position) }
 
-    if (isPlaying) {
+    if (playerState.isPlaying) {
         LaunchedEffect(Unit) {
             while (true) {
-                currentPosition = player.currentPosition
+                realPosition = player.currentPosition
                 delay(500)
             }
         }
     }
 
-    if (!isPaused) { KeepScreenOn() }
+    if (!playerState.isPaused) { KeepScreenOn() }
 
     var currentOrientation by rememberSaveable { mutableStateOf(ORIENTATION_PORTRAIT) }
 
@@ -150,7 +144,7 @@ fun NekoAnimePlayer(
         }
     }
 
-    if (player.mediaItemCount != 0 && bufferedPercentage == 0) {
+    if (player.mediaItemCount != 0 && playerState.bufferedPercentage == 0) {
         LaunchedEffect(Unit) {
             delay(45.seconds)
             Log.d("Video", "视频加载超时，尝试备用地址")
@@ -215,36 +209,6 @@ fun NekoAnimePlayer(
         }
         backDispatcher?.addCallback(backCallback)
 
-
-        val playerListener = object : Player.Listener {
-            override fun onEvents(player: Player, events: Player.Events) {
-                super.onEvents(player, events)
-
-                when (player.playbackState) {
-                    Player.STATE_IDLE, Player.STATE_BUFFERING -> {
-                        isLoading = true
-                        isEnded = false
-                    }
-
-                    Player.STATE_READY -> {
-                        isLoading = false
-                        isEnded = false
-                    }
-
-                    Player.STATE_ENDED -> {
-                        isEnded = true
-                        isLoading = player.mediaItemCount == 0
-                    }
-                }
-                currentPosition = player.currentPosition
-                isPaused = !player.playWhenReady
-                isPlaying = player.isPlaying
-                totalDurationMs = player.duration.coerceAtLeast(0L)
-                bufferedPercentage = player.bufferedPercentage
-            }
-        }
-        player.addListener(playerListener)
-
         onDispose {
             backCallback.remove()
             orientationListener.disable()
@@ -272,7 +236,7 @@ fun NekoAnimePlayer(
     }
 
     Box(playerModifier) {
-        if (isLoading) {
+        if (playerState.isLoading) {
             LoadingDotsVariant(
                 Modifier
                     .zIndex(1f)
@@ -334,12 +298,12 @@ fun NekoAnimePlayer(
                 modifier = Modifier.background(
                     Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(0.5f)))
                 ),
-                isPaused = isPaused,
+                isPaused = playerState.isPaused,
                 currentEpisode = if (uiState is AnimePlayUiState.Data) uiState.episode.value else 1,
                 totalEpisodes = if (uiState is AnimePlayUiState.Data) uiState.anime.latestEpisode else 1,
-                currentPosition = currentPosition,
-                totalDurationMs = totalDurationMs,
-                bufferedPercentage = bufferedPercentage,
+                currentPosition = realPosition,
+                totalDurationMs = playerState.totalDurationMs,
+                bufferedPercentage = playerState.bufferedPercentage,
                 orientation = currentOrientation,
                 onPlay = player::play,
                 onPause = player::pause,
