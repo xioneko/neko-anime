@@ -100,10 +100,11 @@ internal object HtmlParser {
         /* 第24集(完结) / 22:00 第2集(每周一22:00更新)
             第1集(每周一更新) / [OVA 01-04] / [全集]
             第3话(完结) / 第OVA1话 / [OVA 01-02+SP]
-            第06集(完结) /
+            第06集(完结) / [TV 01-12+SP01-06]
          */
         val latestEpisode = div.child(6).ownText()
             .substringAfter('第')
+            .substringBefore('+')
             .substringAfter('-')
             .substringBefore('(')
             .filter { it.isDigit() }
