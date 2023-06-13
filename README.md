@@ -18,13 +18,19 @@
 ## 介绍
 <p>
 
-Neko Anime 使用樱花动漫「[地址Ⅰ](http://www.yinghuacd.com/)丨[地址Ⅱ](https://www.yhdmz2.com/)」作为数据源，灵感来源于项目 [Imomoe](https://github.com/androiddevnotesforks/Imomoe)。技术栈方面采用了 Kotlin 搭配 Jetpack Compose，遵循了官方指南中的“[现代 Android 应用架构](https://developer.android.com/topic/architecture)”最佳实践。同时，为尽可能地提高用户体验，Neko Anime 在 UI/UX 设计上广泛借鉴了相关优秀 app。
+Neko Anime 使用樱花动漫「[🌸Ⅰ](http://www.yinghuacd.com/)│[🌸Ⅱ](https://www.yhdmz2.com/)」作为数据源，灵感来源于项目 [Imomoe](https://github.com/androiddevnotesforks/Imomoe)。技术栈方面采用了 Kotlin 搭配 Jetpack Compose，遵循了官方指南中的“[现代 Android 应用架构](https://developer.android.com/topic/architecture)”最佳实践。同时，为尽可能地提高用户体验，Neko Anime 在 UI/UX 设计上广泛借鉴了相关优秀 app。
 
 </p>
 
 <p>
 
-由于本项目**并不是**由一个拥有丰富经验的开发者从 0 到 1 构建起来的，更准确地讲是一个初学者的练习项目，所以肯定存在些许不成熟、不规范或有待改进的地方，欢迎在 [Issues](https://github.com/xioneko/neko-anime/issues) 中讨论。
+由于本项目**并不是**由一个拥有丰富经验的开发者从 0 到 1 构建起来的，更准确地讲是一个初学者的练习项目，所以肯定存在些许不成熟、不规范或有待改进的地方，欢迎在 [Issues](https://github.com/xioneko/neko-anime/issues) 中讨论 ☺️。
+
+</p>
+
+<p>
+
+App 的开发仍在进行中 🚧，可在 GitHub 上 [⬇️下载最新版本](https://github.com/xioneko/neko-anime/releases)
 
 </p>
 
