@@ -85,7 +85,7 @@ class AnimePlayViewModel @Inject constructor(
         if (uiState is AnimePlayUiState.Data) return
 
         viewModelScope.launch {
-            animeRepository.getAnimeById(animeId, skipMemory = true)
+            animeRepository.getAnimeById(animeId)
                 .onStart { _loadingState.emit(LoadingState.LOADING) }
                 .onEmpty { _loadingState.emit(LoadingState.FAILURE("🥹 数据源似乎出了问题")) }
                 .combine(userDataRepository.watchHistory.take(1)) { anime, watchRecords ->

@@ -10,7 +10,7 @@ import dagger.hilt.components.SingletonComponent
 import java.util.Calendar
 import javax.inject.Singleton
 
-private const val DEFAULT_EXPIRATION: Long = 36_000_000 // 10小时
+private const val DEFAULT_EXPIRATION: Long = 300_000 // 5分钟
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -23,7 +23,7 @@ object DataModule {
 
             override suspend fun isValid(item: Anime): Boolean =
                 if (item.status == "已完结") true
-                else item.lastModified.timeInMillis - Calendar.getInstance().timeInMillis < expiration
+                else Calendar.getInstance().timeInMillis - item.lastModified.timeInMillis < expiration
         }
 
 

@@ -44,13 +44,9 @@ class AnimeRepository @Inject constructor(
 
     fun getAnimeById(
         animeId: Int,
-        refresh: Boolean = false,
-        skipMemory: Boolean = false
+        refresh: Boolean = false
     ): Flow<Anime> = flow {
-        store.stream(
-            if (skipMemory) StoreReadRequest.skipMemory(AnimeKey.FetchAnime(animeId), refresh)
-            else StoreReadRequest.cached(AnimeKey.FetchAnime(animeId), refresh)
-        )
+        store.stream(StoreReadRequest.cached(AnimeKey.FetchAnime(animeId), refresh))
             .firstOrNull { it is StoreReadResponse.Data }
             ?.let { emit((it as StoreReadResponse.Data).value) }
     }
