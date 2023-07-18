@@ -158,7 +158,7 @@ internal object HtmlParser {
 
     /**
      * 适配页面：
-     * - http://www.yinghuacd.com/v/{animeId}-{episode}.html
+     * - http://www.yinghuavideo.com/v/{animeId}-{episode}.html
      */
     fun parseVideoSource(document: Document): String =
         document.select("#playbox").first()!!
