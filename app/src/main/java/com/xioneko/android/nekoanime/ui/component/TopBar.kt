@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeFontFamilies
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
+import com.xioneko.android.nekoanime.ui.theme.basicBlack
 import com.xioneko.android.nekoanime.ui.theme.pink95
 
 @Composable
@@ -93,6 +94,7 @@ fun SolidTopBar(
 fun TransparentTopBar(
     title: String,
     iconId: Int,
+    iconTint: Color = basicBlack,
     onIconClick:() -> Unit
 ) {
     val systemUiController = rememberSystemUiController()
@@ -127,7 +129,8 @@ fun TransparentTopBar(
         ) {
             Icon(
                 painter = painterResource(iconId),
-                contentDescription = null
+                contentDescription = null,
+                tint = iconTint
             )
         }
     }

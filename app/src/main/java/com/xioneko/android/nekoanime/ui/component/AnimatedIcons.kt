@@ -29,3 +29,24 @@ fun AnimatedFollowIcon(
         composition = followIcon,
         progress = { if (isFollowed) animationProgress else 0f })
 }
+
+@Composable
+fun AnimatedRadioButton(
+    modifier: Modifier = Modifier,
+    selected: Boolean,
+    durationMillis: Int = 600,
+) {
+    val radioButton by rememberLottieComposition(
+        LottieCompositionSpec.RawRes(NekoAnimeIcons.Animated.radio)
+    )
+
+    val selectProgress by animateFloatAsState(
+        targetValue = if (selected) 0.5f else 0f,
+        animationSpec = tween(durationMillis, easing = LinearEasing)
+    )
+
+    LottieAnimation(
+        modifier = modifier,
+        composition = radioButton, progress = { if (selected) selectProgress else 0f}
+    )
+}
