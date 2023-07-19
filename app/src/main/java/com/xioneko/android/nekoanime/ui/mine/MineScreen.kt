@@ -1,6 +1,5 @@
 package com.xioneko.android.nekoanime.ui.mine
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -20,9 +19,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,7 +34,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -42,6 +48,7 @@ import com.xioneko.android.nekoanime.ui.component.AnimatedSwitchButton
 import com.xioneko.android.nekoanime.ui.component.TransparentTopBar
 import com.xioneko.android.nekoanime.ui.component.WorkingInProgressDialog
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
+import com.xioneko.android.nekoanime.ui.theme.basicBlack
 import com.xioneko.android.nekoanime.ui.theme.basicWhite
 import com.xioneko.android.nekoanime.ui.theme.pink10
 import com.xioneko.android.nekoanime.ui.theme.pink50
@@ -82,24 +89,22 @@ fun MineScreen(
         contentWindowInsets = WindowInsets(0)
     ) {
 
-        val blockModifier = Modifier
-            .padding(6.dp)
-            .shadow(
-                elevation = 1.dp,
-                shape = RoundedCornerShape(6.dp),
-                ambientColor = pink50.copy(0.2f),
-                spotColor = pink50.copy(0.2f)
-            )
-            .padding(1.dp)
-            .background(
-                basicWhite,
-                RoundedCornerShape(6.dp)
-            )
+        val cardModifier = remember {
+            Modifier
+                .shadow(
+                    elevation = 1.dp,
+                    shape = RoundedCornerShape(6.dp),
+                    ambientColor = pink50.copy(0.2f),
+                    spotColor = pink50.copy(0.2f)
+                )
+                .padding(1.dp)
+                .clip(RoundedCornerShape(6.dp))
+        }
 
         val itemModifier = remember {
             Modifier
                 .fillMaxWidth()
-                .height(36.dp)
+                .height(38.dp)
         }
 
         Column(
@@ -113,13 +118,13 @@ fun MineScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 PrimaryBox(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .then(blockModifier),
+                        .then(cardModifier),
                     iconId = NekoAnimeIcons.love,
                     text = "我的追番",
                     onClick = onFollowedAnimeClick
@@ -128,7 +133,7 @@ fun MineScreen(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .then(blockModifier),
+                        .then(cardModifier),
                     iconId = NekoAnimeIcons.history,
                     text = "历史观看",
                     onClick = onHistoryClick
@@ -137,7 +142,7 @@ fun MineScreen(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .then(blockModifier),
+                        .then(cardModifier),
                     iconId = NekoAnimeIcons.download,
                     text = "我的下载",
                     onClick = { showWorkingInProgressDialog = true }
@@ -146,10 +151,8 @@ fun MineScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .then(blockModifier)
-                    .padding(vertical = 5.dp),
+                    .then(cardModifier)
             ) {
-
                 ItemWithNewPage(
                     modifier = itemModifier,
                     text = "重新选择我的兴趣点",
@@ -184,11 +187,6 @@ fun MineScreen(
                     onCheckedChange = viewModel::setUpdateAutoCheck
                 )
 
-                ItemWithNewPage(
-                    modifier = itemModifier,
-                    text = "关于",
-                    onClick = { /* TODO: 关于页面 */ showWorkingInProgressDialog = true }
-                )
             }
         }
     }
@@ -201,7 +199,7 @@ private fun PrimaryBox(
     text: String,
     onClick: () -> Unit,
 ) {
-    Box(
+    Surface(
         modifier = modifier
             .aspectRatio(5f / 4f)
             .clickable(
@@ -210,82 +208,135 @@ private fun PrimaryBox(
                 role = Role.Button,
                 onClick = onClick
             ),
-        contentAlignment = Alignment.Center
+        contentColor = basicBlack,
+        color = basicWhite
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(1.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            Icon(
-                painter = painterResource(iconId),
-                contentDescription = text,
-                tint = pink10,
-            )
-            Text(
-                text = text,
-                color = pink10,
-                style = MaterialTheme.typography.labelSmall
-            )
+            Column(
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    painter = painterResource(iconId),
+                    contentDescription = text,
+                    tint = pink10,
+                )
+                Text(
+                    text = text,
+                    color = pink10,
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ItemWithNewPage(
     modifier: Modifier,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 15.dp),
     text: String,
     onClick: () -> Unit,
 ) {
-    Row(
-        modifier = modifier
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                role = Role.Button,
-                onClick = onClick
-            )
-            .padding(horizontal = 15.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+    Card(
+        modifier = modifier,
+        onClick = onClick,
+        shape = RectangleShape,
+        colors = CardDefaults.cardColors(
+            containerColor = basicWhite,
+            contentColor = basicBlack
+        )
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Icon(
-            painter = painterResource(NekoAnimeIcons.arrowRight),
-            contentDescription = "more",
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(contentPadding),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Icon(
+                painter = painterResource(NekoAnimeIcons.arrowRight),
+                contentDescription = "more",
+            )
+        }
     }
+
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ItemWithSwitch(
     modifier: Modifier,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 15.dp),
     text: String,
     checked: Boolean?,
     onCheckedChange: (Boolean) -> Unit
 ) {
-    Row(
-        modifier = modifier
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                role = Role.Switch,
-                onClick = { onCheckedChange(checked?.not() ?: false) }
-            )
-            .padding(horizontal = 15.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+    Card(
+        modifier = modifier,
+        onClick = { onCheckedChange(checked?.not() ?: false) },
+        shape = RectangleShape,
+        colors = CardDefaults.cardColors(
+            containerColor = basicWhite,
+            contentColor = basicBlack
+        )
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium,
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(contentPadding),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            AnimatedSwitchButton(
+                modifier = Modifier.size(32.dp),
+                checked = checked
+            )
+        }
+    }
+
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ItemWithAction(
+    modifier: Modifier,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 15.dp),
+    text: String,
+    action: () -> Unit,
+) {
+    Card(
+        modifier = modifier,
+        onClick = action,
+        shape = RectangleShape,
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent,
+            contentColor = basicBlack
         )
-        AnimatedSwitchButton(
-            modifier = Modifier.size(30.dp),
-            checked = checked
-        )
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(contentPadding)
+                .fillMaxHeight(),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
     }
 }
 
