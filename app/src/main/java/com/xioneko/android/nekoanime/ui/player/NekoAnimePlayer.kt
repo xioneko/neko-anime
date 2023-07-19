@@ -14,6 +14,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.animateFloat
@@ -23,6 +24,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.with
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -42,12 +45,17 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -101,7 +109,7 @@ const val ORIENTATION_SENSOR = ActivityInfo.SCREEN_ORIENTATION_SENSOR
 fun NekoAnimePlayer(
     player: ExoPlayer,
     uiState: AnimePlayUiState,
-    playerState : NekoAnimePlayerState,
+    playerState: NekoAnimePlayerState,
     onEpisodeChange: (Int) -> Unit,
     onBack: () -> Unit,
 ) {
@@ -134,6 +142,7 @@ fun NekoAnimePlayer(
 
     var isTopControllerVisible by remember { mutableStateOf(true) }
     var isBottomControllerVisible by remember { mutableStateOf(true) }
+    var isEpisodesDrawerVisible by remember { mutableStateOf(false) }
 
     if (isBottomControllerVisible) {
         LaunchedEffect(Unit) {
@@ -312,7 +321,28 @@ fun NekoAnimePlayer(
                     player.seekTo(it)
                     realPosition = it
                 },
-                onEpisodeChange = onEpisodeChange
+                onEpisodeChange = onEpisodeChange,
+                showEpisodesDrawer = {
+                    isBottomControllerVisible = false
+                    isTopControllerVisible = false
+                    isEpisodesDrawerVisible = true
+                }
+            )
+        }
+
+        AnimatedVisibility(
+            visible = isEpisodesDrawerVisible,
+            enter = slideInHorizontally { it / 2 },
+            exit = slideOutHorizontally { it / 2 }
+        ) {
+            EpisodesDrawer(
+                currentEpisode = if (uiState is AnimePlayUiState.Data) uiState.episode.value else 1,
+                totalEpisodes = if (uiState is AnimePlayUiState.Data) uiState.anime.latestEpisode else 1,
+                onEpisodeChange = {
+                    onEpisodeChange(it)
+                    isEpisodesDrawerVisible = false
+                },
+                hideDrawer = { isEpisodesDrawerVisible = false }
             )
         }
     }
@@ -387,6 +417,7 @@ private fun BottomController(
     onOrientationChange: (Int) -> Unit,
     seekTo: (Long) -> Unit,
     onEpisodeChange: (Int) -> Unit,
+    showEpisodesDrawer: () -> Unit,
 ) {
     val totalDuration = formatMilliseconds(totalDurationMs)
     val currentPos = formatMilliseconds(currentPosition, totalDuration.length > 5)
@@ -501,7 +532,7 @@ private fun BottomController(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                             role = Role.DropdownList,
-                            onClick = { /* TODO: 选集 */ }
+                            onClick = showEpisodesDrawer
                         ),
                         text = "选集",
                         color = basicWhite,
@@ -638,6 +669,94 @@ private fun SeekBar(
                 )
             }
         )
+    }
+}
+
+@OptIn(ExperimentalAnimationApi::class)
+@Composable
+private fun AnimatedVisibilityScope.EpisodesDrawer(
+    currentEpisode: Int,
+    totalEpisodes: Int,
+    onEpisodeChange: (Int) -> Unit,
+    hideDrawer: () -> Unit,
+) {
+
+    Box(contentAlignment = Alignment.CenterEnd) {
+        Box(
+            modifier = Modifier
+                .animateEnterExit(enter = fadeIn(), exit = fadeOut())
+                .fillMaxSize()
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = hideDrawer
+                )
+                .background(
+                    Brush.horizontalGradient(
+                        0f to Color.Black.copy(0f),
+                        1f to Color.Black.copy(0.9f)
+                    )
+                ),
+        )
+        Column(
+            modifier = Modifier
+                .width(360.dp)
+                .padding(start = 15.dp, end = 15.dp, top = 15.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = "选集",
+                color = basicWhite.copy(0.65f),
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            LazyVerticalGrid(
+                modifier = Modifier.fillMaxSize(),
+                columns = GridCells.Fixed(5),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                repeat(totalEpisodes) {
+                    val episode = it + 1
+                    item(episode) {
+                        if (episode == currentEpisode) {
+                            Box(
+                                modifier = Modifier
+                                    .requiredSize(50.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Color.LightGray.copy(0.35f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = episode.toString(),
+                                    color = basicWhite,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .requiredSize(50.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Color.LightGray.copy(0.1f))
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                        role = Role.Button,
+                                        onClick = { onEpisodeChange(episode) }
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = episode.toString(),
+                                    color = basicWhite,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
