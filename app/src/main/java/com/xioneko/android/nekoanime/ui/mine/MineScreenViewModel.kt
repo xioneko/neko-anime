@@ -62,6 +62,12 @@ class MineScreenViewModel @Inject constructor(
 
     fun getAnimeById(animeId: Int) = animeRepository.getAnimeById(animeId)
 
+    fun clearWatchRecords() {
+        viewModelScope.launch {
+            userDataRepository.clearWatchRecord()
+        }
+    }
+
 }
 
 enum class WatchPeriod(val title: String) {

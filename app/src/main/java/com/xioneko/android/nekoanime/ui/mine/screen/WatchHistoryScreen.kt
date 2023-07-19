@@ -12,10 +12,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.xioneko.android.nekoanime.ui.component.ConfirmationDialog
 import com.xioneko.android.nekoanime.ui.component.NarrowAnimeCard
 import com.xioneko.android.nekoanime.ui.component.PlaceholderAnimeCard
 import com.xioneko.android.nekoanime.ui.component.SolidTopBar
@@ -31,14 +35,17 @@ fun WatchHistoryScreen(
     onBackClick: () -> Unit
 ) {
     val watchHistory by viewModel.watchHistory.collectAsStateWithLifecycle()
+    var shouldConfirmRecordsCleanup by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             SolidTopBar(
                 title = "历史观看",
                 onLeftIconClick = onBackClick,
-                rightIconId = NekoAnimeIcons.search,
-                onRightIconClick = { /* TODO: 历史记录搜索 */ }
+                rightIconId = NekoAnimeIcons.trash2,
+                onRightIconClick = {
+                    if (watchHistory.isNotEmpty()) shouldConfirmRecordsCleanup = true
+                }
             )
         },
         containerColor = basicWhite,
@@ -73,6 +80,17 @@ fun WatchHistoryScreen(
                     }
                 }
             }
+        }
+
+        if (shouldConfirmRecordsCleanup) {
+            ConfirmationDialog(
+                text = "清空所有观看记录吗？",
+                onConfirm = {
+                    viewModel.clearWatchRecords()
+                    shouldConfirmRecordsCleanup = false
+                },
+                onDismiss = { shouldConfirmRecordsCleanup = false }
+            )
         }
     }
 }

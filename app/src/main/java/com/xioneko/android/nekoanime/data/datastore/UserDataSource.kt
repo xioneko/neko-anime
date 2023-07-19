@@ -60,6 +60,12 @@ class UserDataSource @Inject constructor(
         }
     }
 
+    suspend fun clearWatchRecords() {
+        dataStore.updateData { userData ->
+            userData.copy(watchRecords = emptyMap())
+        }
+    }
+
     suspend fun addDownloadRecord(animeId: Int, record: DownloadRecord) {
         dataStore.updateData { userData ->
             val origin = userData.downloadRecords.toMutableMap()

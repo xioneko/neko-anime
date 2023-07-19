@@ -51,6 +51,8 @@ class UserDataRepository @Inject constructor(
         )
     }
 
+    suspend fun clearWatchRecord() = userDataSource.clearWatchRecords()
+
     suspend fun addDownloadRecord(animeId: Int, episode: Int) =
         userDataSource.addDownloadRecord(
             animeId,

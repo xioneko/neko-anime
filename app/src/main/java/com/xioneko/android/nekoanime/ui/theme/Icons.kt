@@ -20,6 +20,7 @@ object NekoAnimeIcons {
     val status = R.drawable.ic_status
     val tag = R.drawable.ic_tag
     val trash = R.drawable.ic_trash
+    val trash2 = R.drawable.ic_trash2
     val tv = R.drawable.ic_tv
     val light = R.drawable.ic_light
     val love = R.drawable.ic_love
