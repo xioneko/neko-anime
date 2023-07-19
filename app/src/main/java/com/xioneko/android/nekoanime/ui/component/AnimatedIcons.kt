@@ -47,6 +47,33 @@ fun AnimatedRadioButton(
 
     LottieAnimation(
         modifier = modifier,
-        composition = radioButton, progress = { if (selected) selectProgress else 0f}
+        composition = radioButton, progress = { if (selected) selectProgress else 0f }
     )
+}
+
+@Composable
+fun AnimatedSwitchButton(
+    modifier: Modifier = Modifier,
+    checked: Boolean?,
+) {
+    val switchButton by rememberLottieComposition(
+        LottieCompositionSpec.RawRes(NekoAnimeIcons.Animated.switch)
+    )
+
+    if (checked == null) {
+        LottieAnimation(
+            modifier = modifier,
+            composition = switchButton, progress = { 1f }
+        )
+    } else {
+        val animationProgress by animateFloatAsState(
+            targetValue = if (checked) 1f else 0f,
+            animationSpec = tween(400, easing = LinearEasing)
+        )
+
+        LottieAnimation(
+            modifier = modifier,
+            composition = switchButton, progress = { animationProgress }
+        )
+    }
 }

@@ -47,5 +47,6 @@ object NekoAnimeIcons {
         val loading = R.raw.loading
         val videoLoading = R.raw.v_loading
         val radio = R.raw.ic_radio
+        val switch = R.raw.ic_switch
     }
 }

@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -36,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xioneko.android.nekoanime.data.model.ThemeConfig
+import com.xioneko.android.nekoanime.ui.component.AnimatedSwitchButton
 import com.xioneko.android.nekoanime.ui.component.TransparentTopBar
 import com.xioneko.android.nekoanime.ui.component.WorkingInProgressDialog
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
@@ -56,6 +59,8 @@ fun MineScreen(
 ) {
     val themeConfig by viewModel.themeConfig.collectAsStateWithLifecycle()
     val isSystemInDarkTheme = isSystemInDarkTheme()
+
+    val updateAutoCheck by viewModel.updateAutoCheck.collectAsStateWithLifecycle()
 
     var showWorkingInProgressDialog by remember { mutableStateOf(false) }
     if (showWorkingInProgressDialog) {
@@ -90,6 +95,13 @@ fun MineScreen(
                 basicWhite,
                 RoundedCornerShape(6.dp)
             )
+
+        val itemModifier = remember {
+            Modifier
+                .fillMaxWidth()
+                .height(36.dp)
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -134,10 +146,12 @@ fun MineScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .then(blockModifier),
+                    .then(blockModifier)
+                    .padding(vertical = 5.dp),
             ) {
 
                 ItemWithNewPage(
+                    modifier = itemModifier,
                     text = "重新选择我的兴趣点",
                     onClick = {
                         /* TODO：兴趣点选择 */
@@ -146,8 +160,10 @@ fun MineScreen(
                 )
 
                 ItemWithSwitch(
+                    modifier = itemModifier,
                     text = "夜间主题跟随系统",
-                    checked = themeConfig == ThemeConfig.THEME_CONFIG_FOLLOW_SYSTEM,
+                    checked = if (themeConfig == null) null else
+                        themeConfig == ThemeConfig.THEME_CONFIG_FOLLOW_SYSTEM,
                     onCheckedChange = { followSystem ->
                         viewModel.setTheme(
                             if (followSystem) {
@@ -161,7 +177,15 @@ fun MineScreen(
                     }
                 )
 
+                ItemWithSwitch(
+                    modifier = itemModifier,
+                    text = "自动检查更新",
+                    checked = updateAutoCheck,
+                    onCheckedChange = viewModel::setUpdateAutoCheck
+                )
+
                 ItemWithNewPage(
+                    modifier = itemModifier,
                     text = "关于",
                     onClick = { /* TODO: 关于页面 */ showWorkingInProgressDialog = true }
                 )
@@ -171,7 +195,7 @@ fun MineScreen(
 }
 
 @Composable
-fun PrimaryBox(
+private fun PrimaryBox(
     modifier: Modifier,
     iconId: Int,
     text: String,
@@ -208,19 +232,19 @@ fun PrimaryBox(
 
 @Composable
 private fun ItemWithNewPage(
+    modifier: Modifier,
     text: String,
     onClick: () -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 role = Role.Button,
                 onClick = onClick
             )
-            .padding(15.dp, 10.dp),
+            .padding(horizontal = 15.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -237,20 +261,20 @@ private fun ItemWithNewPage(
 
 @Composable
 private fun ItemWithSwitch(
+    modifier: Modifier,
     text: String,
-    checked: Boolean,
+    checked: Boolean?,
     onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 role = Role.Switch,
-                onClick = { onCheckedChange(!checked) }
+                onClick = { onCheckedChange(checked?.not() ?: false) }
             )
-            .padding(15.dp, 10.dp),
+            .padding(horizontal = 15.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -258,7 +282,10 @@ private fun ItemWithSwitch(
             text = text,
             style = MaterialTheme.typography.bodyMedium,
         )
-        // TODO: Switch ICON
+        AnimatedSwitchButton(
+            modifier = Modifier.size(30.dp),
+            checked = checked
+        )
     }
 }
 

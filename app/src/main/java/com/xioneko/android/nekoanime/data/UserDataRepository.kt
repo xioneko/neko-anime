@@ -29,6 +29,8 @@ class UserDataRepository @Inject constructor(
 
     val themeConfig: Flow<ThemeConfig> by userDataSource.userData
 
+    val updateAutoCheck: Flow<Boolean> by userDataSource.userData
+
 
     fun isFollowed(anime: Anime): Flow<Boolean> =
         followedAnimeIds.map { anime.id in it }
@@ -73,5 +75,6 @@ class UserDataRepository @Inject constructor(
     suspend fun setThemeConfig(config: ThemeConfig) =
         userDataSource.setThemeConfig(config)
 
-
+    suspend fun setUpdateAutoCheck(enable: Boolean) =
+        userDataSource.setUpdateAutoCheck(enable)
 }

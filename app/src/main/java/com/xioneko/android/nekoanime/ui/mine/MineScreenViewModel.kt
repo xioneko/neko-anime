@@ -26,7 +26,7 @@ class MineScreenViewModel @Inject constructor(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = ThemeConfig.THEME_CONFIG_LIGHT
+            initialValue = null
         )
 
     val followedAnime = getFollowedAnimeUseCase().stateIn(
@@ -54,6 +54,12 @@ class MineScreenViewModel @Inject constructor(
                 initialValue = emptyMap()
             )
 
+    val updateAutoCheck = userDataRepository.updateAutoCheck.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = null
+    )
+
     fun setTheme(themeConfig: ThemeConfig) {
         viewModelScope.launch {
             userDataRepository.setThemeConfig(themeConfig)
@@ -65,6 +71,12 @@ class MineScreenViewModel @Inject constructor(
     fun clearWatchRecords() {
         viewModelScope.launch {
             userDataRepository.clearWatchRecord()
+        }
+    }
+
+    fun setUpdateAutoCheck(enable: Boolean) {
+        viewModelScope.launch {
+            userDataRepository.setUpdateAutoCheck(enable)
         }
     }
 

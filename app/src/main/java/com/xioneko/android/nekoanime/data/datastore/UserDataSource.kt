@@ -30,6 +30,8 @@ class UserDataSource @Inject constructor(
             dataStore.data.map { it.interests })
         put("themeConfig",
             dataStore.data.map { it.themeConfig })
+        put("updateAutoCheck",
+            dataStore.data.map { it.updateAutoCheck })
     }
 
     suspend fun addSearchRecord(record: SearchRecord) {
@@ -104,6 +106,14 @@ class UserDataSource @Inject constructor(
     suspend fun setThemeConfig(config: ThemeConfig) {
         dataStore.updateData { userData ->
             userData.copy(themeConfig = config)
+        }
+    }
+
+    suspend fun setUpdateAutoCheck(enable: Boolean) {
+        dataStore.updateData { userData ->
+            userData.copy(
+                updateAutoCheck = enable
+            )
         }
     }
 
