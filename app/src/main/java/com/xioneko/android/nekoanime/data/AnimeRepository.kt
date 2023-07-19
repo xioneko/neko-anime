@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.retry
+import org.mobilenativefoundation.store.store5.ExperimentalStoreApi
 import org.mobilenativefoundation.store.store5.Store
 import org.mobilenativefoundation.store.store5.StoreBuilder
 import org.mobilenativefoundation.store.store5.StoreReadRequest
@@ -105,4 +106,7 @@ class AnimeRepository @Inject constructor(
             ?.let { emit((it as StoreReadResponse.Data).value.videoSource[episode]!!) }
 
     }
+
+    @OptIn(ExperimentalStoreApi::class)
+    suspend fun clearCache() = store.clear()
 }

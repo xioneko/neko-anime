@@ -39,6 +39,7 @@ class AnimeSourceOfTruth @Inject constructor(
                 is AnimeKey.FetchAnime -> dao.delete(key.animeId)
                 is AnimeKey.FetchVideo -> dao.delete(key.anime.id)
             }
-        }
+        },
+        deleteAll = dao::deleteAll
     )
 }

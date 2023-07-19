@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,6 +26,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,7 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -45,6 +48,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xioneko.android.nekoanime.data.model.ThemeConfig
 import com.xioneko.android.nekoanime.ui.component.AnimatedSwitchButton
+import com.xioneko.android.nekoanime.ui.component.NekoAnimeSnackBar
 import com.xioneko.android.nekoanime.ui.component.TransparentTopBar
 import com.xioneko.android.nekoanime.ui.component.WorkingInProgressDialog
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
@@ -69,6 +73,8 @@ fun MineScreen(
 
     val updateAutoCheck by viewModel.updateAutoCheck.collectAsStateWithLifecycle()
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
     var showWorkingInProgressDialog by remember { mutableStateOf(false) }
     if (showWorkingInProgressDialog) {
         WorkingInProgressDialog {
@@ -84,6 +90,16 @@ fun MineScreen(
                 iconId = NekoAnimeIcons.light,
                 onIconClick = { /* TODO: 主题模式切换 */  showWorkingInProgressDialog = true }
             )
+        },
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState
+            ) {
+                NekoAnimeSnackBar(
+                    modifier = Modifier.requiredWidth(210.dp),
+                    snackbarData = it
+                )
+            }
         },
         containerColor = pink99,
         contentWindowInsets = WindowInsets(0)
@@ -187,6 +203,20 @@ fun MineScreen(
                     onCheckedChange = viewModel::setUpdateAutoCheck
                 )
 
+                ItemWithAction(
+                    modifier = itemModifier,
+                    text = "清除番剧数据缓存",
+                    action = {
+                        viewModel.clearAnimeCache(
+                            onFinished = {
+                                snackbarHostState.showSnackbar(
+                                    message = "已清除全部番剧数据缓存",
+                                    duration = SnackbarDuration.Short
+                                )
+                            }
+                        )
+                    }
+                )
             }
         }
     }
@@ -322,7 +352,7 @@ private fun ItemWithAction(
         onClick = action,
         shape = RectangleShape,
         colors = CardDefaults.cardColors(
-            containerColor = Color.Transparent,
+            containerColor = basicWhite,
             contentColor = basicBlack
         )
     ) {

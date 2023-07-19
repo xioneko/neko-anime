@@ -1,13 +1,17 @@
 package com.xioneko.android.nekoanime.ui.mine
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import coil.annotation.ExperimentalCoilApi
+import coil.imageLoader
 import com.xioneko.android.nekoanime.data.AnimeRepository
 import com.xioneko.android.nekoanime.data.UserDataRepository
 import com.xioneko.android.nekoanime.data.model.ThemeConfig
 import com.xioneko.android.nekoanime.data.model.sortedByDate
 import com.xioneko.android.nekoanime.domain.GetFollowedAnimeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.mapLatest
@@ -18,10 +22,13 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MineScreenViewModel @Inject constructor(
+    @ApplicationContext context: Context,
     private val animeRepository: AnimeRepository,
     private val userDataRepository: UserDataRepository,
     getFollowedAnimeUseCase: GetFollowedAnimeUseCase
 ) : ViewModel() {
+    private val imageLoader = context.imageLoader
+
     val themeConfig = userDataRepository.themeConfig
         .stateIn(
             scope = viewModelScope,
@@ -77,6 +84,16 @@ class MineScreenViewModel @Inject constructor(
     fun setUpdateAutoCheck(enable: Boolean) {
         viewModelScope.launch {
             userDataRepository.setUpdateAutoCheck(enable)
+        }
+    }
+
+    @OptIn(ExperimentalCoilApi::class)
+    fun clearAnimeCache(onFinished: suspend () -> Unit = {}) {
+        viewModelScope.launch {
+            animeRepository.clearCache()
+            imageLoader.diskCache?.clear()
+            imageLoader.memoryCache?.clear()
+            onFinished()
         }
     }
 
