@@ -234,35 +234,39 @@ fun FollowedAnimeCard(
     anime: FollowedAnime,
     onClick: (Int) -> Unit,
 ) {
-    Column(
-        modifier = modifier.clickable(
-            interactionSource = remember { MutableInteractionSource() },
-            indication = null,
-            role = Role.Button,
-            onClick = { onClick(anime.id) }
-        ),
-    ) {
-        AnimeImage(anime.imageUrl)
-        Text(
-            modifier = Modifier.padding(top = 6.dp),
-            text = anime.name,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            color = basicBlack,
-            style = MaterialTheme.typography.bodySmall
-        )
-        Text(
-            text = if (anime.isFinished) "已看完"
-            else if (anime.currentEpisode == 0) "尚未观看"
-            else "看到第${anime.currentEpisode}话",
-            color = pink40,
-            style = MaterialTheme.typography.bodySmall,
-        )
+    if (anime.name == null) {
+        PlaceholderAnimeCard(modifier)
+    } else {
+        Column(
+            modifier = modifier.clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                role = Role.Button,
+                onClick = { onClick(anime.id) }
+            ),
+        ) {
+            AnimeImage(anime.imageUrl)
+            Text(
+                modifier = Modifier.padding(top = 6.dp),
+                text = anime.name,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = basicBlack,
+                style = MaterialTheme.typography.bodySmall
+            )
+            Text(
+                text = if (anime.isFinished!!) "已看完"
+                else if (anime.currentEpisode == 0) "尚未观看"
+                else "看到第${anime.currentEpisode}话",
+                color = pink40,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
     }
 }
 
 @Composable
-private fun AnimeImage(imageUrl: String? ) {
+private fun AnimeImage(imageUrl: String?) {
     AsyncImage(
         modifier = Modifier
             .aspectRatio(ratio = 0.72f)
