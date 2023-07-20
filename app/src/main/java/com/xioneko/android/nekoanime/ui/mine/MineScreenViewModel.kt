@@ -1,6 +1,8 @@
 package com.xioneko.android.nekoanime.ui.mine
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.annotation.ExperimentalCoilApi
@@ -95,6 +97,11 @@ class MineScreenViewModel @Inject constructor(
             imageLoader.memoryCache?.clear()
             onFinished()
         }
+    }
+
+    fun accessGitHubRepo(context: Context) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/xioneko/neko-anime/"))
+        context.startActivity(intent)
     }
 
 }

@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -68,6 +69,8 @@ fun MineScreen(
     onHistoryClick: () -> Unit,
     onAnimeClick: (Int) -> Unit,
 ) {
+    val context = LocalContext.current
+
     val themeConfig by viewModel.themeConfig.collectAsStateWithLifecycle()
     val isSystemInDarkTheme = isSystemInDarkTheme()
 
@@ -216,6 +219,12 @@ fun MineScreen(
                             }
                         )
                     }
+                )
+
+                ItemWithAction(
+                    modifier = itemModifier,
+                    text = "访问 GitHub 仓库",
+                    action = { viewModel.accessGitHubRepo(context) }
                 )
             }
         }
