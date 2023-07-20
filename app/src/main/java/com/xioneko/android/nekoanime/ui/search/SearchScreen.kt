@@ -39,9 +39,12 @@ fun SearchScreen(
     val shouldShowHistory = uiState.searching
 
     val onSearch = {
-        focusManager.clearFocus()
-        shouldShowResults = true
-        viewModel.addSearchRecord(searchText)
+        val keyword = searchText.trim()
+        if (keyword.isNotEmpty()) {
+            focusManager.clearFocus()
+            shouldShowResults = true
+            viewModel.addSearchRecord(keyword)
+        }
     }
     val onExit = {
         onEnterExit(false)
@@ -60,8 +63,7 @@ fun SearchScreen(
                         shouldShowResults = false
                         searchText = ""
                         uiState.focusRequester.requestFocus()
-                    }
-                    else onExit()
+                    } else onExit()
                 }
             }
             backDispatcher?.addCallback(backCallback)
@@ -112,7 +114,7 @@ fun SearchScreen(
                 enter = fadeIn(), exit = fadeOut()
             ) {
                 CandidatesView(
-                    input = searchText,
+                    input = searchText.trim(),
                     fetch = viewModel::getCandidatesOf,
                     onCandidateClick = {
                         searchText = it
@@ -126,7 +128,7 @@ fun SearchScreen(
                 enter = fadeIn(), exit = fadeOut()
             ) {
                 ResultsView(
-                    input = searchText,
+                    input = searchText.trim(),
                     fetch = viewModel::searchAnime,
                     onFollow = viewModel::addFollowedAnime,
                     onUnfollow = viewModel::unfollowedAnime,
