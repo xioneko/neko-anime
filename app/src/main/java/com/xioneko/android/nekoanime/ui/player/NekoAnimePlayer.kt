@@ -260,7 +260,13 @@ fun NekoAnimePlayer(
                         if (currentOrientation == ORIENTATION_LANDSCAPE)
                             isTopControllerVisible = !isTopControllerVisible
                     },
-                    onDoubleTap = { player.playWhenReady = !player.playWhenReady }
+                    onDoubleTap = {
+                        player.playWhenReady = !player.playWhenReady
+                        if (!player.playWhenReady) {
+                            isBottomControllerVisible = true
+                            isTopControllerVisible = true
+                        }
+                    }
                 )
             },
             factory = { context ->
@@ -278,8 +284,8 @@ fun NekoAnimePlayer(
             modifier = Modifier
                 .align(Alignment.TopCenter),
             visible = isTopControllerVisible,
-            enter = fadeIn(spring(stiffness = 20_000f)),
-            exit = fadeOut(spring(stiffness = 10_000f))
+            enter = fadeIn(spring(stiffness = 4_000f)),
+            exit = fadeOut(spring(stiffness = 1_000f))
         ) {
             TopController(
                 modifier = Modifier.background(
@@ -300,8 +306,8 @@ fun NekoAnimePlayer(
         AnimatedVisibility(
             modifier = Modifier.align(Alignment.BottomCenter),
             visible = isBottomControllerVisible,
-            enter = fadeIn(),
-            exit = fadeOut()
+            enter = fadeIn(spring(stiffness = 4_000f)),
+            exit = fadeOut(spring(stiffness = 1_000f))
         ) {
             BottomController(
                 modifier = Modifier.background(
@@ -342,7 +348,11 @@ fun NekoAnimePlayer(
                     onEpisodeChange(it)
                     isEpisodesDrawerVisible = false
                 },
-                hideDrawer = { isEpisodesDrawerVisible = false }
+                hideDrawer = {
+                    isBottomControllerVisible = true
+                    isTopControllerVisible = true
+                    isEpisodesDrawerVisible = false
+                }
             )
         }
     }
