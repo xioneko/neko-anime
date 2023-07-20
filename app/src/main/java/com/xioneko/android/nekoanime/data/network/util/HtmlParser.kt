@@ -30,14 +30,7 @@ internal object HtmlParser {
 
                 val episodeInfo = li.child(2).child(0).ownText()
 
-                val latestEpisode = episodeInfo
-                    .substringAfter('第')
-                    .substringAfter('-')
-                    .substringBefore('(')
-                    .filter { it.isDigit() }
-                    .takeIf { it.isNotEmpty() }
-                    ?.toInt()
-                    ?: 1
+                val latestEpisode = episodeInfo.extractLatestEpisode()
 
                 val status = episodeInfo.run {
                     when {
@@ -97,20 +90,7 @@ internal object HtmlParser {
             }
         }
 
-        /* 第24集(完结) / 22:00 第2集(每周一22:00更新)
-            第1集(每周一更新) / [OVA 01-04] / [全集]
-            第3话(完结) / 第OVA1话 / [OVA 01-02+SP]
-            第06集(完结) / [TV 01-12+SP01-06]
-         */
-        val latestEpisode = div.child(6).ownText()
-            .substringAfter('第')
-            .substringBefore('+')
-            .substringAfter('-')
-            .substringBefore('(')
-            .filter { it.isDigit() }
-            .takeIf { it.isNotEmpty() }
-            ?.toInt()
-            ?: 1
+        val latestEpisode = div.child(6).ownText().extractLatestEpisode()
 
         return Anime(
             id = animeId,
@@ -164,5 +144,23 @@ internal object HtmlParser {
         document.select("#playbox").first()!!
             .attr("data-vid")
             .substringBefore("\$")
+
+    /**
+     * 适配：
+     * 第24集(完结) \ 22:00 第2集(每周一22:00更新)
+     * 第1集(每周一更新) \ [OVA 01-04] \[全集]
+     * 第3话(完结) \ 第OVA1话 \ [OVA 01-02+SP]
+     * 第06集(完结) \ [TV 01-12+SP01-06]
+     */
+    private fun String.extractLatestEpisode() =
+        this.substringAfter('第')
+            .substringBefore('+')
+            .substringAfter('-')
+            .substringBefore('(')
+            .filter { it.isDigit() }
+            .takeIf { it.isNotEmpty() }
+            ?.toInt()
+            ?: 1
+
 
 }
