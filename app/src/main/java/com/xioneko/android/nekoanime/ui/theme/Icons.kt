@@ -3,10 +3,8 @@ package com.xioneko.android.nekoanime.ui.theme
 import com.xioneko.android.nekoanime.R
 
 object NekoAnimeIcons {
-    val arrowDown = R.drawable.ic_arrow_down
     val arrowLeft = R.drawable.ic_arrow_left
     val arrowRight = R.drawable.ic_arrow_right
-    val arrowUp = R.drawable.ic_arrow_up
     val category = R.drawable.ic_category
     val close = R.drawable.ic_close
     val date = R.drawable.ic_date
@@ -34,7 +32,6 @@ object NekoAnimeIcons {
         val pause = R.drawable.ic_pause
         val play = R.drawable.ic_play
         val playNext = R.drawable.ic_play_next
-        val shrink = R.drawable.ic_shrink
         val thumb = R.drawable.ic_thumb
     }
 
