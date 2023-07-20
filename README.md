@@ -7,9 +7,9 @@
 <p>
 
 [![Android](https://img.shields.io/badge/android-11+-green)](https://developer.android.com/about/versions/12)
-[![Release](https://img.shields.io/github/v/release/xioneko/neko-anime)](https://github.com/xioneko/neko-anime/releases/)
+[![Release](https://img.shields.io/github/v/release/xioneko/neko-anime)](https://github.com/xioneko/neko-anime/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/xioneko/neko-anime/total)](https://github.com/xioneko/neko-anime/releases/)
-[![Powered-by](https://img.shields.io/badge/powered%20by-%E6%A8%B1%E8%8A%B1%E5%8A%A8%E6%BC%AB-ea5c7b)](http://www.yinghuacd.com/)
+[![Powered-by](https://img.shields.io/badge/powered%20by-%E6%A8%B1%E8%8A%B1%E5%8A%A8%E6%BC%AB-ea5c7b)](http://www.yinghuavideo.com/)
 [![License](https://img.shields.io/badge/license-GPLv3-yellow)](https://www.gnu.org/licenses/gpl-3.0.html)
 
 </p>
@@ -18,7 +18,7 @@
 ## 介绍
 <p>
 
-Neko Anime 使用樱花动漫「[🌸Ⅰ](http://www.yinghuacd.com/)│[🌸Ⅱ](https://www.yhdmz2.com/)」作为数据源，灵感来源于项目 [Imomoe](https://github.com/androiddevnotesforks/Imomoe)。技术栈方面采用了 Kotlin 搭配 Jetpack Compose，遵循了官方指南中的“[现代 Android 应用架构](https://developer.android.com/topic/architecture)”最佳实践。同时，为尽可能地提高用户体验，Neko Anime 在 UI/UX 设计上广泛借鉴了相关优秀 app。
+Neko Anime 使用樱花动漫「[🌸Ⅰ](http://www.yinghuavideo.com/)│[🌸Ⅱ](https://www.yhdmzz.com/)」作为数据源，灵感来源于项目 [Imomoe](https://github.com/androiddevnotesforks/Imomoe)。技术栈方面采用了 Kotlin 搭配 Jetpack Compose，遵循了官方指南中的“[现代 Android 应用架构](https://developer.android.com/topic/architecture)”最佳实践。同时，为尽可能地提高用户体验，Neko Anime 在 UI/UX 设计上广泛借鉴了相关优秀 app。
 
 </p>
 
@@ -44,8 +44,8 @@ App 的开发仍在进行中 🚧，可在 GitHub 上 [⬇️下载最新版本]
 - ...
 
 ### 应用截图
-| 首页                                | 搜索                             | 分类                           | 播放                            | 时间表                             |
-|-------------------------------------|-------------------------------------|---------------------------------|-----------------------------------|-------------------------------------|
+| 首页                            | 搜索                                | 分类                                    | 播放                                | 时间表                                  |
+| ------------------------------- | ----------------------------------- | --------------------------------------- | ----------------------------------- | --------------------------------------- |
 | ![Home](./docs/images/home.png) | ![Search](./docs/images/search.png) | ![Category](./docs/images/category.png) | ![Player](./docs/images/player.png) | ![Schedule](./docs/images/schedule.png) |
 
 ## 技术特性
@@ -61,6 +61,25 @@ App 的开发仍在进行中 🚧，可在 GitHub 上 [⬇️下载最新版本]
 - Gradle JDK 17
 
 ## 更新日志
+
+### v0.2.0 (2023-7-20)
+**新增功能**
+- 自动检查更新，直达新版下载地址
+- 时间表筛选番剧
+- 清空观看历史
+- 清除番剧数据缓存
+- 播放器全屏状态下进行选集
+- 直达 GitHub 仓库
+
+**界面优化**
+- 优化播放器控件交互
+
+**缺陷修复**
+- 更新视频源域名
+- 修复番剧集数加载错乱的问题
+
+**开发重构**
+- 缩减安装包体积 (50% ↓)
 
 ### v0.1.3 (2023-6-13)
 **缺陷修复**
@@ -99,11 +118,11 @@ App 的开发仍在进行中 🚧，可在 GitHub 上 [⬇️下载最新版本]
 ## FAQ
 - **番剧数据加载失败了怎么办？**
 
-  目前 App 使用的番剧信息数据全部来自于 https://www.yhdmz2.com/ ，请检查该网站是否可以访问，若无法访问可在 [GitHub Issues](https://github.com/xioneko/neko-anime/issues) 中反馈。
+  目前 App 使用的番剧信息数据全部来自于 https://www.yhdmzz.com/ ，请检查该网站是否可以访问，若无法访问可在 [GitHub Issues](https://github.com/xioneko/neko-anime/issues) 中反馈。
 
 - **视频加载失败了怎么办？**
 
-  目前 App 以 http://www.yinghuacd.com/ 作为主视频源，以 https://www.yhdmz2.com/ 作为备用视频源
+  目前 App 以 http://www.yinghuavideo.com/ 作为主视频源，以 https://www.yhdmzz.com/ 作为备用视频源
   - 对于主视频源，需要指出的是，App 内部在从主视频源请求视频地址的时候，使用的是备用视频源网站获取的番剧名，而不是某一固定统一的番剧ID，因此会有一定概率失败
   - 对于备用视频源，App 会请求其提供的前两个视频线路，并且优先使用线路1，如果出现加载超时，再切换成线路2
 
