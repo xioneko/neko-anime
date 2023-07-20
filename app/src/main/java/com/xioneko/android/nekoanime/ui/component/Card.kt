@@ -273,6 +273,7 @@ private fun AnimeImage(imageUrl: String?) {
             .clip(MaterialTheme.shapes.small),
         model = imageUrl,
         contentDescription = null,
-        error = painterResource(R.drawable.broken_image)
+        placeholder = painterResource(R.drawable.broken_image),
+        error = painterResource(R.drawable.broken_image),
     )
 }
