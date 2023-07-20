@@ -21,6 +21,8 @@ import com.xioneko.android.nekoanime.data.model.Category
 import com.xioneko.android.nekoanime.ui.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -37,6 +39,7 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.retry
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.floor
@@ -53,6 +56,8 @@ class AnimePlayViewModel @Inject constructor(
     private val _loadingState = MutableStateFlow<LoadingState>(LoadingState.IDLE)
 
     private val _playerState = MutableStateFlow(NekoAnimePlayerState())
+
+    private val videoFetchingJob = SupervisorJob(viewModelScope.coroutineContext.job)
 
     var uiState: AnimePlayUiState by mutableStateOf(AnimePlayUiState.Loading)
 
@@ -114,7 +119,8 @@ class AnimePlayViewModel @Inject constructor(
     fun ExoPlayer.update() {
         with(uiState as AnimePlayUiState.Data) {
             clearMediaItems()
-            viewModelScope.launch {
+            videoFetchingJob.cancelChildren()
+            viewModelScope.launch(videoFetchingJob) {
                 fetchVideoUrl(episode.value)
                     .onStart { _loadingState.emit(LoadingState.LOADING) }
                     .onEmpty {
