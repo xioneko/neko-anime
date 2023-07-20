@@ -18,9 +18,9 @@ import java.net.URLDecoder
 import javax.inject.Inject
 
 
-private const val BASE_URL = "https://www.yhdmz2.com/"
+private const val BASE_URL = "https://www.yhdmzz.com/"
 
-class Yhdmz2VideoSource @Inject constructor(
+class YhdmzzVideoSource @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : VideoDataSource {
 

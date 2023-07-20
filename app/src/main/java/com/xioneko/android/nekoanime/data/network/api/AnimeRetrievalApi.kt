@@ -8,11 +8,11 @@ import retrofit2.http.Query
 
 /**
  * API示例:
- * - 搜索：https://www.yhdmz2.com/s_all?ex=1&kw=女神的露天咖啡厅
- * - 信息页：https://www.yhdmz2.com/showp/22415.html
- * - 检索: https:/www.yhdmz2.com/list/?region=日本&genre=TV&year=2022&season:=4&status=完结&label=运动&order=名称
+ * - 搜索：https://www.yhdmzz.com/s_all?ex=1&kw=女神的露天咖啡厅
+ * - 信息页：https://www.yhdmzz.com/showp/22415.html
+ * - 检索: https:/www.yhdmzz.com/list/?region=日本&genre=TV&year=2022&season:=4&status=完结&label=运动&order=名称
  */
-internal interface AnimeRetrievalApi {
+interface AnimeRetrievalApi {
 
     @GET("/")
     suspend fun getHomePage(): Response<Document>

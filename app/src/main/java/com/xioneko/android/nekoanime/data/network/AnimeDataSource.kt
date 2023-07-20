@@ -13,7 +13,7 @@ import retrofit2.Retrofit
 import java.time.DayOfWeek
 import javax.inject.Inject
 
-private const val BASE_URL = "https://www.yhdmz2.com/"
+private const val BASE_URL = "https://www.yhdmzz.com/"
 
 
 class AnimeDataSource @Inject constructor(
@@ -70,9 +70,6 @@ class AnimeDataSource @Inject constructor(
             }
     }
 
-    /**
-     * @return [0-6] -> animeShell list
-     */
     fun getWeeklyScheduleResults(): Flow<Map<DayOfWeek, List<AnimeShell>>> = flow {
         animeRetrievalApi.getHomePage()
             .takeIf { it.isSuccessful }
