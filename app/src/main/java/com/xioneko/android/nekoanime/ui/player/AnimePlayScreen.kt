@@ -56,6 +56,7 @@ import com.xioneko.android.nekoanime.ui.component.AnimeGrid
 import com.xioneko.android.nekoanime.ui.component.NekoAnimeSnackBar
 import com.xioneko.android.nekoanime.ui.component.NekoAnimeSnackbarHost
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
+import com.xioneko.android.nekoanime.ui.theme.basicBlack
 import com.xioneko.android.nekoanime.ui.theme.basicWhite
 import com.xioneko.android.nekoanime.ui.theme.darkPink60
 import com.xioneko.android.nekoanime.ui.theme.neutral01
@@ -230,6 +231,7 @@ private fun PlayerNeck(
                     text = anime.name,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    color = basicBlack,
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(
@@ -450,7 +452,9 @@ private fun EpisodesList(
     ) {
         Text(
             modifier = Modifier.padding(horizontal = 12.dp),
-            text = "选集", style = MaterialTheme.typography.titleSmall
+            text = "选集",
+            color = basicBlack,
+            style = MaterialTheme.typography.titleSmall
         )
         LazyRow(
             contentPadding = PaddingValues(horizontal = 12.dp),
@@ -515,7 +519,8 @@ private fun ForYouAnimeGrid(
         Text(
             modifier = Modifier.padding(start = 12.dp),
             text = "猜你喜欢",
-            style = MaterialTheme.typography.bodyMedium,
+            color = basicBlack,
+            style = MaterialTheme.typography.titleSmall,
         )
         AnimeGrid(animeList = animeList, onAnimeClick = onAnimeClick)
     }
