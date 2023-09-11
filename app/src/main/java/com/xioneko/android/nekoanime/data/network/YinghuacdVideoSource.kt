@@ -11,11 +11,14 @@ import org.jsoup.nodes.Document
 import retrofit2.Retrofit
 import javax.inject.Inject
 
-private const val BASE_URL = "http://www.yinghuavideo.com/"
 
 class YinghuacdVideoSource @Inject constructor(
     httpClient: OkHttpClient
 ) : VideoDataSource {
+    companion object {
+        const val BASE_URL = "http://www.yinghuavideo.com/";
+    }
+
     private val videoSourceApi = Retrofit.Builder()
         .baseUrl(BASE_URL)
         .client(httpClient)

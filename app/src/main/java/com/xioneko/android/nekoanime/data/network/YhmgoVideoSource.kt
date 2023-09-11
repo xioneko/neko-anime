@@ -17,12 +17,13 @@ import kotlinx.coroutines.flow.flowOn
 import java.net.URLDecoder
 import javax.inject.Inject
 
-
-private const val BASE_URL = "https://www.yhdmzz.com/"
-
-class YhdmzzVideoSource @Inject constructor(
+class YhmgoVideoSource @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : VideoDataSource {
+
+    companion object {
+        const val BASE_URL = "https://www.yhmgo.com/"
+    }
 
     private var webView: WebView? = null
 

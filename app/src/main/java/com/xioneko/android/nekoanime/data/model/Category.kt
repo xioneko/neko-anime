@@ -3,7 +3,7 @@ package com.xioneko.android.nekoanime.data.model
 import java.time.LocalDate
 
 /**
- * 适配页面：https://www.yhdmzz.com/list/
+ * 适配页面：https://www.yhmgo.com/list/
  */
 enum class Category(
     val key: String,

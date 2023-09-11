@@ -13,12 +13,13 @@ import retrofit2.Retrofit
 import java.time.DayOfWeek
 import javax.inject.Inject
 
-private const val BASE_URL = "https://www.yhdmzz.com/"
-
-
 class AnimeDataSource @Inject constructor(
     httpClient: OkHttpClient
 ) {
+    companion object {
+        const val BASE_URL = "https://www.yhmgo.com/"
+    }
+
     private val animeRetrievalApi = Retrofit.Builder()
         .client(httpClient)
         .baseUrl(BASE_URL)

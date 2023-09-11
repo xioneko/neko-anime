@@ -2,7 +2,7 @@ package com.xioneko.android.nekoanime.data.network.di
 
 
 import com.xioneko.android.nekoanime.data.network.VideoSourceManager
-import com.xioneko.android.nekoanime.data.network.YhdmzzVideoSource
+import com.xioneko.android.nekoanime.data.network.YhmgoVideoSource
 import com.xioneko.android.nekoanime.data.network.YinghuacdVideoSource
 import com.xioneko.android.nekoanime.data.network.util.ErrorHandlerInterceptor
 import dagger.Module
@@ -27,12 +27,12 @@ object NetworkModule {
     @Provides
     @Singleton
     fun videoDataSource(
-        yhdmzzVideoSource: YhdmzzVideoSource,
+        yhmgoVideoSource: YhmgoVideoSource,
         yinghuacdVideoSource: YinghuacdVideoSource,
     ): VideoSourceManager = object : VideoSourceManager {
         override val sources = listOf(
             yinghuacdVideoSource,
-            yhdmzzVideoSource
+            yhmgoVideoSource
         )
         override var index: Int = 0
     }
