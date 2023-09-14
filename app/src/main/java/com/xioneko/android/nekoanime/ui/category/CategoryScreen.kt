@@ -75,6 +75,8 @@ import com.xioneko.android.nekoanime.ui.theme.neutral01
 import com.xioneko.android.nekoanime.ui.theme.neutral10
 import com.xioneko.android.nekoanime.ui.theme.pink40
 import com.xioneko.android.nekoanime.ui.theme.pink90
+import com.xioneko.android.nekoanime.ui.util.getAspectRadio
+import com.xioneko.android.nekoanime.ui.util.isTablet
 
 
 @Composable
@@ -85,6 +87,9 @@ fun CategoryScreen(
     onSearchClick: () -> Unit,
     onBackClick: () -> Unit,
 ) {
+    val aspectRatio = getAspectRadio()
+    val isTablet = isTablet()
+
     LaunchedEffect(Unit) { viewModel.initFilterState(filter) }
 
     val lazyGridState = rememberLazyGridState()
@@ -130,7 +135,7 @@ fun CategoryScreen(
                 .padding(padding)
                 .fillMaxSize()
                 .background(basicWhite),
-            columns = GridCells.Fixed(3),
+            columns = GridCells.Fixed(if (isTablet) 4 else if (aspectRatio < 0.56) 6 else 3),
             contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 36.dp, bottom = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -171,16 +176,15 @@ fun FiltersBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(basicWhite)
-                .padding(end = 16.dp, bottom = 5.dp)
+                .padding(bottom = 5.dp)
                 .zIndex(1f),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             for (category in mainCategories) {
                 CategoryHead(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(start = 24.dp)
                         .clickable(
                             interactionSource = interactionSource,
                             indication = null,
@@ -204,7 +208,7 @@ fun FiltersBar(
                                 if (drawer !in otherCategories) otherCategories.first() else null
                         }
                     )
-                    .padding(start = 24.dp),
+                    .weight(0.6f),
                 painter = painterResource(NekoAnimeIcons.filter),
                 contentDescription = null,
                 tint = if (filter.filterKeys { it in otherCategories }
@@ -334,13 +338,14 @@ private fun MainFilterDrawer(
     onFilter: (Category, Pair<String, String>) -> Unit,
     drawer: Category
 ) {
+    val isTablet = isTablet()
     FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (isTablet) 16.dp else 12.dp),
     ) {
         for (option in drawer.options) {
             OptionChip(
                 modifier = Modifier
-                    .padding(bottom = 12.dp)
+                    .padding(bottom = if (isTablet) 16.dp else 12.dp)
                     .widthIn(min = 56.dp, max = 94.dp)
                     .background(
                         color = if (filter[drawer] == option) pink90 else neutral01,

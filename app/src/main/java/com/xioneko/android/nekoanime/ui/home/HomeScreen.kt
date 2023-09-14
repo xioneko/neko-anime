@@ -47,6 +47,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
@@ -54,6 +56,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.min
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -78,6 +81,8 @@ import com.xioneko.android.nekoanime.ui.theme.pink40
 import com.xioneko.android.nekoanime.ui.theme.pink50
 import com.xioneko.android.nekoanime.ui.theme.pink95
 import com.xioneko.android.nekoanime.ui.util.LoadingState
+import com.xioneko.android.nekoanime.ui.util.getAspectRadio
+import com.xioneko.android.nekoanime.ui.util.isTablet
 import kotlinx.coroutines.delay
 
 
@@ -92,12 +97,15 @@ fun HomeScreen(
     onFollowedAnimeClick: () -> Unit,
     navigateToCategory: (genre: String) -> Unit,
 ) {
+    val aspectRatio = getAspectRadio()
+    val isTablet = isTablet()
+
     var searching by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val lazyListState = rememberLazyListState()
     val scrollProgress by remember {
         derivedStateOf {
-            if (lazyListState.firstVisibleItemIndex == 0)
+            if (aspectRatio > 1.8 && lazyListState.firstVisibleItemIndex == 0)
                 (lazyListState.firstVisibleItemScrollOffset / 300f).coerceAtMost(1f)
             else 1f
         }
@@ -151,10 +159,11 @@ fun HomeScreen(
     ) {
         LazyColumn(
             state = lazyListState,
+            contentPadding = PaddingValues(top = if (aspectRatio > 1.8) 0.dp else 86.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-
-            item("Carousel") { Carousel(onSlideClick = onAnimeClick) }
+            if (aspectRatio > 1.8) // 为了更舒服的的 UI 布局，暂时在较小纵横比的屏幕下隐藏轮播图
+                item("Carousel") { Carousel(onSlideClick = onAnimeClick) }
 
             if (followedAnime.isNotEmpty()) {
                 item("Followed Anime") {
@@ -176,7 +185,13 @@ fun HomeScreen(
                             for (anime in followedAnime.reversed()) {
                                 item(anime.id) {
                                     FollowedAnimeCard(
-                                        modifier = Modifier.width(116.dp),
+                                        modifier = Modifier
+                                            .width(
+                                                if (isTablet) min(
+                                                    240.dp,
+                                                    (LocalConfiguration.current.screenWidthDp / 3).dp
+                                                ) else 116.dp
+                                            ),
                                         anime = anime,
                                         onClick = onAnimeClick
                                     )
@@ -268,8 +283,10 @@ private fun Carousel(
                 )
             ) {
                 Image(
+                    modifier = Modifier.fillMaxWidth(),
                     painter = painterResource(slides[index].imageId),
                     contentDescription = slides[index].title,
+                    contentScale = ContentScale.Crop,
                 )
                 Box(
                     Modifier
@@ -365,6 +382,7 @@ private fun AnimeGridWithHead(
             }
         }
         AnimeGrid(
+            modifier = Modifier.padding(horizontal = 12.dp),
             useExpandCardStyle = useExpandCardStyle,
             animeList = animeList,
             onAnimeClick = onAnimeClick

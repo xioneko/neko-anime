@@ -68,6 +68,7 @@ import com.xioneko.android.nekoanime.ui.theme.pink60
 import com.xioneko.android.nekoanime.ui.theme.pink70
 import com.xioneko.android.nekoanime.ui.theme.pink97
 import com.xioneko.android.nekoanime.ui.util.LoadingState
+import com.xioneko.android.nekoanime.ui.util.isTablet
 import kotlinx.coroutines.delay
 
 @SuppressLint("SourceLockedOrientationActivity")
@@ -79,7 +80,6 @@ fun AnimePlayScreen(
     onAnimeClick: (Int) -> Unit,
     onBackClick: () -> Unit
 ) {
-
     LaunchedEffect(Unit) { viewModel.loadingUiState(animeId) }
 
     val playerState by viewModel.playerState.collectAsStateWithLifecycle()
@@ -92,8 +92,9 @@ fun AnimePlayScreen(
                     viewModel.isPausedBeforeLeave = !viewModel.player.playWhenReady
                     viewModel.player.pause()
                 }
+
                 Lifecycle.Event.ON_RESUME -> {
-                    if (!viewModel.isPausedBeforeLeave)  viewModel.player.play()
+                    if (!viewModel.isPausedBeforeLeave) viewModel.player.play()
                 }
 
                 else -> {}
@@ -138,9 +139,7 @@ fun AnimePlayScreen(
         color = basicWhite
     ) {
         Box(
-            modifier = Modifier
-                .navigationBarsPadding()
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize()
         ) {
             Column {
                 NekoAnimePlayer(
@@ -150,39 +149,38 @@ fun AnimePlayScreen(
                     onEpisodeChange = onEpisodeChange,
                     onBack = onBackClick
                 )
-                if (viewModel.uiState is AnimePlayUiState.Loading) AnimePlayBodySkeleton()
-                else {
-                    with(viewModel.uiState as AnimePlayUiState.Data) {
-                        val isFollowed by viewModel.followed.collectAsStateWithLifecycle()
-                        PlayerNeck(
-                            anime = anime,
-                            isFollowed = isFollowed,
-                            onFollowAnime = viewModel::followAnime,
-                            onUnfollowAnime = viewModel::unfollowAnime
-                        )
-                        LazyColumn {
-                            item("Anime Detail") {
-                                AnimeDetail(anime, onGenreClick)
-                            }
-                            item("Episodes List") {
-                                EpisodesList(
-                                    currentEpisode = episode.value,
-                                    totalEpisodes = anime.latestEpisode,
-                                    onEpisodeChange = onEpisodeChange
-                                )
-                            }
-                            item("For You Anime Grid") {
-                                ForYouAnimeGrid(
-                                    animeList = forYouAnimeList,
-                                    onAnimeClick = onAnimeClick
-                                )
+                Column(Modifier.navigationBarsPadding()) {
+                    if (viewModel.uiState is AnimePlayUiState.Loading) AnimePlayBodySkeleton()
+                    else {
+                        with(viewModel.uiState as AnimePlayUiState.Data) {
+                            val isFollowed by viewModel.followed.collectAsStateWithLifecycle()
+                            PlayerNeck(
+                                anime = anime,
+                                isFollowed = isFollowed,
+                                onFollowAnime = viewModel::followAnime,
+                                onUnfollowAnime = viewModel::unfollowAnime
+                            )
+                            LazyColumn {
+                                item("Anime Detail") {
+                                    AnimeDetail(anime, onGenreClick)
+                                }
+                                item("Episodes List") {
+                                    EpisodesList(
+                                        currentEpisode = episode.value,
+                                        totalEpisodes = anime.latestEpisode,
+                                        onEpisodeChange = onEpisodeChange
+                                    )
+                                }
+                                item("For You Anime Grid") {
+                                    ForYouAnimeGrid(
+                                        animeList = forYouAnimeList,
+                                        onAnimeClick = onAnimeClick
+                                    )
+                                }
                             }
                         }
                     }
-
                 }
-
-
             }
             NekoAnimeSnackbarHost(
                 modifier = Modifier.align(Alignment.BottomCenter),
@@ -206,6 +204,8 @@ private fun PlayerNeck(
     onFollowAnime: (Anime) -> Unit,
     onUnfollowAnime: (Anime) -> Unit,
 ) {
+    val isTablet = isTablet()
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -241,7 +241,7 @@ private fun PlayerNeck(
                 )
             }
             Box(modifier = Modifier
-                .width(72.dp)
+                .width(if (isTablet) 80.dp else 72.dp)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -262,7 +262,7 @@ private fun PlayerNeck(
                         isFollowed = isFollowed
                     )
                     Text(
-                        text = if (isFollowed) "已追番" else "追番",
+                        text = if (isFollowed) "已追番" else "追番 ",
                         color = pink30,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -522,6 +522,10 @@ private fun ForYouAnimeGrid(
             color = basicBlack,
             style = MaterialTheme.typography.titleSmall,
         )
-        AnimeGrid(animeList = animeList, onAnimeClick = onAnimeClick)
+        AnimeGrid(
+            modifier = Modifier.padding(horizontal = 12.dp),
+            animeList = animeList,
+            onAnimeClick = onAnimeClick
+        )
     }
 }

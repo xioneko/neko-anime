@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -70,7 +71,7 @@ fun NarrowAnimeCard(
         ),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Box(Modifier.clip(MaterialTheme.shapes.small)) {
+        Box(Modifier.clip(MaterialTheme.shapes.extraSmall)) {
             AnimeImage(anime.imageUrl)
             Box(
                 modifier = Modifier
@@ -85,7 +86,7 @@ fun NarrowAnimeCard(
                 contentAlignment = Alignment.BottomEnd
             ) {
                 Text(
-                    modifier = Modifier.padding(end = 5.dp, bottom = 5.dp),
+                    modifier = Modifier.offset((-6).dp, (-5).dp),
                     text = subTitle,
                     color = basicWhite,
                     style = MaterialTheme.typography.labelSmall,
@@ -105,7 +106,7 @@ fun NarrowAnimeCard(
 
 
 @Composable
-fun ExpandAnimeCard(
+fun ExpandedAnimeCard(
     modifier: Modifier = Modifier,
     anime: AnimeShell,
     onClick: (Int) -> Unit,
@@ -145,21 +146,21 @@ fun PlaceholderAnimeCard(modifier: Modifier = Modifier) {
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(0.72f)
-                .clip(MaterialTheme.shapes.small)
+                .clip(MaterialTheme.shapes.extraSmall)
                 .background(shimmerBrush(Offset(x = 400f, y = 400f / 0.72f), brightNeutral04))
         )
         Box(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
                 .height(12.dp)
-                .clip(MaterialTheme.shapes.small)
+                .clip(MaterialTheme.shapes.extraSmall)
                 .background(shimmerBrush(Offset(x = 400f, y = 100f), brightNeutral05))
         )
         Box(
             modifier = Modifier
                 .fillMaxWidth(0.7f)
                 .height(12.dp)
-                .clip(MaterialTheme.shapes.small)
+                .clip(MaterialTheme.shapes.extraSmall)
                 .background(shimmerBrush(Offset(x = 400f, y = 200f), brightNeutral06))
         )
     }
@@ -270,7 +271,7 @@ private fun AnimeImage(imageUrl: String?) {
     AsyncImage(
         modifier = Modifier
             .aspectRatio(ratio = 0.72f)
-            .clip(MaterialTheme.shapes.small),
+            .clip(MaterialTheme.shapes.extraSmall),
         model = imageUrl,
         contentDescription = null,
         placeholder = painterResource(R.drawable.broken_image),

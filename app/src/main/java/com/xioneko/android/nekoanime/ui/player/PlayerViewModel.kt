@@ -44,7 +44,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.floor
 
-private const val FOR_YOU_ANIME_GRID_SIZE = 9
+private const val FOR_YOU_ANIME_GRID_SIZE = 12
 
 @HiltViewModel
 class AnimePlayViewModel @Inject constructor(

@@ -1,5 +1,6 @@
 package com.xioneko.android.nekoanime.ui.mine
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -10,7 +11,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,9 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -40,7 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -58,6 +54,7 @@ import com.xioneko.android.nekoanime.ui.theme.basicWhite
 import com.xioneko.android.nekoanime.ui.theme.pink10
 import com.xioneko.android.nekoanime.ui.theme.pink50
 import com.xioneko.android.nekoanime.ui.theme.pink99
+import com.xioneko.android.nekoanime.ui.util.isTablet
 import java.time.LocalTime
 
 @Composable
@@ -70,6 +67,7 @@ fun MineScreen(
     onAnimeClick: (Int) -> Unit,
 ) {
     val context = LocalContext.current
+    val isTablet = isTablet()
 
     val themeConfig by viewModel.themeConfig.collectAsStateWithLifecycle()
     val isSystemInDarkTheme = isSystemInDarkTheme()
@@ -123,7 +121,7 @@ fun MineScreen(
         val itemModifier = remember {
             Modifier
                 .fillMaxWidth()
-                .height(38.dp)
+                .height(if (isTablet) 48.dp else 38.dp)
         }
 
         Column(
@@ -135,14 +133,13 @@ fun MineScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(if (isTablet) 28.dp else 12.dp)
             ) {
                 PrimaryBox(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight()
+                        .aspectRatio(if (isTablet) 1.8f else 1.25f)
                         .then(cardModifier),
                     iconId = NekoAnimeIcons.love,
                     text = "我的追番",
@@ -151,7 +148,7 @@ fun MineScreen(
                 PrimaryBox(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight()
+                        .aspectRatio(if (isTablet) 1.8f else 1.25f)
                         .then(cardModifier),
                     iconId = NekoAnimeIcons.history,
                     text = "历史观看",
@@ -160,7 +157,7 @@ fun MineScreen(
                 PrimaryBox(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight()
+                        .aspectRatio(if (isTablet) 1.8f else 1.25f)
                         .then(cardModifier),
                     iconId = NekoAnimeIcons.download,
                     text = "我的下载",
@@ -240,7 +237,6 @@ private fun PrimaryBox(
 ) {
     Surface(
         modifier = modifier
-            .aspectRatio(5f / 4f)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -273,27 +269,21 @@ private fun PrimaryBox(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ItemWithNewPage(
-    modifier: Modifier,
-    contentPadding: PaddingValues = PaddingValues(horizontal = 15.dp),
+    modifier: Modifier = Modifier,
     text: String,
     onClick: () -> Unit,
 ) {
-    Card(
-        modifier = modifier,
-        onClick = onClick,
-        shape = RectangleShape,
-        colors = CardDefaults.cardColors(
-            containerColor = basicWhite,
-            contentColor = basicBlack
-        )
+    Box(
+        modifier = modifier
+            .background(basicWhite)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 15.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -310,28 +300,22 @@ private fun ItemWithNewPage(
 
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ItemWithSwitch(
-    modifier: Modifier,
-    contentPadding: PaddingValues = PaddingValues(horizontal = 15.dp),
+    modifier: Modifier = Modifier,
     text: String,
     checked: Boolean?,
     onCheckedChange: (Boolean) -> Unit
 ) {
-    Card(
-        modifier = modifier,
-        onClick = { onCheckedChange(checked?.not() ?: false) },
-        shape = RectangleShape,
-        colors = CardDefaults.cardColors(
-            containerColor = basicWhite,
-            contentColor = basicBlack
-        )
+    Box(
+        modifier = modifier
+            .background(basicWhite)
+            .clickable { onCheckedChange(checked?.not() ?: false) }
+            .padding(horizontal = 15.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -348,27 +332,21 @@ private fun ItemWithSwitch(
 
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ItemWithAction(
-    modifier: Modifier,
-    contentPadding: PaddingValues = PaddingValues(horizontal = 15.dp),
+    modifier: Modifier = Modifier,
     text: String,
     action: () -> Unit,
 ) {
-    Card(
-        modifier = modifier,
-        onClick = action,
-        shape = RectangleShape,
-        colors = CardDefaults.cardColors(
-            containerColor = basicWhite,
-            contentColor = basicBlack
-        )
+    Box(
+        modifier = modifier
+            .background(basicWhite)
+            .clickable(onClick = action)
+            .padding(horizontal = 15.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Box(
-            modifier = Modifier
-                .padding(contentPadding)
-                .fillMaxHeight(),
+            modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.CenterStart
         ) {
             Text(

@@ -35,6 +35,7 @@ import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
 import com.xioneko.android.nekoanime.ui.theme.basicWhite
 import com.xioneko.android.nekoanime.ui.theme.neutral03
 import com.xioneko.android.nekoanime.ui.theme.pink40
+import com.xioneko.android.nekoanime.ui.util.isTablet
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
@@ -46,6 +47,7 @@ internal fun CandidatesView(
     fetch: (String) -> Flow<String>,
     onCandidateClick: (String) -> Unit,
 ) {
+    val isTablet = isTablet()
 
     val candidateList = remember(input) {
         mutableStateListOf<Pair<MutableTransitionState<Boolean>, String>>()
@@ -67,7 +69,7 @@ internal fun CandidatesView(
             .background(basicWhite)
             .padding(horizontal = 12.dp)
             .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(if (isTablet) 14.dp else 10.dp),
     ) {
         for (candidate in candidateList) {
             AnimatedVisibility(visibleState = candidate.first, enter = fadeIn(), exit = fadeOut()) {

@@ -26,8 +26,8 @@ import kotlinx.coroutines.supervisorScope
 import javax.inject.Inject
 
 
-const val RECENT_UPDATES_SIZE = 9
-private const val FOR_YOU_ANIME_GRID_SIZE = 6
+const val RECENT_UPDATES_SIZE = 12
+private const val FOR_YOU_ANIME_GRID_SIZE = 12
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -56,7 +56,6 @@ class HomeViewModel @Inject constructor(
     init {
         refresh()
     }
-
     fun refresh(onFinished: (() -> Unit)? = null) {
         with(fetchingScope) {
             launch {

@@ -1,11 +1,11 @@
 package com.xioneko.android.nekoanime.ui.search.screen
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -89,6 +89,7 @@ internal fun ResultsView(
         state = lazyListState,
         contentPadding = PaddingValues(0.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
         reverseLayout = false,
         userScrollEnabled = true,
     ) {
@@ -97,9 +98,7 @@ internal fun ResultsView(
             item(searchItem.first.id) {
                 val followed by searchItem.second.collectAsStateWithLifecycle(true)
                 SearchResult(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(100.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     anime = searchItem.first,
                     isFollowed = followed,
                     onClick = onAnimeClick,

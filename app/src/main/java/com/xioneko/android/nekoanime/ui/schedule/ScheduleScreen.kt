@@ -85,6 +85,8 @@ import com.xioneko.android.nekoanime.ui.theme.pink70
 import com.xioneko.android.nekoanime.ui.theme.pink80
 import com.xioneko.android.nekoanime.ui.theme.pink99
 import com.xioneko.android.nekoanime.ui.util.LoadingState
+import com.xioneko.android.nekoanime.ui.util.getAspectRadio
+import com.xioneko.android.nekoanime.ui.util.isTablet
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
@@ -104,6 +106,8 @@ fun ScheduleScreen(
     viewModel: ScheduleViewModel = hiltViewModel(),
     onAnimeClick: (Int) -> Unit
 ) {
+    val isTablet = isTablet()
+    val aspectRadio = getAspectRadio()
 
     val localDate = LocalDate.now()
     val pagerState = rememberPagerState(localDate.dayOfWeek.ordinal)
@@ -165,9 +169,11 @@ fun ScheduleScreen(
             Column(Modifier.fillMaxSize()) {
                 Row(
                     modifier = Modifier
+                        .fillMaxWidth()
                         .horizontalScroll(scrollState)
                         .padding(15.dp, 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(15.dp)
+                    horizontalArrangement = if (aspectRadio < 0.55 || isTablet) Arrangement.SpaceEvenly
+                    else Arrangement.spacedBy(15.dp)
                 ) {
                     val animationScope = rememberCoroutineScope()
                     DayOfWeek.values().forEach {
@@ -177,6 +183,7 @@ fun ScheduleScreen(
                         }
                         DayBox(
                             modifier = Modifier
+                                .size(if (isTablet) DpSize(48.dp, 72.dp) else DpSize(40.dp, 60.dp))
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,
@@ -258,6 +265,7 @@ fun ScheduleScreen(
                                         item(animeShell.id) {
                                             ScheduleItem(
                                                 modifier = Modifier
+                                                    .height(if (isTablet) 88.dp else 80.dp)
                                                     .fillMaxWidth()
                                                     .clickable(
                                                         interactionSource = remember { MutableInteractionSource() },
@@ -287,13 +295,9 @@ private fun DayBox(
     selected: Boolean,
     date: LocalDate,
 ) {
-    val dayBoxSize = DpSize(40.dp, 60.dp)
-    val dayBoxShape = RoundedCornerShape(14.dp)
-
     Box(
         modifier = modifier
-            .size(dayBoxSize)
-            .clip(dayBoxShape)
+            .clip(RoundedCornerShape(14.dp))
             .background(if (selected) pink70 else neutral01),
         contentAlignment = Alignment.Center
     ) {
@@ -326,7 +330,7 @@ private fun ScheduleItem(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        SideLine(Modifier.height(80.dp))
+        SideLine()
         ItemCard(
             modifier = Modifier
                 .weight(1f)

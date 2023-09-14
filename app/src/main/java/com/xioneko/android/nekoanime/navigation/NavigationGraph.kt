@@ -1,16 +1,11 @@
 package com.xioneko.android.nekoanime.navigation
 
-import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.Context
-import android.content.pm.ActivityInfo
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.navOptions
 import com.google.accompanist.navigation.animation.AnimatedNavHost
@@ -35,7 +30,6 @@ fun NekoAnimeNavigationGraph(
     navController: NavHostController,
 ) {
     val navOptions = navOptions { launchSingleTop = true }
-    val context = LocalContext.current
     val topLevelNavController = rememberAnimatedNavController()
 
     AnimatedNavHost(
@@ -81,23 +75,15 @@ fun NekoAnimeNavigationGraph(
 
         animePlayScreen(
             onGenreClick = {
-                context.resetOrientation()
                 navController.navigateToCategory(genre = it)
             },
             onAnimeClick = {
-                context.resetOrientation()
                 navController.navigateToAnimePlay(it)
             },
             onBackClick = {
-                context.resetOrientation()
                 navController.popBackStack()
             },
         )
 
     }
-}
-
-@SuppressLint("SourceLockedOrientationActivity")
-private fun Context.resetOrientation() {
-    (this as? Activity)?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 }

@@ -36,21 +36,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -129,7 +124,9 @@ fun NekoAnimePlayer(
         }
     }
 
-    if (!playerState.isPaused) { KeepScreenOn() }
+    if (!playerState.isPaused) {
+        KeepScreenOn()
+    }
 
     var currentOrientation by rememberSaveable { mutableStateOf(ORIENTATION_PORTRAIT) }
 
@@ -238,7 +235,6 @@ fun NekoAnimePlayer(
                 Modifier
                     .fillMaxSize()
                     .background(Color.Black)
-                    .safeDrawingPadding()
 
             else -> Modifier
         }
@@ -370,7 +366,7 @@ private fun TopController(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .statusBarsPadding()
+            .then(if (orientation == ORIENTATION_PORTRAIT) Modifier.statusBarsPadding() else Modifier.displayCutoutPadding())
             .padding(start = 15.dp, end = 15.dp, top = 15.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -476,11 +472,7 @@ private fun BottomController(
             Column(
                 modifier = modifier
                     .fillMaxWidth()
-                    .windowInsetsPadding(
-                        WindowInsets.safeDrawing.only(
-                            WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal
-                        )
-                    )
+                    .displayCutoutPadding()
                     .padding(vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {

@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -29,6 +28,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -38,6 +38,7 @@ import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
 import com.xioneko.android.nekoanime.ui.theme.neutral03
 import com.xioneko.android.nekoanime.ui.theme.neutral08
 import com.xioneko.android.nekoanime.ui.theme.pink30
+import com.xioneko.android.nekoanime.ui.util.isTablet
 
 private const val MAX_OVERFLOW_SIZE = 10
 
@@ -50,6 +51,7 @@ fun SearchResult(
     onFollowAnime: (Anime) -> Unit,
     onUnfollowAnime: (Anime) -> Unit,
 ) {
+    val isTablet = isTablet()
     Row(
         modifier = modifier
             .padding(horizontal = 15.dp)
@@ -64,7 +66,7 @@ fun SearchResult(
     ) {
         AsyncImage(
             modifier = Modifier
-                .size(60.dp, 82.dp)
+                .size(if (isTablet) DpSize(72.dp, 98.dp) else DpSize(60.dp, 82.dp))
                 .clip(MaterialTheme.shapes.small),
             model = ImageRequest.Builder(LocalContext.current)
                 .data(anime.imageUrl)
@@ -195,7 +197,6 @@ private fun GenreTag(
 ) {
     Box(
         modifier = modifier
-            .height(20.dp)
             .widthIn(min = 32.dp)
             .border(1.dp, neutral03, CircleShape)
             .padding(8.dp, 2.dp),

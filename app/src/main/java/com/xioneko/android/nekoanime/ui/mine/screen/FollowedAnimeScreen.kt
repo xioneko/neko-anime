@@ -21,6 +21,8 @@ import com.xioneko.android.nekoanime.ui.component.LoadingDots
 import com.xioneko.android.nekoanime.ui.component.SolidTopBar
 import com.xioneko.android.nekoanime.ui.mine.MineScreenViewModel
 import com.xioneko.android.nekoanime.ui.theme.basicWhite
+import com.xioneko.android.nekoanime.ui.util.getAspectRadio
+import com.xioneko.android.nekoanime.ui.util.isTablet
 
 @Composable
 fun FollowedAnimeScreen(
@@ -28,6 +30,9 @@ fun FollowedAnimeScreen(
     onAnimeClick: (Int) -> Unit,
     onBackClick: () -> Unit
 ) {
+    val aspectRatio = getAspectRadio()
+    val isTablet = isTablet()
+
     val followedAnime by viewModel.followedAnime.collectAsStateWithLifecycle()
 
     Scaffold(
@@ -51,7 +56,7 @@ fun FollowedAnimeScreen(
         else
             LazyVerticalGrid(
                 modifier = Modifier.padding(padding),
-                columns = GridCells.Fixed(3),
+                columns = GridCells.Fixed(if (isTablet) 4 else if (aspectRatio < 0.56) 6 else 3),
                 contentPadding = PaddingValues(horizontal = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),

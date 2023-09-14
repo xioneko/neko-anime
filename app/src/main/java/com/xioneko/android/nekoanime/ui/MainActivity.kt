@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
+import com.xioneko.android.nekoanime.ui.theme.NekoAnimeTheme
 import com.xioneko.android.nekoanime.util.NetworkMonitor
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -29,7 +30,9 @@ class MainActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
-            NekoAnimeApp(networkMonitor, viewModel.updater)
+            NekoAnimeTheme {
+                NekoAnimeApp(networkMonitor, viewModel.updater)
+            }
         }
     }
 }

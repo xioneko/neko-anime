@@ -27,6 +27,8 @@ import com.xioneko.android.nekoanime.ui.mine.MineScreenViewModel
 import com.xioneko.android.nekoanime.ui.mine.WatchPeriod
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
 import com.xioneko.android.nekoanime.ui.theme.basicWhite
+import com.xioneko.android.nekoanime.ui.util.getAspectRadio
+import com.xioneko.android.nekoanime.ui.util.isTablet
 
 @Composable
 fun WatchHistoryScreen(
@@ -34,6 +36,9 @@ fun WatchHistoryScreen(
     onAnimeClick: (Int) -> Unit,
     onBackClick: () -> Unit
 ) {
+    val aspectRatio = getAspectRadio()
+    val isTablet = isTablet()
+
     val watchHistory by viewModel.watchHistory.collectAsStateWithLifecycle()
     var shouldConfirmRecordsCleanup by remember { mutableStateOf(false) }
 
@@ -52,7 +57,7 @@ fun WatchHistoryScreen(
     ) {
         LazyVerticalGrid(
             modifier = Modifier.padding(it),
-            columns = GridCells.Fixed(3),
+            columns = GridCells.Fixed(if (isTablet) 4 else if (aspectRatio < 0.56) 6 else 3),
             contentPadding = PaddingValues(horizontal = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
