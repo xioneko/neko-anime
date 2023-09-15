@@ -32,6 +32,8 @@ class UserDataSource @Inject constructor(
             dataStore.data.map { it.themeConfig })
         put("updateAutoCheck",
             dataStore.data.map { it.updateAutoCheck })
+        put("disableLandscapeMode",
+            dataStore.data.map { it.disableLandscapeMode })
     }
 
     suspend fun addSearchRecord(record: SearchRecord) {
@@ -113,6 +115,14 @@ class UserDataSource @Inject constructor(
         dataStore.updateData { userData ->
             userData.copy(
                 updateAutoCheck = enable
+            )
+        }
+    }
+
+    suspend fun setDisableLandscapeMode(disable: Boolean) {
+        dataStore.updateData { userData ->
+            userData.copy(
+                disableLandscapeMode = disable
             )
         }
     }

@@ -1,11 +1,8 @@
 package com.xioneko.android.nekoanime.ui.player
 
-import android.app.Activity
-import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.hardware.SensorManager
-import android.provider.Settings
 import android.util.Log
 import android.view.OrientationEventListener
 import android.view.ViewGroup
@@ -63,7 +60,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,7 +73,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -90,14 +86,19 @@ import com.xioneko.android.nekoanime.ui.component.LoadingDotsVariant
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
 import com.xioneko.android.nekoanime.ui.theme.basicBlack
 import com.xioneko.android.nekoanime.ui.theme.basicWhite
+import com.xioneko.android.nekoanime.ui.util.KeepScreenOn
+import com.xioneko.android.nekoanime.ui.util.isOrientationLocked
+import com.xioneko.android.nekoanime.ui.util.setScreenOrientation
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
 
 
-const val ORIENTATION_LANDSCAPE = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-const val ORIENTATION_PORTRAIT = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-const val ORIENTATION_SENSOR = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+const val ORIENTATION_LANDSCAPE = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE // 11
+const val ORIENTATION_PORTRAIT = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT // 1
+const val ORIENTATION_UNSPECIFIED = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED // -1
 
 
 @Composable
@@ -128,12 +129,11 @@ fun NekoAnimePlayer(
         KeepScreenOn()
     }
 
-    var currentOrientation by rememberSaveable { mutableStateOf(ORIENTATION_PORTRAIT) }
-
+    val unlockOrientationScope = rememberCoroutineScope()
     val changeOrientationTo: (Int) -> Unit = remember {
-        { _orientation ->
-            currentOrientation = _orientation
-            context.setScreenOrientation(_orientation)
+        { orientation ->
+            unlockOrientationScope.coroutineContext.cancelChildren()
+            context.setScreenOrientation(orientation)
         }
     }
 
@@ -145,7 +145,7 @@ fun NekoAnimePlayer(
         LaunchedEffect(Unit) {
             delay(5.seconds)
             isBottomControllerVisible = false
-            if (currentOrientation == ORIENTATION_LANDSCAPE)
+            if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
                 isTopControllerVisible = false
         }
     }
@@ -159,46 +159,46 @@ fun NekoAnimePlayer(
     }
 
     DisposableEffect(Unit) {
-        currentOrientation =
-            when (configuration.orientation) {
-                Configuration.ORIENTATION_LANDSCAPE -> ORIENTATION_LANDSCAPE
-                else -> ORIENTATION_PORTRAIT
-            }
-
         systemUiController.run {
             setStatusBarColor(Color.Transparent, false)
 
-            when (currentOrientation) {
-                ORIENTATION_PORTRAIT -> {
+            when (configuration.orientation) {
+                Configuration.ORIENTATION_PORTRAIT -> {
                     isSystemBarsVisible = true
                     systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
                 }
 
-                ORIENTATION_LANDSCAPE -> {
+                Configuration.ORIENTATION_LANDSCAPE -> {
                     isSystemBarsVisible = false
                     systemBarsBehavior =
                         WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                 }
+
+                else -> {}
             }
         }
 
         val orientationListener =
             object : OrientationEventListener(context, SensorManager.SENSOR_DELAY_NORMAL) {
                 override fun onOrientationChanged(angle: Int) {
-                    when (currentOrientation) {
-                        ORIENTATION_PORTRAIT ->
-                            if (angle <= 5 || angle >= 355)
-                                context.setScreenOrientation(
-                                    if (context.isOrientationLocked()) ORIENTATION_PORTRAIT
-                                    else ORIENTATION_SENSOR
-                                )
+                    if (context.isOrientationLocked()) return
 
-                        ORIENTATION_LANDSCAPE ->
-                            if (angle in 85..95 || angle in 265..275)
-                                context.setScreenOrientation(
-                                    if (context.isOrientationLocked()) ORIENTATION_LANDSCAPE
-                                    else ORIENTATION_SENSOR
-                                )
+                    when (configuration.orientation) {
+                        Configuration.ORIENTATION_PORTRAIT ->
+                            if (angle <= 10 || angle >= 350)
+                                unlockOrientationScope.launch {
+                                    delay(1000)
+                                    context.setScreenOrientation(ORIENTATION_UNSPECIFIED)
+                                }
+
+                        Configuration.ORIENTATION_LANDSCAPE ->
+                            if (angle in 80..100 || angle in 260..280)
+                                unlockOrientationScope.launch {
+                                    delay(1000)
+                                    context.setScreenOrientation(ORIENTATION_UNSPECIFIED)
+                                }
+
+                        else -> {}
                     }
                 }
 
@@ -206,10 +206,12 @@ fun NekoAnimePlayer(
 
         val backCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                when (currentOrientation) {
-                    ORIENTATION_PORTRAIT -> onBack()
+                when (configuration.orientation) {
+                    Configuration.ORIENTATION_PORTRAIT -> onBack()
 
-                    ORIENTATION_LANDSCAPE -> changeOrientationTo(ORIENTATION_PORTRAIT)
+                    Configuration.ORIENTATION_LANDSCAPE -> changeOrientationTo(ORIENTATION_PORTRAIT)
+
+                    else -> {}
                 }
             }
         }
@@ -221,9 +223,9 @@ fun NekoAnimePlayer(
         }
     }
 
-    val playerModifier = remember(currentOrientation) {
-        when (currentOrientation) {
-            ORIENTATION_PORTRAIT ->
+    val playerModifier = remember(configuration) {
+        when (configuration.orientation) {
+            Configuration.ORIENTATION_PORTRAIT ->
                 Modifier
                     .wrapContentHeight(Alignment.Top)
                     .fillMaxWidth()
@@ -231,7 +233,7 @@ fun NekoAnimePlayer(
                     .statusBarsPadding()
                     .aspectRatio(16f / 9f)
 
-            ORIENTATION_LANDSCAPE ->
+            Configuration.ORIENTATION_LANDSCAPE ->
                 Modifier
                     .fillMaxSize()
                     .background(Color.Black)
@@ -253,7 +255,7 @@ fun NekoAnimePlayer(
                 detectTapGestures(
                     onTap = {
                         isBottomControllerVisible = !isBottomControllerVisible
-                        if (currentOrientation == ORIENTATION_LANDSCAPE)
+                        if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
                             isTopControllerVisible = !isTopControllerVisible
                     },
                     onDoubleTap = {
@@ -289,9 +291,9 @@ fun NekoAnimePlayer(
                 ),
                 title = if (uiState is AnimePlayUiState.Data)
                     "${uiState.anime.name} 第${uiState.episode.value}话" else "",
-                orientation = currentOrientation,
+                orientation = configuration.orientation,
                 onBack = {
-                    if (currentOrientation == ORIENTATION_LANDSCAPE) {
+                    if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
                         changeOrientationTo(ORIENTATION_PORTRAIT)
                     } else
                         onBack()
@@ -315,7 +317,7 @@ fun NekoAnimePlayer(
                 currentPosition = realPosition,
                 totalDurationMs = playerState.totalDurationMs,
                 bufferedPercentage = playerState.bufferedPercentage,
-                orientation = currentOrientation,
+                orientation = configuration.orientation,
                 onPlay = player::play,
                 onPause = player::pause,
                 onOrientationChange = changeOrientationTo,
@@ -366,7 +368,7 @@ private fun TopController(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .then(if (orientation == ORIENTATION_PORTRAIT) Modifier.statusBarsPadding() else Modifier.displayCutoutPadding())
+            .then(if (orientation == Configuration.ORIENTATION_PORTRAIT) Modifier.statusBarsPadding() else Modifier.displayCutoutPadding())
             .padding(start = 15.dp, end = 15.dp, top = 15.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -429,7 +431,7 @@ private fun BottomController(
     val currentPos = formatMilliseconds(currentPosition, totalDuration.length > 5)
 
     when (orientation) {
-        ORIENTATION_PORTRAIT -> {
+        Configuration.ORIENTATION_PORTRAIT -> {
             Row(
                 modifier = modifier
                     .fillMaxWidth()
@@ -468,7 +470,7 @@ private fun BottomController(
             }
         }
 
-        ORIENTATION_LANDSCAPE -> {
+        Configuration.ORIENTATION_LANDSCAPE -> {
             Column(
                 modifier = modifier
                     .fillMaxWidth()
@@ -762,11 +764,6 @@ private fun AnimatedVisibilityScope.EpisodesDrawer(
     }
 }
 
-private fun Context.setScreenOrientation(orientation: Int) {
-    val activity = this as? Activity ?: return
-    activity.requestedOrientation = orientation
-}
-
 private fun formatMilliseconds(millis: Long, includeHour: Boolean? = null): String {
     val hours = TimeUnit.MILLISECONDS.toHours(millis)
     val minutes = TimeUnit.MILLISECONDS.toMinutes(millis)
@@ -778,23 +775,5 @@ private fun formatMilliseconds(millis: Long, includeHour: Boolean? = null): Stri
         String.format("%d:%02d:%02d", hours, minutes - hours * 60, seconds - minutes * 60)
     } else {
         String.format("%02d:%02d", minutes, seconds - minutes * 60)
-    }
-}
-
-private fun Context.isOrientationLocked() =
-    Settings.System.getInt(
-        contentResolver,
-        Settings.System.ACCELEROMETER_ROTATION,
-        1
-    ) == 0
-
-@Composable
-fun KeepScreenOn() {
-    val currentView = LocalView.current
-    DisposableEffect(Unit) {
-        currentView.keepScreenOn = true
-        onDispose {
-            currentView.keepScreenOn = false
-        }
     }
 }

@@ -375,6 +375,7 @@ private fun ItemCard(
     modifier: Modifier = Modifier,
     animeShell: AnimeShell
 ) {
+    val isTablet = isTablet()
     Surface(
         modifier = modifier
             .shadow(
@@ -391,7 +392,7 @@ private fun ItemCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                modifier = Modifier.width(56.dp),
+                modifier = Modifier.width(if (isTablet) 64.dp else 56.dp),
                 text = "第${animeShell.latestEpisode}话",
                 textAlign = TextAlign.Center,
                 color = darkPink60,
@@ -430,10 +431,12 @@ private fun FilterMenu(
     currentFilterType: ScheduleFilterType,
     onFilterChange: (ScheduleFilterType) -> Unit,
 ) {
+    val isTablet = isTablet()
+
     Surface(
         modifier = modifier
             .zIndex(1f)
-            .width(110.dp)
+            .width(if (isTablet) 124.dp else 110.dp)
             .border(
                 width = Dp.Hairline,
                 brush = Brush.horizontalGradient(
@@ -452,7 +455,7 @@ private fun FilterMenu(
                 RadioWithLabel(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(28.dp),
+                        .height(if (isTablet) 36.dp else 28.dp),
                     label = it.label,
                     selected = currentFilterType == it,
                     onSelect = { onFilterChange(it) },

@@ -1,10 +1,15 @@
 package com.xioneko.android.nekoanime.ui.util
 
+import android.app.Activity
+import android.content.Context
 import android.content.res.Configuration
+import android.provider.Settings
 import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalView
 
 @Composable
 fun getAspectRadio(): Float {
@@ -25,3 +30,28 @@ fun isTablet(): Boolean {
         Log.d("UI", "tablet? $it")
     }
 }
+
+fun Context.setScreenOrientation(orientation: Int) {
+    Log.d("ROTATE", orientation.toString())
+    val activity = this as? Activity ?: return
+    activity.requestedOrientation = orientation
+}
+
+fun Context.isOrientationLocked() =
+    Settings.System.getInt(
+        contentResolver,
+        Settings.System.ACCELEROMETER_ROTATION,
+        1
+    ) == 0
+
+@Composable
+fun KeepScreenOn() {
+    val currentView = LocalView.current
+    DisposableEffect(Unit) {
+        currentView.keepScreenOn = true
+        onDispose {
+            currentView.keepScreenOn = false
+        }
+    }
+}
+

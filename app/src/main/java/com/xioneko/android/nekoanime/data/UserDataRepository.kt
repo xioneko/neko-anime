@@ -31,6 +31,8 @@ class UserDataRepository @Inject constructor(
 
     val updateAutoCheck: Flow<Boolean> by userDataSource.userData
 
+    val disableLandscapeMode: Flow<Boolean> by userDataSource.userData
+
 
     fun isFollowed(anime: Anime): Flow<Boolean> =
         followedAnimeIds.map { anime.id in it }
@@ -77,4 +79,7 @@ class UserDataRepository @Inject constructor(
 
     suspend fun setUpdateAutoCheck(enable: Boolean) =
         userDataSource.setUpdateAutoCheck(enable)
+
+    suspend fun setDisableLandscapeMode(disable: Boolean) =
+        userDataSource.setDisableLandscapeMode(disable)
 }

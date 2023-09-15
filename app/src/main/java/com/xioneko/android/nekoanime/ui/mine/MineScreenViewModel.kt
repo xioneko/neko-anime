@@ -69,6 +69,12 @@ class MineScreenViewModel @Inject constructor(
         initialValue = null
     )
 
+    val disableLandscapeMode = userDataRepository.disableLandscapeMode.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = null
+    )
+
     fun setTheme(themeConfig: ThemeConfig) {
         viewModelScope.launch {
             userDataRepository.setThemeConfig(themeConfig)
@@ -102,6 +108,12 @@ class MineScreenViewModel @Inject constructor(
     fun accessGitHubRepo(context: Context) {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/xioneko/neko-anime/"))
         context.startActivity(intent)
+    }
+
+    fun setDisableLandscapeMode(disable: Boolean) {
+        viewModelScope.launch {
+            userDataRepository.setDisableLandscapeMode(disable)
+        }
     }
 
 }

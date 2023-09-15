@@ -14,7 +14,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainActivityViewModel @Inject constructor(
-    userDataRepository: UserDataRepository,
+    val userDataRepository: UserDataRepository,
     val updater: NekoAnimeUpdater,
 ) : ViewModel() {
 
@@ -32,4 +32,6 @@ class MainActivityViewModel @Inject constructor(
             _isSplashScreenVisible.emit(false)
         }
     }
+
+    suspend fun isLandscapeModeDisabled() = userDataRepository.disableLandscapeMode.first()
 }

@@ -1,11 +1,13 @@
 package com.xioneko.android.nekoanime.navigation
 
+import android.content.pm.ActivityInfo
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.navOptions
 import com.google.accompanist.navigation.animation.AnimatedNavHost
@@ -21,6 +23,7 @@ import com.xioneko.android.nekoanime.ui.player.animePlayScreen
 import com.xioneko.android.nekoanime.ui.player.navigateToAnimePlay
 import com.xioneko.android.nekoanime.ui.search.SearchNavRoute
 import com.xioneko.android.nekoanime.ui.search.searchScreen
+import com.xioneko.android.nekoanime.ui.util.setScreenOrientation
 
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -29,6 +32,7 @@ fun NekoAnimeNavigationGraph(
     modifier: Modifier = Modifier,
     navController: NavHostController,
 ) {
+    val context = LocalContext.current
     val navOptions = navOptions { launchSingleTop = true }
     val topLevelNavController = rememberAnimatedNavController()
 
@@ -75,12 +79,14 @@ fun NekoAnimeNavigationGraph(
 
         animePlayScreen(
             onGenreClick = {
+                context.setScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
                 navController.navigateToCategory(genre = it)
             },
             onAnimeClick = {
                 navController.navigateToAnimePlay(it)
             },
             onBackClick = {
+                context.setScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
                 navController.popBackStack()
             },
         )

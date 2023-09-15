@@ -1,5 +1,6 @@
 package com.xioneko.android.nekoanime.ui.mine
 
+import android.content.pm.ActivityInfo
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -54,7 +55,9 @@ import com.xioneko.android.nekoanime.ui.theme.basicWhite
 import com.xioneko.android.nekoanime.ui.theme.pink10
 import com.xioneko.android.nekoanime.ui.theme.pink50
 import com.xioneko.android.nekoanime.ui.theme.pink99
+import com.xioneko.android.nekoanime.ui.util.getAspectRadio
 import com.xioneko.android.nekoanime.ui.util.isTablet
+import com.xioneko.android.nekoanime.ui.util.setScreenOrientation
 import java.time.LocalTime
 
 @Composable
@@ -68,11 +71,14 @@ fun MineScreen(
 ) {
     val context = LocalContext.current
     val isTablet = isTablet()
+    val aspectRadio = getAspectRadio()
 
     val themeConfig by viewModel.themeConfig.collectAsStateWithLifecycle()
     val isSystemInDarkTheme = isSystemInDarkTheme()
 
     val updateAutoCheck by viewModel.updateAutoCheck.collectAsStateWithLifecycle()
+
+    val disableLandscapeMode by viewModel.disableLandscapeMode.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -134,12 +140,12 @@ fun MineScreen(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(if (isTablet) 28.dp else 12.dp)
+                horizontalArrangement = Arrangement.spacedBy(if (aspectRadio > 1.8) 12.dp else 28.dp)
             ) {
                 PrimaryBox(
                     modifier = Modifier
                         .weight(1f)
-                        .aspectRatio(if (isTablet) 1.8f else 1.25f)
+                        .aspectRatio(if (aspectRadio > 1.8) 1.25f else 1.8f)
                         .then(cardModifier),
                     iconId = NekoAnimeIcons.love,
                     text = "我的追番",
@@ -148,7 +154,7 @@ fun MineScreen(
                 PrimaryBox(
                     modifier = Modifier
                         .weight(1f)
-                        .aspectRatio(if (isTablet) 1.8f else 1.25f)
+                        .aspectRatio(if (aspectRadio > 1.8) 1.25f else 1.8f)
                         .then(cardModifier),
                     iconId = NekoAnimeIcons.history,
                     text = "历史观看",
@@ -157,7 +163,7 @@ fun MineScreen(
                 PrimaryBox(
                     modifier = Modifier
                         .weight(1f)
-                        .aspectRatio(if (isTablet) 1.8f else 1.25f)
+                        .aspectRatio(if (aspectRadio > 1.8) 1.25f else 1.8f)
                         .then(cardModifier),
                     iconId = NekoAnimeIcons.download,
                     text = "我的下载",
@@ -201,6 +207,19 @@ fun MineScreen(
                     text = "自动检查更新",
                     checked = updateAutoCheck,
                     onCheckedChange = viewModel::setUpdateAutoCheck
+                )
+
+                ItemWithSwitch(
+                    modifier = itemModifier,
+                    text = "禁用横屏模式",
+                    checked = disableLandscapeMode,
+                    onCheckedChange = { disable ->
+                        viewModel.setDisableLandscapeMode(disable)
+                        if (disable)
+                            context.setScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+                        else
+                            context.setScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
+                    }
                 )
 
                 ItemWithAction(

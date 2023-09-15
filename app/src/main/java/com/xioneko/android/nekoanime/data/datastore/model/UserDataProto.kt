@@ -14,5 +14,6 @@ data class UserDataProto(
     val followedAnimeIds: List<Int> = emptyList(),
     val interests: List<String> = emptyList(),
     val themeConfig: ThemeConfig = ThemeConfig.THEME_CONFIG_FOLLOW_SYSTEM,
-    val updateAutoCheck: Boolean = true
+    val updateAutoCheck: Boolean = true,
+    val disableLandscapeMode: Boolean = true,
 )
