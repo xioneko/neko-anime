@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -31,10 +31,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.min
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.text.HtmlCompat
 import com.xioneko.android.nekoanime.R
@@ -84,6 +87,12 @@ fun UpdateDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier
+            .requiredHeightIn(
+                max = min(
+                    360.dp,
+                    (LocalConfiguration.current.screenHeightDp * 4 / 5).dp
+                )
+            )
             .clip(RoundedCornerShape(12.dp))
             .background(basicWhite),
     ) {
@@ -91,7 +100,6 @@ fun UpdateDialog(
             modifier = Modifier
                 .padding(bottom = 18.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Box {
                 Image(
@@ -117,25 +125,28 @@ fun UpdateDialog(
                     )
                 }
             }
+            val hPadding = with(LocalDensity.current) { 15.dp.roundToPx() }
+            val vPadding = with(LocalDensity.current) { 12.dp.roundToPx() }
             AndroidView(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 15.dp)
-                    .heightIn(min = 120.dp, max = 270.dp)
+                    .weight(1f)
                     .verticalScroll(rememberScrollState()),
                 factory = { context ->
                     TextView(context).apply {
                         setLineSpacing(20f, 1f)
+                        setPadding(hPadding, vPadding, hPadding, 0)
                     }
                 },
                 update = {
                     it.text = HtmlCompat.fromHtml(
-                        updateNotes ?: "优化产品体验，修复若干问题",
+                        updateNotes ?: "优化应用体验，修复若干问题",
                         HtmlCompat.FROM_HTML_MODE_COMPACT
                     )
                 }
             )
             FilledTonalButton(
+                modifier = Modifier.padding(top = 12.dp),
                 onClick = onConfirm,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = pink40,
@@ -177,17 +188,17 @@ fun ConfirmationDialog(
             Row(
                 horizontalArrangement = Arrangement.spacedBy(30.dp)
             ) {
-               Text(
-                   modifier = Modifier.clickable(
-                       interactionSource = remember { MutableInteractionSource() },
-                       indication = null,
-                       role = Role.Button,
-                       onClick = onDismiss
-                   ),
-                   text = "取消",
-                   color = Color(0xFFD49DB0),
-                   style = MaterialTheme.typography.bodyMedium
-               )
+                Text(
+                    modifier = Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        role = Role.Button,
+                        onClick = onDismiss
+                    ),
+                    text = "取消",
+                    color = Color(0xFFD49DB0),
+                    style = MaterialTheme.typography.bodyMedium
+                )
                 Text(
                     modifier = Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() },
