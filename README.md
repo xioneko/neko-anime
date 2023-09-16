@@ -9,7 +9,7 @@
 [![Android](https://img.shields.io/badge/android-11+-green)](https://developer.android.com/about/versions/12)
 [![Release](https://img.shields.io/github/v/release/xioneko/neko-anime)](https://github.com/xioneko/neko-anime/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/xioneko/neko-anime/total)](https://github.com/xioneko/neko-anime/releases/)
-[![Powered-by](https://img.shields.io/badge/powered%20by-%E6%A8%B1%E8%8A%B1%E5%8A%A8%E6%BC%AB-ea5c7b)](http://www.yinghuavideo.com/)
+[![Powered-by](https://img.shields.io/badge/powered%20by-%E6%A8%B1%E8%8A%B1%E5%8A%A8%E6%BC%AB-ea5c7b)](http://www.iyinghua.com/)
 [![License](https://img.shields.io/badge/license-GPLv3-yellow)](https://www.gnu.org/licenses/gpl-3.0.html)
 
 </p>
@@ -18,7 +18,7 @@
 ## 介绍
 <p>
 
-Neko Anime 使用樱花动漫「[🌸Ⅰ](http://www.yinghuavideo.com/)│[🌸Ⅱ](https://www.yhmgo.com/)
+Neko Anime 使用樱花动漫「[🌸Ⅰ](http://www.iyinghua.com/)│[🌸Ⅱ](https://www.yhmgo.com/)
 」作为数据源，灵感来源于项目 [Imomoe](https://github.com/androiddevnotesforks/Imomoe)。技术栈方面采用了
 Kotlin 搭配 Jetpack
 Compose，遵循了官方指南中的“[现代 Android 应用架构](https://developer.android.com/topic/architecture)
@@ -128,7 +128,7 @@ App 的开发仍在进行中 🚧，可在 GitHub 上 [⬇️下载最新版本]
 
 - **视频加载失败了怎么办？**
 
-  目前 App 以 http://www.yinghuavideo.com/ 作为主视频源，以 https://www.yhmgo.com/ 作为备用视频源
+  目前 App 以 http://www.iyinghua.com/ 作为主视频源，以 https://www.yhmgo.com/ 作为备用视频源
   - 对于主视频源，需要指出的是，App 内部在从主视频源请求视频地址的时候，使用的是备用视频源网站获取的番剧名，而不是某一固定统一的番剧ID，因此会有一定概率失败
   - 对于备用视频源，App 会请求其提供的前两个视频线路，并且优先使用线路1，如果出现加载超时，再切换成线路2
 

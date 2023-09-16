@@ -12,11 +12,11 @@ import retrofit2.Retrofit
 import javax.inject.Inject
 
 
-class YinghuacdVideoSource @Inject constructor(
+class IyinghuaVideoSource @Inject constructor(
     httpClient: OkHttpClient
 ) : VideoDataSource {
     companion object {
-        const val BASE_URL = "http://www.yinghuavideo.com/";
+        const val BASE_URL = "http://www.iyinghua.com/"
     }
 
     private val videoSourceApi = Retrofit.Builder()
@@ -48,5 +48,6 @@ class YinghuacdVideoSource @Inject constructor(
                 }
             }
     }
+
     override fun toString(): String = "动漫视频源<$BASE_URL>"
 }

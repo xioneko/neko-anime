@@ -8,8 +8,8 @@ import retrofit2.http.Path
 
 /**
  * API示例:
- * - 搜索：http://www.yinghuavideo.com/search/女神的露天咖啡厅
- * - 视频页：http://www.yinghuavideo.com/v/5879-1.html
+ * - 搜索：http://www.iyinghua.com/search/女神的露天咖啡厅
+ * - 视频页：http://www.iyinghua.com/v/5879-1.html
  */
 interface VideoSourceApi {
     @GET("search/{name}")
