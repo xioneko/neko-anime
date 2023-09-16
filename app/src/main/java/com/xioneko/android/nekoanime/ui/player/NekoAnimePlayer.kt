@@ -369,7 +369,7 @@ private fun TopController(
         modifier = modifier
             .fillMaxWidth()
             .then(if (orientation == Configuration.ORIENTATION_PORTRAIT) Modifier.statusBarsPadding() else Modifier.displayCutoutPadding())
-            .padding(start = 15.dp, end = 15.dp, top = 15.dp),
+            .padding(top = 15.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Row(
@@ -377,12 +377,14 @@ private fun TopController(
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Icon(
-                modifier = Modifier.clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    role = Role.Button,
-                    onClick = onBack
-                ),
+                modifier = Modifier
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        role = Role.Button,
+                        onClick = onBack
+                    )
+                    .padding(start = 15.dp),
                 painter = painterResource(NekoAnimeIcons.Player.back),
                 contentDescription = "back",
                 tint = basicWhite
@@ -397,12 +399,14 @@ private fun TopController(
                 )
         }
         Icon(
-            modifier = Modifier.clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                role = Role.Button,
-                onClick = { /* TODO: menu */ }
-            ),
+            modifier = Modifier
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    role = Role.Button,
+                    onClick = { /* TODO: menu */ }
+                )
+                .padding(end = 15.dp),
             painter = painterResource(NekoAnimeIcons.Player.more),
             contentDescription = "menu",
             tint = basicWhite
