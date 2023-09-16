@@ -11,7 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
@@ -33,24 +33,24 @@ fun SearchScreen(
     val focusManager = LocalFocusManager.current
     val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
 
-    var searchText by remember { mutableStateOf("") }
-    var shouldShowResults by remember { mutableStateOf(false) }
-    val shouldShowCandidates = searchText.isNotBlank()
+    var shouldShowResults by rememberSaveable { mutableStateOf(false) }
+    val shouldShowCandidates = viewModel.searchText.isNotBlank()
     val shouldShowHistory = uiState.searching
 
     val onSearch = {
-        val keyword = searchText.trim()
+        val keyword = viewModel.searchText.trim()
         if (keyword.isNotEmpty()) {
             focusManager.clearFocus()
-            shouldShowResults = true
             viewModel.addSearchRecord(keyword)
+            viewModel.fetchAnimeResults(keyword)
+            shouldShowResults = true
         }
     }
     val onExit = {
         onEnterExit(false)
         shouldShowResults = false
         focusManager.clearFocus()
-        searchText = ""
+        viewModel.searchText = ""
     }
 
 
@@ -61,7 +61,7 @@ fun SearchScreen(
                 override fun handleOnBackPressed() {
                     if (shouldShowResults) {
                         shouldShowResults = false
-                        searchText = ""
+                        viewModel.searchText = ""
                         uiState.focusRequester.requestFocus()
                     } else onExit()
                 }
@@ -76,13 +76,13 @@ fun SearchScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .zIndex(1f),
-            text = searchText,
+            text = viewModel.searchText,
             searching = uiState.searching,
             focusRequester = uiState.focusRequester,
             searchBarState = uiState,
             onLeftIconClick = onHistoryClick,
             onRightIconClick = onCategoryClick,
-            onInputChange = { searchText = it },
+            onInputChange = { viewModel.searchText = it },
             onFocusChange = { focused ->
                 if (focused) {
                     shouldShowResults = false
@@ -103,7 +103,7 @@ fun SearchScreen(
                     source = viewModel.searchHistory,
                     onClearHistory = viewModel::clearSearchHistory,
                     onRecordClick = {
-                        searchText = it
+                        viewModel.searchText = it
                         onSearch()
                     }
                 )
@@ -114,10 +114,10 @@ fun SearchScreen(
                 enter = fadeIn(), exit = fadeOut()
             ) {
                 CandidatesView(
-                    input = searchText.trim(),
+                    input = viewModel.searchText.trim(),
                     fetch = viewModel::getCandidatesOf,
                     onCandidateClick = {
-                        searchText = it
+                        viewModel.searchText = it
                         onSearch()
                     }
                 )
@@ -128,8 +128,7 @@ fun SearchScreen(
                 enter = fadeIn(), exit = fadeOut()
             ) {
                 ResultsView(
-                    input = searchText.trim(),
-                    fetch = viewModel::searchAnime,
+                    uiState = viewModel.resultsViewState,
                     onFollow = viewModel::addFollowedAnime,
                     onUnfollow = viewModel::unfollowedAnime,
                     onAnimeClick = onAnimeClick,

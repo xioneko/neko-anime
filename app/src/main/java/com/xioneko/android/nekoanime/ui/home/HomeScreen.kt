@@ -39,6 +39,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -101,7 +102,6 @@ fun HomeScreen(
     val aspectRatio = getAspectRadio()
     val isTablet = isTablet()
 
-    var searching by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val lazyListState = rememberLazyListState()
     val scrollProgress by remember {
@@ -112,12 +112,13 @@ fun HomeScreen(
         }
     }
 
-    val searchBarState = rememberSearchBarState(searching, focusRequester, scrollProgress)
+    val searchBarState =
+        rememberSearchBarState(viewModel.isSearching, focusRequester, scrollProgress)
     val systemUiController = rememberSystemUiController()
 
     val loadingState by viewModel.loadingState.collectAsStateWithLifecycle()
 
-    var refreshing by remember { mutableStateOf(false) }
+    var refreshing by rememberSaveable { mutableStateOf(false) }
     val pullRefreshState = rememberPullRefreshState(
         refreshing = refreshing,
         refreshingOffset = 124.dp,
@@ -131,10 +132,10 @@ fun HomeScreen(
         }
     )
 
-    LaunchedEffect(searching, scrollProgress) {
+    LaunchedEffect(viewModel.isSearching, scrollProgress) {
         systemUiController.setStatusBarColor(
             color = Color.Transparent,
-            darkIcons = searching || scrollProgress > 0.5f
+            darkIcons = viewModel.isSearching || scrollProgress > 0.5f
         )
     }
 
@@ -147,7 +148,7 @@ fun HomeScreen(
             .zIndex(1f),
         viewModel = hiltViewModel(),
         uiState = searchBarState,
-        onEnterExit = { searching = it },
+        onEnterExit = { viewModel.isSearching = it },
         onCategoryClick = onCategoryClick,
         onHistoryClick = onHistoryClick,
         onAnimeClick = onAnimeClick

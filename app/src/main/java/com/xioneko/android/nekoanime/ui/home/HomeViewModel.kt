@@ -1,5 +1,8 @@
 package com.xioneko.android.nekoanime.ui.home
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xioneko.android.nekoanime.data.AnimeRepository
@@ -37,6 +40,8 @@ class HomeViewModel @Inject constructor(
 
     private val fetchingScope: CoroutineScope =
         CoroutineScope(SupervisorJob(viewModelScope.coroutineContext.job))
+
+    var isSearching: Boolean by mutableStateOf(false)
 
     private val _recentUpdates = MutableStateFlow(List<AnimeShell?>(RECENT_UPDATES_SIZE) { null })
     val recentUpdates: StateFlow<List<AnimeShell?>> = _recentUpdates.asStateFlow()

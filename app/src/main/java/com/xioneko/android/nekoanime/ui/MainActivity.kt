@@ -59,7 +59,7 @@ class MainActivity : ComponentActivity() {
 
     private fun registerUncaughtExceptionHandler() {
         Thread.setDefaultUncaughtExceptionHandler { _, throwable ->
-            Log.e("GLOBAL", throwable.message.toString())
+            Log.e("GLOBAL", "App Crash!!", throwable)
 
             CoroutineScope(Dispatchers.Default).launch {
                 withContext(Dispatchers.Main) {

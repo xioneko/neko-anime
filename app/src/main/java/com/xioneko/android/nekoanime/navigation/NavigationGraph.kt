@@ -9,7 +9,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
-import androidx.navigation.navOptions
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.xioneko.android.nekoanime.ui.category.categoryScreen
@@ -18,10 +17,9 @@ import com.xioneko.android.nekoanime.ui.mine.screen.FollowedAnimeNavRoute
 import com.xioneko.android.nekoanime.ui.mine.screen.WatchHistoryNavRoute
 import com.xioneko.android.nekoanime.ui.mine.screen.followedAnimeScreen
 import com.xioneko.android.nekoanime.ui.mine.screen.historyScreen
-import com.xioneko.android.nekoanime.ui.player.AnimePlayNavRoute
 import com.xioneko.android.nekoanime.ui.player.animePlayScreen
 import com.xioneko.android.nekoanime.ui.player.navigateToAnimePlay
-import com.xioneko.android.nekoanime.ui.search.SearchNavRoute
+import com.xioneko.android.nekoanime.ui.search.navigateToSearchScreen
 import com.xioneko.android.nekoanime.ui.search.searchScreen
 import com.xioneko.android.nekoanime.ui.util.setScreenOrientation
 
@@ -33,7 +31,6 @@ fun NekoAnimeNavigationGraph(
     navController: NavHostController,
 ) {
     val context = LocalContext.current
-    val navOptions = navOptions { launchSingleTop = true }
     val topLevelNavController = rememberAnimatedNavController()
 
     AnimatedNavHost(
@@ -56,14 +53,14 @@ fun NekoAnimeNavigationGraph(
         )
 
         searchScreen(
-            onAnimeClick = { navController.navigate(AnimePlayNavRoute) },
+            onAnimeClick = navController::navigateToAnimePlay,
             onBackClick = navController::popBackStack
         )
 
 
         categoryScreen(
             onAnimeClick = navController::navigateToAnimePlay,
-            onSearchClick = { navController.navigate(SearchNavRoute, navOptions) },
+            onSearchClick = navController::navigateToSearchScreen,
             onBackClick = navController::popBackStack,
         )
 
