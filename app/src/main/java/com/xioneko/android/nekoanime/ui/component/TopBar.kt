@@ -9,9 +9,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
@@ -57,10 +57,8 @@ fun SolidTopBar(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .windowInsetsPadding(
-                    WindowInsets.safeDrawing
-                        .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
-                )
+                .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Horizontal))
+                .statusBarsPadding()
                 .padding(15.dp, 12.dp),
         ) {
             Icon(
@@ -103,7 +101,7 @@ fun TransparentTopBar(
     title: String,
     iconId: Int,
     iconTint: Color = basicBlack,
-    onIconClick:() -> Unit
+    onIconClick: () -> Unit
 ) {
     val systemUiController = rememberSystemUiController()
     LaunchedEffect(Unit) {
