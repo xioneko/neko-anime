@@ -240,7 +240,23 @@ fun MineScreen(
                 ItemWithAction(
                     modifier = itemModifier,
                     text = "访问 GitHub 仓库",
-                    action = { viewModel.accessGitHubRepo(context) }
+                    action = {
+                        viewModel.accessWebPage(
+                            context,
+                            "https://github.com/xioneko/neko-anime/"
+                        )
+                    }
+                )
+
+                ItemWithAction(
+                    modifier = itemModifier,
+                    text = "问题反馈",
+                    action = {
+                        viewModel.accessWebPage(
+                            context,
+                            "https://github.com/xioneko/neko-anime/issues/"
+                        )
+                    }
                 )
             }
         }

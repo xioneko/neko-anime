@@ -105,8 +105,8 @@ class MineScreenViewModel @Inject constructor(
         }
     }
 
-    fun accessGitHubRepo(context: Context) {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/xioneko/neko-anime/"))
+    fun accessWebPage(context: Context, url: String) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
         context.startActivity(intent)
     }
 
