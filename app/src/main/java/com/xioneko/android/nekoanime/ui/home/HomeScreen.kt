@@ -84,6 +84,7 @@ import com.xioneko.android.nekoanime.ui.util.LoadingState
 import com.xioneko.android.nekoanime.ui.util.getAspectRadio
 import com.xioneko.android.nekoanime.ui.util.isTablet
 import kotlinx.coroutines.delay
+import kotlin.random.Random
 
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -248,7 +249,7 @@ fun HomeScreen(
 private fun Carousel(
     onSlideClick: (Int) -> Unit
 ) {
-    val pagerState = rememberPagerState(Int.MAX_VALUE / 20 * 10)
+    val pagerState = rememberPagerState(Int.MAX_VALUE / 2 + Random.nextInt(0, 10))
     val slides = Slide.values()
 
     LaunchedEffect(Unit) {

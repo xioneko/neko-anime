@@ -11,36 +11,36 @@ enum class Slide(
 ) {
     Slide1(
         imageId = R.drawable.slide1,
-        animeId = 22285,
-        title = "鬼灭之刃 锻刀村篇",
-        description = "霞柱恋柱迎战，炭治郎新刀亮相"
+        animeId = 22330,
+        title = "无职转生II",
+        description = "艾莉丝消失后过了几个月。鲁迪乌斯尽管内心感到空虚，还是为了寻找母亲塞妮丝，来到巴榭兰特公国的第二都市罗森堡..."
     ),
 
     Slide2(
         imageId = R.drawable.slide2,
-        animeId = 23086,
-        title = "放学后失眠的你",
-        description = "“你的不眠之夜一定也有其意义。”"
+        animeId = 22289,
+        title = "咒术回战 第二季",
+        description = "虎杖他们击败道成肉身的「咒胎九相图」次男和三男，回收了宿傩的手指。而在背后暗中安排的五条，究竟有何用心...！？"
     ),
 
     Slide3(
         imageId = R.drawable.slide3,
-        animeId = 23167,
-        title = "国王排名 勇气的宝箱",
-        description = "讲述波吉、卡克及其同伴们那不为人知的“勇气的故事”"
+        animeId = 23189,
+        title = "BanG Dream! It's MyGO!!",
+        description = "高一即将结束的春天。在羽丘女子学园里，每个人都在组乐团，晚了入学的爱音也为了快速融入班级，急着寻找乐团成员..."
     ),
 
     Slide4(
         imageId = R.drawable.slide4,
-        animeId = 23140,
-        title = "我家的英雄",
-        description = "父亲为了女儿，走上了修罗之道，高潮迭起的悬疑故事就此开幕"
+        animeId = 23213,
+        title = "谎言游戏",
+        description = "在以决定阶级的学园岛上，我——篠原绯吕斗参加了国内最困难的学园岛入学测验，以学园岛史上最快的速度夺得了'7星'。──没错，这一切当然全是一场骗局..."
     ),
 
     Slide5(
         imageId = R.drawable.slide5,
-        animeId = 23085,
-        title = "为美好的世界献上爆焰！",
-        description = "红魔族首屈一指的天才魔法师惠惠为了学习禁忌爆裂魔法，在修练与学校生活之间过着繁忙的每一天"
+        animeId = 23224,
+        title = "间谍教室 第二季",
+        description = "达成刺客「尸」的任务之后，四名少女失踪了，克劳斯带着百合前去追查她们的下落。时间回溯到四天前..."
     )
 }
