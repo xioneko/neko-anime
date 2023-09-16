@@ -46,6 +46,7 @@ import com.xioneko.android.nekoanime.ui.theme.basicBlack
 import com.xioneko.android.nekoanime.ui.theme.basicWhite
 import com.xioneko.android.nekoanime.ui.theme.pink40
 import com.xioneko.android.nekoanime.ui.theme.pink95
+import com.xioneko.android.nekoanime.ui.util.isTablet
 
 @Composable
 fun WorkingInProgressDialog(
@@ -84,13 +85,15 @@ fun UpdateDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val isTablet = isTablet()
+
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier
             .requiredHeightIn(
                 max = min(
-                    360.dp,
-                    (LocalConfiguration.current.screenHeightDp * 4 / 5).dp
+                    if (isTablet) 540.dp else 360.dp,
+                    LocalConfiguration.current.screenHeightDp.dp * 4 / 5
                 )
             )
             .clip(RoundedCornerShape(12.dp))
