@@ -19,10 +19,11 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
@@ -81,10 +82,8 @@ fun NekoAnimeSearchBar(
     Surface(modifier = modifier, color = searchBarState.surfaceColor) {
         Row(
             modifier = Modifier
-                .windowInsetsPadding(
-                    WindowInsets.safeDrawing
-                        .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
-                )
+                .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Horizontal))
+                .statusBarsPadding()
                 .padding(15.dp, 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(9.dp)
@@ -222,7 +221,7 @@ private fun LeftAnimatedIcon(
                 transformOrigin = TransformOrigin(0f, .5f)
             )
         },
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center, label = ""
     ) { activated ->
         if (activated) {
             // back icon
@@ -273,7 +272,7 @@ private fun RightAnimatedIcon(
                 transformOrigin = TransformOrigin(1f, .5f)
             )
         },
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center, label = ""
     ) { activated ->
         if (activated) {
             // search icon
