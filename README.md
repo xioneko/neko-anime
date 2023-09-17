@@ -6,10 +6,10 @@
 <p>一个可以在线看番的 Android App</p>
 <p>
 
-[![Android](https://img.shields.io/badge/android-11+-green)](https://developer.android.com/about/versions/12)
+[![Android](https://img.shields.io/badge/android-10+-green)](https://developer.android.com/about/versions/10)
 [![Release](https://img.shields.io/github/v/release/xioneko/neko-anime)](https://github.com/xioneko/neko-anime/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/xioneko/neko-anime/total)](https://github.com/xioneko/neko-anime/releases/)
-[![Powered-by](https://img.shields.io/badge/powered%20by-%E6%A8%B1%E8%8A%B1%E5%8A%A8%E6%BC%AB-ea5c7b)](http://www.iyinghua.com/)
+[![Powered-by](https://img.shields.io/badge/powered%20by-%E6%A8%B1%E8%8A%B1%E5%8A%A8%E6%BC%AB-ea5c7b)](http://www.yinghuavideo.com/)
 [![License](https://img.shields.io/badge/license-GPLv3-yellow)](https://www.gnu.org/licenses/gpl-3.0.html)
 
 </p>
@@ -18,7 +18,7 @@
 ## 介绍
 <p>
 
-Neko Anime 使用樱花动漫「[🌸Ⅰ](http://www.iyinghua.com/)│[🌸Ⅱ](https://www.yhmgo.com/)
+Neko Anime 使用樱花动漫「[🌸Ⅰ](http://www.yinghuavideo.com/)│[🌸Ⅱ](https://www.yhmgo.com/)
 」作为数据源，灵感来源于项目 [Imomoe](https://github.com/androiddevnotesforks/Imomoe)。技术栈方面采用了
 Kotlin 搭配 Jetpack
 Compose，遵循了官方指南中的“[现代 Android 应用架构](https://developer.android.com/topic/architecture)
@@ -48,8 +48,9 @@ App 的开发仍在进行中 🚧，可在 GitHub 上 [⬇️下载最新版本]
 - ...
 
 ### 应用截图
-| 首页                            | 搜索                                | 分类                                    | 播放                                | 时间表                                  |
-| ------------------------------- | ----------------------------------- | --------------------------------------- | ----------------------------------- | --------------------------------------- |
+
+| 首页                              | 搜索                                  | 分类                                      | 播放                                  | 时间表                                     |
+|---------------------------------|-------------------------------------|-----------------------------------------|-------------------------------------|-----------------------------------------|
 | ![Home](./docs/images/home.png) | ![Search](./docs/images/search.png) | ![Category](./docs/images/category.png) | ![Player](./docs/images/player.png) | ![Schedule](./docs/images/schedule.png) |
 
 ## 技术特性
@@ -60,14 +61,40 @@ App 的开发仍在进行中 🚧，可在 GitHub 上 [⬇️下载最新版本]
  - ...
 
 ## 构建
-- Android Studio Flamingo | 2022.2.1
+
+- Android Studio Flamingo | 2022.3.1
 - compileSdk 33
 - Gradle JDK 17
 
 ## 更新日志
 
+### v0.2.1 (2023-9-17)
+
+**改进功能**
+
+- 优化自动旋转，修复若干问题
+- 增加“我的”->“禁用横屏模式”配置选项
+- 增加“我的”->“允许在竖屏状态下全屏播放”配置选项
+
+**界面优化**
+
+- 优化平板/宽屏 UI 显示
+- 更新轮播图内容（为了更好的视觉体验，暂且在宽屏状态下隐藏）
+
+**缺陷修复**
+
+- 更新视频源域名
+- 崩溃提示对话框，可通过“我的”->"问题反馈"访问 GitHub Issues
+
+**开发重构**
+
+- 适配 Android 10
+- 升级部分依赖
+
 ### v0.2.0 (2023-7-20)
+
 **新增功能**
+
 - 自动检查更新，直达新版下载地址
 - 时间表筛选番剧
 - 清空观看历史
@@ -128,7 +155,7 @@ App 的开发仍在进行中 🚧，可在 GitHub 上 [⬇️下载最新版本]
 
 - **视频加载失败了怎么办？**
 
-  目前 App 以 http://www.iyinghua.com/ 作为主视频源，以 https://www.yhmgo.com/ 作为备用视频源
+  目前 App 以 http://www.yinghuavideo.com/ 作为主视频源，以 https://www.yhmgo.com/ 作为备用视频源
   - 对于主视频源，需要指出的是，App 内部在从主视频源请求视频地址的时候，使用的是备用视频源网站获取的番剧名，而不是某一固定统一的番剧ID，因此会有一定概率失败
   - 对于备用视频源，App 会请求其提供的前两个视频线路，并且优先使用线路1，如果出现加载超时，再切换成线路2
 
