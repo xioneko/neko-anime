@@ -1,6 +1,12 @@
 package com.xioneko.android.nekoanime.ui.player
 
 import android.annotation.SuppressLint
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
+import android.hardware.SensorManager
+import android.view.OrientationEventListener
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,13 +16,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
@@ -31,6 +40,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +48,8 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -45,10 +57,12 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.model.AnimeShell
 import com.xioneko.android.nekoanime.ui.component.AnimatedFollowIcon
@@ -68,7 +82,9 @@ import com.xioneko.android.nekoanime.ui.theme.pink60
 import com.xioneko.android.nekoanime.ui.theme.pink70
 import com.xioneko.android.nekoanime.ui.theme.pink97
 import com.xioneko.android.nekoanime.ui.util.LoadingState
+import com.xioneko.android.nekoanime.ui.util.isOrientationLocked
 import com.xioneko.android.nekoanime.ui.util.isTablet
+import com.xioneko.android.nekoanime.ui.util.setScreenOrientation
 import kotlinx.coroutines.delay
 
 @SuppressLint("SourceLockedOrientationActivity")
@@ -81,10 +97,57 @@ fun AnimePlayScreen(
     onBackClick: () -> Unit
 ) {
     LaunchedEffect(Unit) { viewModel.loadingUiState(animeId) }
-
     val playerState by viewModel.playerState.collectAsStateWithLifecycle()
 
+    val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+
+    val systemUiController = rememberSystemUiController()
+    var isFullscreen by rememberSaveable { mutableStateOf(false) }
+    val enablePortraitFullscreen by viewModel.isEnablePortraitFullscreen.collectAsStateWithLifecycle()
+    val onFullscreenChange: (Boolean) -> Unit = remember {
+        { enable ->
+            isFullscreen = enable
+            if (enablePortraitFullscreen) {
+                if (!enable && configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
+                    context.setScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+            } else {
+                context.setScreenOrientation(
+                    if (enable) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                    else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                )
+            }
+        }
+    }
+    LaunchedEffect(configuration.orientation) {
+        when (configuration.orientation) {
+            Configuration.ORIENTATION_LANDSCAPE -> {
+                isFullscreen = true
+            }
+
+            Configuration.ORIENTATION_PORTRAIT -> {
+                if (!enablePortraitFullscreen) isFullscreen = false
+            }
+
+            else -> {}
+        }
+    }
+    LaunchedEffect(isFullscreen) {
+        systemUiController.run {
+            setStatusBarColor(Color.Transparent, false)
+            if (isFullscreen) {
+                isSystemBarsVisible = false
+                systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            } else {
+                isSystemBarsVisible = true
+                systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
+            }
+        }
+    }
+
     val lifecycleOwner = LocalLifecycleOwner.current
+    val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     DisposableEffect(Unit) {
         val lifecycleObserver = LifecycleEventObserver { _, event ->
             when (event) {
@@ -102,8 +165,43 @@ fun AnimePlayScreen(
         }
         lifecycleOwner.lifecycle.addObserver(lifecycleObserver)
 
+        val backCallback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (isFullscreen) {
+                    onFullscreenChange(false)
+                } else {
+                    onBackClick()
+                }
+            }
+        }
+        backDispatcher?.addCallback(backCallback)
+
+        val orientationListener =
+            object : OrientationEventListener(context, SensorManager.SENSOR_DELAY_NORMAL) {
+                override fun onOrientationChanged(angle: Int) {
+                    if (context.isOrientationLocked()) return
+
+                    when (configuration.orientation) {
+                        Configuration.ORIENTATION_PORTRAIT ->
+                            if (angle <= 5 || angle >= 355) {
+                                viewModel.unlockOrientation(context)
+                            }
+
+                        Configuration.ORIENTATION_LANDSCAPE ->
+                            if (angle in 85..95 || angle in 265..275) {
+                                viewModel.unlockOrientation(context)
+                            }
+
+                        else -> {}
+                    }
+                }
+
+            }.apply { enable() }
+
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(lifecycleObserver)
+            backCallback.remove()
+            orientationListener.disable()
         }
     }
 
@@ -135,6 +233,21 @@ fun AnimePlayScreen(
 
     val forYouAnimeList by viewModel.forYouAnimeStream.collectAsStateWithLifecycle()
 
+    val playerModifier = remember(isFullscreen) {
+        if (isFullscreen) {
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        } else {
+            Modifier
+                .wrapContentHeight(Alignment.Top)
+                .fillMaxWidth()
+                .background(Color.Black)
+                .statusBarsPadding()
+                .aspectRatio(16f / 9f)
+        }
+    }
+
     Surface(
         color = basicWhite
     ) {
@@ -143,11 +256,17 @@ fun AnimePlayScreen(
         ) {
             Column {
                 NekoAnimePlayer(
+                    modifier = playerModifier,
                     player = viewModel.player,
                     uiState = viewModel.uiState,
                     playerState = playerState,
                     onEpisodeChange = onEpisodeChange,
-                    onBack = onBackClick
+                    isFullscreen = isFullscreen,
+                    onFullScreenChange = onFullscreenChange,
+                    onBack = {
+                        if (isFullscreen) onFullscreenChange(false)
+                        else onBackClick()
+                    },
                 )
                 Column(Modifier.navigationBarsPadding()) {
                     if (viewModel.uiState is AnimePlayUiState.Loading) AnimePlayBodySkeleton()

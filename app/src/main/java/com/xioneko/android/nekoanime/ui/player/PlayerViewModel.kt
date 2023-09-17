@@ -2,6 +2,7 @@ package com.xioneko.android.nekoanime.ui.player
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.ActivityInfo
 import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
@@ -19,11 +20,13 @@ import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.model.AnimeShell
 import com.xioneko.android.nekoanime.data.model.Category
 import com.xioneko.android.nekoanime.ui.util.LoadingState
+import com.xioneko.android.nekoanime.ui.util.setScreenOrientation
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -31,6 +34,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
@@ -39,6 +43,7 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.retry
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -77,6 +82,15 @@ class AnimePlayViewModel @Inject constructor(
 
     lateinit var followed: StateFlow<Boolean>
 
+    private val orientationRequestFlow =
+        MutableStateFlow(context to ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
+
+    val isEnablePortraitFullscreen = userDataRepository.enablePortraitFullscreen.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        false,
+    )
+
     init {
         viewModelScope.launch {
             producePlayerState()
@@ -84,6 +98,19 @@ class AnimePlayViewModel @Inject constructor(
                     _playerState.emit(it)
                 }
         }
+
+        viewModelScope.launch {
+            orientationRequestFlow.collectLatest { (context, orientation) ->
+//                Log.d("ROTATE", "collect $orientation")
+                delay(200)
+                context.setScreenOrientation(orientation)
+//                Log.d("ROTATE", "set to $orientation")
+            }
+        }
+    }
+
+    fun unlockOrientation(context: Context) {
+        orientationRequestFlow.update { context to ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
     }
 
     fun loadingUiState(animeId: Int) {
@@ -96,7 +123,7 @@ class AnimePlayViewModel @Inject constructor(
                 .combine(userDataRepository.watchHistory.take(1)) { anime, watchRecords ->
                     uiState = AnimePlayUiState.Data(
                         anime = anime,
-                        episode = mutableStateOf(watchRecords[animeId]?.recentEpisode ?: 1)
+                        episode = mutableStateOf(watchRecords[animeId]?.recentEpisode ?: 1),
                     )
 
                     player.update()

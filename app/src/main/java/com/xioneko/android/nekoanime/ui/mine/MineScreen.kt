@@ -80,6 +80,8 @@ fun MineScreen(
 
     val disableLandscapeMode by viewModel.disableLandscapeMode.collectAsStateWithLifecycle()
 
+    val enablePortraitFullscreen by viewModel.enablePortraitFullscreen.collectAsStateWithLifecycle()
+
     val snackbarHostState = remember { SnackbarHostState() }
 
     var showWorkingInProgressDialog by remember { mutableStateOf(false) }
@@ -219,6 +221,15 @@ fun MineScreen(
                             context.setScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
                         else
                             context.setScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
+                    }
+                )
+
+                ItemWithSwitch(
+                    modifier = itemModifier,
+                    text = "允许在竖屏状态下全屏播放",
+                    checked = enablePortraitFullscreen,
+                    onCheckedChange = { enable ->
+                        viewModel.setEnablePortraitFullscreen(enable)
                     }
                 )
 

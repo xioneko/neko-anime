@@ -33,6 +33,8 @@ class UserDataRepository @Inject constructor(
 
     val disableLandscapeMode: Flow<Boolean> by userDataSource.userData
 
+    val enablePortraitFullscreen: Flow<Boolean> by userDataSource.userData
+
 
     fun isFollowed(anime: Anime): Flow<Boolean> =
         followedAnimeIds.map { anime.id in it }
@@ -82,4 +84,7 @@ class UserDataRepository @Inject constructor(
 
     suspend fun setDisableLandscapeMode(disable: Boolean) =
         userDataSource.setDisableLandscapeMode(disable)
+
+    suspend fun setEnablePortraitFullscreen(enable: Boolean) =
+        userDataSource.setEnablePortraitFullscreen(enable)
 }

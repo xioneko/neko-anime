@@ -1,14 +1,8 @@
 package com.xioneko.android.nekoanime.ui.player
 
-import android.content.pm.ActivityInfo
-import android.content.res.Configuration
-import android.hardware.SensorManager
 import android.util.Log
-import android.view.OrientationEventListener
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import androidx.activity.OnBackPressedCallback
-import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -33,7 +27,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,9 +34,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
@@ -55,12 +46,10 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,47 +61,36 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.min
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.xioneko.android.nekoanime.ui.component.LoadingDotsVariant
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
 import com.xioneko.android.nekoanime.ui.theme.basicBlack
 import com.xioneko.android.nekoanime.ui.theme.basicWhite
 import com.xioneko.android.nekoanime.ui.util.KeepScreenOn
-import com.xioneko.android.nekoanime.ui.util.isOrientationLocked
-import com.xioneko.android.nekoanime.ui.util.setScreenOrientation
-import kotlinx.coroutines.cancelChildren
+import com.xioneko.android.nekoanime.ui.util.isTablet
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
 
 
-const val ORIENTATION_LANDSCAPE = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE // 11
-const val ORIENTATION_PORTRAIT = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT // 1
-const val ORIENTATION_UNSPECIFIED = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED // -1
-
-
 @Composable
 fun NekoAnimePlayer(
+    modifier: Modifier = Modifier,
     player: ExoPlayer,
     uiState: AnimePlayUiState,
     playerState: NekoAnimePlayerState,
+    isFullscreen: Boolean,
     onEpisodeChange: (Int) -> Unit,
+    onFullScreenChange: (Boolean) -> Unit,
     onBack: () -> Unit,
 ) {
-    val context = LocalContext.current
-    val configuration = LocalConfiguration.current
-    val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
-    val systemUiController = rememberSystemUiController()
 
     var realPosition by remember(playerState) { mutableStateOf(playerState.position) } // sync
 
@@ -129,23 +107,16 @@ fun NekoAnimePlayer(
         KeepScreenOn()
     }
 
-    val unlockOrientationScope = rememberCoroutineScope()
-    val changeOrientationTo: (Int) -> Unit = remember {
-        { orientation ->
-            unlockOrientationScope.coroutineContext.cancelChildren()
-            context.setScreenOrientation(orientation)
-        }
-    }
 
-    var isTopControllerVisible by remember { mutableStateOf(true) }
-    var isBottomControllerVisible by remember { mutableStateOf(true) }
-    var isEpisodesDrawerVisible by remember { mutableStateOf(false) }
+    var isTopControllerVisible by remember(isFullscreen) { mutableStateOf(true) }
+    var isBottomControllerVisible by remember(isFullscreen) { mutableStateOf(true) }
+    var isEpisodesDrawerVisible by remember(isFullscreen) { mutableStateOf(false) }
 
     if (isBottomControllerVisible) {
         LaunchedEffect(Unit) {
             delay(5.seconds)
             isBottomControllerVisible = false
-            if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
+            if (isFullscreen)
                 isTopControllerVisible = false
         }
     }
@@ -158,91 +129,7 @@ fun NekoAnimePlayer(
         }
     }
 
-    DisposableEffect(Unit) {
-        systemUiController.run {
-            setStatusBarColor(Color.Transparent, false)
-
-            when (configuration.orientation) {
-                Configuration.ORIENTATION_PORTRAIT -> {
-                    isSystemBarsVisible = true
-                    systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
-                }
-
-                Configuration.ORIENTATION_LANDSCAPE -> {
-                    isSystemBarsVisible = false
-                    systemBarsBehavior =
-                        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                }
-
-                else -> {}
-            }
-        }
-
-        val orientationListener =
-            object : OrientationEventListener(context, SensorManager.SENSOR_DELAY_NORMAL) {
-                override fun onOrientationChanged(angle: Int) {
-                    if (context.isOrientationLocked()) return
-
-                    when (configuration.orientation) {
-                        Configuration.ORIENTATION_PORTRAIT ->
-                            if (angle <= 10 || angle >= 350)
-                                unlockOrientationScope.launch {
-                                    delay(1000)
-                                    context.setScreenOrientation(ORIENTATION_UNSPECIFIED)
-                                }
-
-                        Configuration.ORIENTATION_LANDSCAPE ->
-                            if (angle in 80..100 || angle in 260..280)
-                                unlockOrientationScope.launch {
-                                    delay(1000)
-                                    context.setScreenOrientation(ORIENTATION_UNSPECIFIED)
-                                }
-
-                        else -> {}
-                    }
-                }
-
-            }.apply { enable() }
-
-        val backCallback = object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                when (configuration.orientation) {
-                    Configuration.ORIENTATION_PORTRAIT -> onBack()
-
-                    Configuration.ORIENTATION_LANDSCAPE -> changeOrientationTo(ORIENTATION_PORTRAIT)
-
-                    else -> {}
-                }
-            }
-        }
-        backDispatcher?.addCallback(backCallback)
-
-        onDispose {
-            backCallback.remove()
-            orientationListener.disable()
-        }
-    }
-
-    val playerModifier = remember(configuration) {
-        when (configuration.orientation) {
-            Configuration.ORIENTATION_PORTRAIT ->
-                Modifier
-                    .wrapContentHeight(Alignment.Top)
-                    .fillMaxWidth()
-                    .background(Color.Black)
-                    .statusBarsPadding()
-                    .aspectRatio(16f / 9f)
-
-            Configuration.ORIENTATION_LANDSCAPE ->
-                Modifier
-                    .fillMaxSize()
-                    .background(Color.Black)
-
-            else -> Modifier
-        }
-    }
-
-    Box(playerModifier) {
+    Box(modifier) {
         if (playerState.isLoading) {
             LoadingDotsVariant(
                 Modifier
@@ -251,11 +138,11 @@ fun NekoAnimePlayer(
             )
         }
         AndroidView(
-            modifier = Modifier.pointerInput(Unit) {
+            modifier = Modifier.pointerInput(isFullscreen) {
                 detectTapGestures(
                     onTap = {
                         isBottomControllerVisible = !isBottomControllerVisible
-                        if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
+                        if (isFullscreen)
                             isTopControllerVisible = !isTopControllerVisible
                     },
                     onDoubleTap = {
@@ -291,13 +178,8 @@ fun NekoAnimePlayer(
                 ),
                 title = if (uiState is AnimePlayUiState.Data)
                     "${uiState.anime.name} 第${uiState.episode.value}话" else "",
-                orientation = configuration.orientation,
-                onBack = {
-                    if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                        changeOrientationTo(ORIENTATION_PORTRAIT)
-                    } else
-                        onBack()
-                }
+                isFullscreen = isFullscreen,
+                onBack = onBack
             )
         }
 
@@ -317,10 +199,10 @@ fun NekoAnimePlayer(
                 currentPosition = realPosition,
                 totalDurationMs = playerState.totalDurationMs,
                 bufferedPercentage = playerState.bufferedPercentage,
-                orientation = configuration.orientation,
+                isFullscreen = isFullscreen,
                 onPlay = player::play,
                 onPause = player::pause,
-                onOrientationChange = changeOrientationTo,
+                onFullScreen = { onFullScreenChange(true) },
                 seekTo = {
                     player.seekTo(it)
                     realPosition = it
@@ -362,14 +244,13 @@ fun NekoAnimePlayer(
 private fun TopController(
     modifier: Modifier = Modifier,
     title: String,
-    orientation: Int,
+    isFullscreen: Boolean,
     onBack: () -> Unit,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .then(if (orientation == Configuration.ORIENTATION_PORTRAIT) Modifier.statusBarsPadding() else Modifier.displayCutoutPadding())
-            .padding(top = 15.dp),
+            .displayCutoutPadding(),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Row(
@@ -384,12 +265,12 @@ private fun TopController(
                         role = Role.Button,
                         onClick = onBack
                     )
-                    .padding(start = 15.dp),
+                    .padding(top = 15.dp, start = 15.dp, bottom = 15.dp),
                 painter = painterResource(NekoAnimeIcons.Player.back),
                 contentDescription = "back",
                 tint = basicWhite
             )
-            if (orientation == ORIENTATION_LANDSCAPE)
+            if (isFullscreen)
             // TODO: 文字溢出，自动滚动
                 Text(
                     text = title,
@@ -406,7 +287,7 @@ private fun TopController(
                     role = Role.Button,
                     onClick = { /* TODO: menu */ }
                 )
-                .padding(end = 15.dp),
+                .padding(top = 15.dp, end = 15.dp, bottom = 15.dp),
             painter = painterResource(NekoAnimeIcons.Player.more),
             contentDescription = "menu",
             tint = basicWhite
@@ -423,30 +304,35 @@ private fun BottomController(
     currentPosition: Long,
     totalDurationMs: Long,
     bufferedPercentage: Int,
-    orientation: Int,
+    isFullscreen: Boolean,
     onPlay: () -> Unit,
     onPause: () -> Unit,
-    onOrientationChange: (Int) -> Unit,
+    onFullScreen: () -> Unit,
     seekTo: (Long) -> Unit,
     onEpisodeChange: (Int) -> Unit,
     showEpisodesDrawer: () -> Unit,
 ) {
     val totalDuration = formatMilliseconds(totalDurationMs)
     val currentPos = formatMilliseconds(currentPosition, totalDuration.length > 5)
-
-    when (orientation) {
-        Configuration.ORIENTATION_PORTRAIT -> {
+    if (isFullscreen) {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .displayCutoutPadding()
+                .padding(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
             Row(
-                modifier = modifier
+                modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp, 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                    .padding(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                AnimatedPlayPauseButton(
-                    isPaused = isPaused,
-                    onPlay = onPlay,
-                    onPause = onPause
+                Text(
+                    text = currentPos,
+                    color = basicWhite,
+                    style = MaterialTheme.typography.labelSmall
                 )
                 SeekBar(
                     modifier = Modifier.weight(1f),
@@ -456,98 +342,88 @@ private fun BottomController(
                     seekTo = seekTo
                 )
                 Text(
-                    text = "$currentPos / $totalDuration",
+                    text = totalDuration,
                     color = basicWhite,
                     style = MaterialTheme.typography.labelSmall
                 )
-                Icon(
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 18.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    AnimatedPlayPauseButton(
+                        isPaused = isPaused,
+                        onPlay = onPlay,
+                        onPause = onPause
+                    )
+                    Icon(
+                        modifier = Modifier.clickable(
+                            enabled = currentEpisode < totalEpisodes,
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            role = Role.Button,
+                            onClick = { onEpisodeChange(currentEpisode + 1) }
+                        ),
+                        painter = painterResource(NekoAnimeIcons.Player.playNext),
+                        contentDescription = "play next",
+                        tint = if (currentEpisode < totalEpisodes) basicWhite
+                        else basicWhite.copy(0.6f)
+                    )
+                }
+                Text(
                     modifier = Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        role = Role.Button,
-                        onClick = { onOrientationChange(ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE) }
+                        role = Role.DropdownList,
+                        onClick = showEpisodesDrawer
                     ),
-                    painter = painterResource(NekoAnimeIcons.Player.expand),
-                    contentDescription = "full-screen",
-                    tint = basicWhite
+                    text = "选集",
+                    color = basicWhite,
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
         }
-
-        Configuration.ORIENTATION_LANDSCAPE -> {
-            Column(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .displayCutoutPadding()
-                    .padding(vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = currentPos,
-                        color = basicWhite,
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                    SeekBar(
-                        modifier = Modifier.weight(1f),
-                        currentPosition = currentPosition,
-                        totalDurationMs = totalDurationMs,
-                        bufferedPercentage = bufferedPercentage,
-                        seekTo = seekTo
-                    )
-                    Text(
-                        text = totalDuration,
-                        color = basicWhite,
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 18.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(14.dp),
-                    ) {
-                        AnimatedPlayPauseButton(
-                            isPaused = isPaused,
-                            onPlay = onPlay,
-                            onPause = onPause
-                        )
-                        Icon(
-                            modifier = Modifier.clickable(
-                                enabled = currentEpisode < totalEpisodes,
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                role = Role.Button,
-                                onClick = { onEpisodeChange(currentEpisode + 1) }
-                            ),
-                            painter = painterResource(NekoAnimeIcons.Player.playNext),
-                            contentDescription = "play next",
-                            tint = if (currentEpisode < totalEpisodes) basicWhite
-                            else basicWhite.copy(0.6f)
-                        )
-                    }
-                    Text(
-                        modifier = Modifier.clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            role = Role.DropdownList,
-                            onClick = showEpisodesDrawer
-                        ),
-                        text = "选集",
-                        color = basicWhite,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
+    } else {
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(12.dp, 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            AnimatedPlayPauseButton(
+                isPaused = isPaused,
+                onPlay = onPlay,
+                onPause = onPause
+            )
+            SeekBar(
+                modifier = Modifier.weight(1f),
+                currentPosition = currentPosition,
+                totalDurationMs = totalDurationMs,
+                bufferedPercentage = bufferedPercentage,
+                seekTo = seekTo
+            )
+            Text(
+                text = "$currentPos / $totalDuration",
+                color = basicWhite,
+                style = MaterialTheme.typography.labelSmall
+            )
+            Icon(
+                modifier = Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    role = Role.Button,
+                    onClick = onFullScreen
+                ),
+                painter = painterResource(NekoAnimeIcons.Player.expand),
+                contentDescription = "full-screen",
+                tint = basicWhite
+            )
         }
     }
 }
@@ -564,7 +440,7 @@ private fun AnimatedPlayPauseButton(
         transitionSpec = {
             scaleIn(tween(delayMillis = 100), 0.8f) + fadeIn(tween(delayMillis = 100)) with
                     scaleOut(targetScale = 0.7f) + fadeOut()
-        }
+        }, label = ""
     ) { paused ->
         val rotation by transition.animateFloat(
             transitionSpec = { tween(400) },
@@ -688,8 +564,12 @@ private fun AnimatedVisibilityScope.EpisodesDrawer(
     onEpisodeChange: (Int) -> Unit,
     hideDrawer: () -> Unit,
 ) {
+    val isTablet = isTablet()
 
-    Box(contentAlignment = Alignment.CenterEnd) {
+    Box(
+        modifier = Modifier.displayCutoutPadding(),
+        contentAlignment = Alignment.CenterEnd
+    ) {
         Box(
             modifier = Modifier
                 .animateEnterExit(enter = fadeIn(), exit = fadeOut())
@@ -708,10 +588,11 @@ private fun AnimatedVisibilityScope.EpisodesDrawer(
         )
         Column(
             modifier = Modifier
-                .width(360.dp)
+                .width(min(360.dp, LocalConfiguration.current.screenWidthDp.dp * 4 / 5))
                 .padding(start = 15.dp, end = 15.dp, top = 15.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            val cellSize = if (isTablet) 64.dp else 50.dp
             Text(
                 text = "选集",
                 color = basicWhite.copy(0.65f),
@@ -719,7 +600,7 @@ private fun AnimatedVisibilityScope.EpisodesDrawer(
             )
             LazyVerticalGrid(
                 modifier = Modifier.fillMaxSize(),
-                columns = GridCells.Fixed(5),
+                columns = GridCells.Adaptive(cellSize),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -729,7 +610,7 @@ private fun AnimatedVisibilityScope.EpisodesDrawer(
                         if (episode == currentEpisode) {
                             Box(
                                 modifier = Modifier
-                                    .requiredSize(50.dp)
+                                    .requiredSize(cellSize)
                                     .clip(RoundedCornerShape(6.dp))
                                     .background(Color.LightGray.copy(0.35f)),
                                 contentAlignment = Alignment.Center
@@ -743,7 +624,7 @@ private fun AnimatedVisibilityScope.EpisodesDrawer(
                         } else {
                             Box(
                                 modifier = Modifier
-                                    .requiredSize(50.dp)
+                                    .requiredSize(cellSize)
                                     .clip(RoundedCornerShape(6.dp))
                                     .background(Color.LightGray.copy(0.1f))
                                     .clickable(

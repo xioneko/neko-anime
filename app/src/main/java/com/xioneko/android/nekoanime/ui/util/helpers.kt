@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.res.Configuration
 import android.provider.Settings
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
@@ -26,13 +25,10 @@ fun isTablet(): Boolean {
         configuration.screenHeightDp > 600
     } else {
         configuration.screenWidthDp > 600
-    }.also {
-        Log.d("UI", "tablet? $it")
     }
 }
 
 fun Context.setScreenOrientation(orientation: Int) {
-    Log.d("ROTATE", orientation.toString())
     val activity = this as? Activity ?: return
     activity.requestedOrientation = orientation
 }

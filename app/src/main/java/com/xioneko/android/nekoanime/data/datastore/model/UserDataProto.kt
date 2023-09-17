@@ -16,4 +16,5 @@ data class UserDataProto(
     val themeConfig: ThemeConfig = ThemeConfig.THEME_CONFIG_FOLLOW_SYSTEM,
     val updateAutoCheck: Boolean = true,
     val disableLandscapeMode: Boolean = true,
+    val enablePortraitFullscreen: Boolean = false,
 )

@@ -34,6 +34,8 @@ class UserDataSource @Inject constructor(
             dataStore.data.map { it.updateAutoCheck })
         put("disableLandscapeMode",
             dataStore.data.map { it.disableLandscapeMode })
+        put("enablePortraitFullscreen",
+            dataStore.data.map { it.enablePortraitFullscreen })
     }
 
     suspend fun addSearchRecord(record: SearchRecord) {
@@ -123,6 +125,14 @@ class UserDataSource @Inject constructor(
         dataStore.updateData { userData ->
             userData.copy(
                 disableLandscapeMode = disable
+            )
+        }
+    }
+
+    suspend fun setEnablePortraitFullscreen(enable: Boolean) {
+        dataStore.updateData { userData ->
+            userData.copy(
+                enablePortraitFullscreen = enable
             )
         }
     }

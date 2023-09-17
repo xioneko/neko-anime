@@ -1,13 +1,11 @@
 package com.xioneko.android.nekoanime.navigation
 
-import android.content.pm.ActivityInfo
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
@@ -21,7 +19,6 @@ import com.xioneko.android.nekoanime.ui.player.animePlayScreen
 import com.xioneko.android.nekoanime.ui.player.navigateToAnimePlay
 import com.xioneko.android.nekoanime.ui.search.navigateToSearchScreen
 import com.xioneko.android.nekoanime.ui.search.searchScreen
-import com.xioneko.android.nekoanime.ui.util.setScreenOrientation
 
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -30,7 +27,6 @@ fun NekoAnimeNavigationGraph(
     modifier: Modifier = Modifier,
     navController: NavHostController,
 ) {
-    val context = LocalContext.current
     val topLevelNavController = rememberAnimatedNavController()
 
     AnimatedNavHost(
@@ -48,7 +44,7 @@ fun NekoAnimeNavigationGraph(
             navigateToCategory = { navController.navigateToCategory(genre = it) },
             navigateToFollowedAnime = { navController.navigate(FollowedAnimeNavRoute) },
             navigateToHistory = { navController.navigate(WatchHistoryNavRoute) },
-            navigateToDownload = {  },
+            navigateToDownload = { },
             navigateToAnimePlay = navController::navigateToAnimePlay,
         )
 
@@ -75,17 +71,9 @@ fun NekoAnimeNavigationGraph(
         )
 
         animePlayScreen(
-            onGenreClick = {
-                context.setScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
-                navController.navigateToCategory(genre = it)
-            },
-            onAnimeClick = {
-                navController.navigateToAnimePlay(it)
-            },
-            onBackClick = {
-                context.setScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
-                navController.popBackStack()
-            },
+            onGenreClick = { navController.navigateToCategory(genre = it) },
+            onAnimeClick = { navController.navigateToAnimePlay(it) },
+            onBackClick = { navController.popBackStack() },
         )
 
     }

@@ -75,6 +75,12 @@ class MineScreenViewModel @Inject constructor(
         initialValue = null
     )
 
+    val enablePortraitFullscreen = userDataRepository.enablePortraitFullscreen.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = null
+    )
+
     fun setTheme(themeConfig: ThemeConfig) {
         viewModelScope.launch {
             userDataRepository.setThemeConfig(themeConfig)
@@ -113,6 +119,12 @@ class MineScreenViewModel @Inject constructor(
     fun setDisableLandscapeMode(disable: Boolean) {
         viewModelScope.launch {
             userDataRepository.setDisableLandscapeMode(disable)
+        }
+    }
+
+    fun setEnablePortraitFullscreen(enable: Boolean) {
+        viewModelScope.launch {
+            userDataRepository.setEnablePortraitFullscreen(enable)
         }
     }
 
