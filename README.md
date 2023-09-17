@@ -9,7 +9,7 @@
 [![Android](https://img.shields.io/badge/android-10+-green)](https://developer.android.com/about/versions/10)
 [![Release](https://img.shields.io/github/v/release/xioneko/neko-anime)](https://github.com/xioneko/neko-anime/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/xioneko/neko-anime/total)](https://github.com/xioneko/neko-anime/releases/)
-[![Powered-by](https://img.shields.io/badge/powered%20by-%E6%A8%B1%E8%8A%B1%E5%8A%A8%E6%BC%AB-ea5c7b)](http://www.yinghuavideo.com/)
+[![Powered-by](https://img.shields.io/badge/powered%20by-%E6%A8%B1%E8%8A%B1%E5%8A%A8%E6%BC%AB-ea5c7b)](http://www.yhmgo.com/)
 [![License](https://img.shields.io/badge/license-GPLv3-yellow)](https://www.gnu.org/licenses/gpl-3.0.html)
 
 </p>
@@ -18,7 +18,7 @@
 ## 介绍
 <p>
 
-Neko Anime 使用樱花动漫「[🌸Ⅰ](http://www.yinghuavideo.com/)│[🌸Ⅱ](https://www.yhmgo.com/)
+Neko Anime 使用樱花动漫「[🌸Ⅰ](http://www.iyinghua.com/)│[🌸Ⅱ](https://www.yhmgo.com/)
 」作为数据源，灵感来源于项目 [Imomoe](https://github.com/androiddevnotesforks/Imomoe)。技术栈方面采用了
 Kotlin 搭配 Jetpack
 Compose，遵循了官方指南中的“[现代 Android 应用架构](https://developer.android.com/topic/architecture)
