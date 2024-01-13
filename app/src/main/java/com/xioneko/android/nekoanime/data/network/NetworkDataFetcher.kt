@@ -1,9 +1,7 @@
 package com.xioneko.android.nekoanime.data.network
 
-import android.util.Log
 import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.model.AnimeKey
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
 import org.mobilenativefoundation.store.store5.Fetcher
 import org.mobilenativefoundation.store.store5.FetcherResult
@@ -30,13 +28,8 @@ class NetworkDataFetcher @Inject constructor(
                 }
 
                 is AnimeKey.FetchVideo -> {
-                    Log.d("Video", "准备解析${key.anime.name}的第${key.episode}话")
-                    Log.d("Video", "采用视频源：${videoSourceManager.currentSource}")
                     videoSourceManager.currentSource
                         .getVideoSource(key.anime, key.episode)
-                        .onEach { url ->
-                            Log.d("Video", "解析得到视频地址<$url>")
-                        }
                         .toList()
                         .let { urls ->
                             if (urls.isNotEmpty()) {
@@ -49,7 +42,7 @@ class NetworkDataFetcher @Inject constructor(
                                 )
                             } else {
                                 FetcherResult.Error
-                                    .Message("视频源解析失败, name=${key.anime.name}, episode=${key.episode}")
+                                    .Message("视频地址获取失败<${key.anime.name}><ep${key.episode}>")
                             }
                         }
                 }

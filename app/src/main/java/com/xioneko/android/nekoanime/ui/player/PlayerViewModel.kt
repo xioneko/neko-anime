@@ -157,8 +157,10 @@ class AnimePlayViewModel @Inject constructor(
                     .combine(
                         userDataRepository.watchHistory.take(1)
                     ) { urls, watchRecords ->
-                        urls.forEach { addMediaItem(MediaItem.fromUri(it)) }
-                        Log.d("Video", "视频地址加载成功<$urls>")
+                        urls.forEach {
+                            addMediaItem(MediaItem.fromUri(it))
+                            Log.d("Video", "加载视频地址: $it")
+                        }
                         prepare()
                         watchRecords[anime.id]?.positions?.get(episode.value)?.let {
                             player.seekTo(it)

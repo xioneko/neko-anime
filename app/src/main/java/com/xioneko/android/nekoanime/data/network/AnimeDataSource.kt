@@ -2,7 +2,7 @@ package com.xioneko.android.nekoanime.data.network
 
 import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.model.AnimeShell
-import com.xioneko.android.nekoanime.data.network.api.AnimeRetrievalApi
+import com.xioneko.android.nekoanime.data.network.api.YhmgoApi
 import com.xioneko.android.nekoanime.data.network.util.HtmlParser
 import com.xioneko.android.nekoanime.data.network.util.JsoupConverterFactory
 import kotlinx.coroutines.flow.Flow
@@ -20,15 +20,15 @@ class AnimeDataSource @Inject constructor(
         const val BASE_URL = "https://www.yhmgo.com/"
     }
 
-    private val animeRetrievalApi = Retrofit.Builder()
+    private val yhmgoApi = Retrofit.Builder()
         .client(httpClient)
         .baseUrl(BASE_URL)
         .addConverterFactory(JsoupConverterFactory)
         .build()
-        .create(AnimeRetrievalApi::class.java)
+        .create(YhmgoApi::class.java)
 
     suspend fun getAnimeById(animeId: Int): Anime? {
-        val document: Document = animeRetrievalApi
+        val document: Document = yhmgoApi
             .getAnimeDetailPage(animeId)
             .takeIf { it.isSuccessful }
             ?.body()
@@ -41,7 +41,7 @@ class AnimeDataSource @Inject constructor(
         animeName: String,
         pageIndex: Int = 0,
     ): Flow<AnimeShell> = flow {
-        animeRetrievalApi
+        yhmgoApi
             .searchAnime(animeName, pageIndex)
             .takeIf { it.isSuccessful }
             ?.body()
@@ -61,7 +61,7 @@ class AnimeDataSource @Inject constructor(
         orderBy: String = "",
         pageIndex: Int = 0,
     ): Flow<List<AnimeShell>> = flow {
-        animeRetrievalApi.filterAnimeBy(
+        yhmgoApi.filterAnimeBy(
             region, type, year, quarter, status, genre, orderBy, pageIndex
         )
             .takeIf { it.isSuccessful }
@@ -72,7 +72,7 @@ class AnimeDataSource @Inject constructor(
     }
 
     fun getWeeklyScheduleResults(): Flow<Map<DayOfWeek, List<AnimeShell>>> = flow {
-        animeRetrievalApi.getHomePage()
+        yhmgoApi.getHomePage()
             .takeIf { it.isSuccessful }
             ?.body()
             ?.let { document ->

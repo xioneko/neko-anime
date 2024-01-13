@@ -1,6 +1,5 @@
 package com.xioneko.android.nekoanime.data
 
-import android.util.Log
 import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.model.AnimeKey
 import com.xioneko.android.nekoanime.data.model.AnimeShell
@@ -96,11 +95,7 @@ class AnimeRepository @Inject constructor(
     ): Flow<List<String>> = flow {
         store.stream(StoreReadRequest.cached(AnimeKey.FetchVideo(anime, episode), refresh))
             .onEach { it.throwIfError() }
-            .retry {
-                Log.e("Video", it.message, it)
-                Log.d("Video", "尝试下一个视频源")
-                videoSourceManager.tryNext()
-            }
+            .retry { videoSourceManager.tryNext() }
             .catch {/* 尝试所有视频源后，如果依然无法解析到视频地址，则不发送任何 String */ }
             .firstOrNull { it is StoreReadResponse.Data }
             ?.let { emit((it as StoreReadResponse.Data).value.videoSource[episode]!!) }

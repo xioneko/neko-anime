@@ -1,98 +1,131 @@
 package com.xioneko.android.nekoanime.data.network
 
-import android.annotation.SuppressLint
-import android.content.Context
 import android.util.Log
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import com.xioneko.android.nekoanime.data.model.Anime
-import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.ProducerScope
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.flowOn
+import com.xioneko.android.nekoanime.data.network.api.YhmgoApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import okhttp3.OkHttpClient
+import retrofit2.Retrofit
 import java.net.URLDecoder
 import javax.inject.Inject
 
 class YhmgoVideoSource @Inject constructor(
-    @ApplicationContext private val context: Context,
+    httpClient: OkHttpClient,
 ) : VideoDataSource {
 
     companion object {
-        const val BASE_URL = "https://www.yhmgo.com/"
+        const val BASE_URL = "https://www.yhmgo.com"
     }
 
-    private var webView: WebView? = null
+    private val yhmgo = Retrofit.Builder()
+        .client(httpClient)
+        .baseUrl(BASE_URL)
+        .build()
+        .create(YhmgoApi::class.java)
 
-    private val channels = listOf(1, 2)
+    /**
+     * Inspired by @hehe1005566889
+     *
+     * Based on:
+     * - https://github.com/xioneko/neko-anime/issues/12#issue-2060922443
+     * - https://www.yhmgo.com/tpsf/js/pck.js?ver=215139
+     */
+    override fun getVideoSource(anime: Anime, episode: Int) = flow {
+        val channels = listOf(1, 2)
 
-    override fun getVideoSource(anime: Anime, episode: Int): Flow<String> =
-        tryFetchVideoUrl(anime.id, episode)
-            .filter { it.endsWith("m3u8") }
+        channels.forEach { channel ->
+            val maxTry = 4
+            var cookies = ""
 
-    @SuppressLint("SetJavaScriptEnabled")
-    private fun tryFetchVideoUrl(animeId: Int, episode: Int) = channelFlow {
-        if (webView == null) {
-            webView = WebView(context).apply { settings.javaScriptEnabled = true }
-        }
-
-        webView!!.run {
-            Log.d("Video", "运行 WebView")
-            webViewClient = object : WebViewClient() {
-                override fun onPageFinished(view: WebView, url: String) {
-                    parseAndSend(view, url)
-                }
-            }.apply {
-                settings.userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
-                        "AppleWebKit/537.36 (KHTML, like Gecko) " +
-                        "Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.37"
-            }
-            Log.d("Video", "开始加载页面")
-            loadUrl("${BASE_URL}vp/${animeId}-${channels.first()}-${episode - 1}.html")
-        }
-
-        awaitClose {}
-
-    }.flowOn(Dispatchers.Main)
-
-
-    private fun ProducerScope<String>.parseAndSend(view: WebView, url: String) {
-        val channel = url.substringAfter('-').substringBefore('-').toInt()
-
-        view.evaluateJavascript(
-            "document.querySelector('#yh_playfram').src"
-        ) { it ->
-            val frameSrc = it.trim('"')
-            Log.d("Video", "解析得到src<$frameSrc>")
-
-            if (frameSrc == "null") {
-                Log.d("Video", "页面加载失败<$url>")
-            } else {
-                if (frameSrc == url) {
-                    parseAndSend(view, url).also { Log.d("Video", "重新尝试解析src") }
-                    return@evaluateJavascript
-                }
-                trySend(
-                    frameSrc.substringAfter("&url=")
-                        .substringBefore("&")
-                        .let { URLDecoder.decode(it, "UTF-8") }
-                        .also { Log.d("Video", "解析得到视频地址<$it>") }
+            repeat(maxTry) {
+                val res = yhmgo.requestVideoUrl(
+                    animeId = anime.id,
+                    channel = channel,
+                    epIndex = episode - 1,
+                    referrer = "$BASE_URL/vp/${anime.id}-$channel-${episode - 1}",
+                    cookies = cookies
                 )
+                val body = res.body()?.string()
+
+                if (res.isSuccessful && body != null) {
+                    if (body.contains("not verified")) {
+                        val c = res.headers().values("set-cookie").joinToString()
+                        val r = Regex("t1=(\\d+).*k1=(\\d+)").find(c)?.groupValues
+                        val t1 = r?.get(1)
+                        val k1 = r?.get(2)
+
+                        if (t1 != null && k1 != null) {
+                            val m2t = calculateM2t()
+                            val k2 = calculateK2(t1)
+                            val t2 = calculateT2(k2.toString())
+
+                            cookies = buildString {
+                                append("t1=$t1; ")
+                                append("t2=$t2; ")
+                                append("k1=$k1; ")
+                                append("k2=$k2; ")
+                                append("m2t=$m2t")
+                            }
+//                            Log.d("Video", "Cookies: $cookies")
+                        }
+                    } else {
+                        val videoUrl = parseUrl(body)
+                        Log.d(
+                            "Video",
+                            "解析得到视频地址<${anime.name}><ep$episode><ch$channel>: $videoUrl"
+                        )
+
+                        emit(videoUrl)
+                        return@forEach
+                    }
+                }
+                delay(500)
             }
 
-            if (channel == channels.last())
-                close()
-            else
-                view.loadUrl(
-                    url.replaceFirst(
-                        oldValue = "-$channel-",
-                        newValue = "-${channels[channels.indexOf(channel) + 1]}-"
-                    )
-                )
+            Log.d("Video", "获取视频地址失败<${anime.name}><ep$episode><ch$channel>")
         }
+    }
+
+    private fun calculateM2t(): Long {
+        val ts = (System.currentTimeMillis() / 0x3e8) shr 19
+        return (ts * 0x15 + 0x9a) *
+                (ts % 0x40 + 0xd) *
+                (ts % 0x20 + 0x22) *
+                (ts % 0x10 + 0x57) *
+                (ts % 0x8 + 0x41) + 0x2ef
+    }
+
+    private fun calculateK2(t1: String): Long {
+        val ts = (t1.toLong() / 0x3e8) shr 0x5
+        return (ts * (ts % 0x100 + 0x1) + 0x89a4) *
+                (ts % 0x80 + 0x1) *
+                (ts % 0x10 + 0x1) + ts
+    }
+
+    private fun calculateT2(k2: String): String {
+        while (true) {
+            val t2 = System.currentTimeMillis().toString()
+            val a = t2.substring(t2.length - 3)
+            val b = k2.substring(k2.length - 1)
+            if (a.contains(b)) return t2
+        }
+    }
+
+    private fun parseUrl(data: String): String {
+        val json = data
+            .chunked(2)
+            .foldIndexed("") { i, acc, cc ->
+                var code = cc.toInt(16)
+                code = (code + 0x100000 - 0x619 - (data.length / 2 - i - 1)) % 0x100
+                code.toChar() + acc
+            }
+
+        val info = Json.parseToJsonElement(json).jsonObject
+
+        return URLDecoder.decode(info["vurl"].toString(), "UTF-8").trim('"')
     }
 
     override fun toString(): String = "动漫视频源<$BASE_URL>"

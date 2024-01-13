@@ -32,6 +32,13 @@ android {
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+        debug {
+            debuggable true
+            minifyEnabled false
+            kotlinOptions {
+                freeCompilerArgs += '-Xdebug'
+            }
+        }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
