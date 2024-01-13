@@ -18,8 +18,8 @@
 ## 介绍
 <p>
 
-Neko Anime 使用樱花动漫「[🌸Ⅰ](http://www.iyinghua.com/)│[🌸Ⅱ](https://www.yhmgo.com/)
-」作为数据源，灵感来源于项目 [Imomoe](https://github.com/androiddevnotesforks/Imomoe)。技术栈方面采用了
+Neko Anime 使用樱花动漫 [🌸](https://www.yhmgo.com/)
+作为数据源，灵感来源于项目 [Imomoe](https://github.com/androiddevnotesforks/Imomoe)。技术栈方面采用了
 Kotlin 搭配 Jetpack
 Compose，遵循了官方指南中的“[现代 Android 应用架构](https://developer.android.com/topic/architecture)
 ”最佳实践。同时，为尽可能地提高用户体验，Neko Anime 在 UI/UX 设计上广泛借鉴了相关优秀 app。
@@ -34,7 +34,9 @@ Compose，遵循了官方指南中的“[现代 Android 应用架构](https://de
 
 <p>
 
-App 的开发仍在进行中 🚧，可在 GitHub 上 [⬇️下载最新版本](https://github.com/xioneko/neko-anime/releases)
+App 的开发仍在进行中 🚧，但是版本迭代可能会比较慢，可在 GitHub
+上 [⬇️下载最新版本](https://github.com/xioneko/neko-anime/releases)
+，最新的代码可在 [dev](https://github.com/xioneko/neko-anime/tree/dev) 分支上查看。
 
 </p>
 
@@ -62,11 +64,18 @@ App 的开发仍在进行中 🚧，可在 GitHub 上 [⬇️下载最新版本]
 
 ## 构建
 
-- Android Studio Flamingo | 2022.3.1
+- Android Studio Flamingo | 2023.1.1
 - compileSdk 33
 - Gradle JDK 17
 
 ## 更新日志
+
+### v0.3.0 (开发中)
+
+**改进功能**
+
+- 改进视频源获取方式，提高视频加载速度 [#12](https://github.com/xioneko/neko-anime/issues/12)
+- ...
 
 ### v0.2.1 (2023-9-17)
 
@@ -147,17 +156,14 @@ App 的开发仍在进行中 🚧，可在 GitHub 上 [⬇️下载最新版本]
 - 待实现功能包括但不限于，番剧下载、明亮/暗黑模式切换、个性化番剧推荐、触摸滑动改变播放时间条。
 
 ## FAQ
-- **番剧数据加载失败了怎么办？**
 
-  目前 App 使用的番剧信息数据全部来自于 https://www.yhmgo.com/
-  ，请检查该网站是否可以访问，若无法访问可在 [GitHub Issues](https://github.com/xioneko/neko-anime/issues)
-  中反馈。
+- **番剧数据来源是什么？怎么获取番剧列表和视频地址的？**
 
-- **视频加载失败了怎么办？**
-
-  目前 App 以 http://www.yinghuavideo.com/ 作为主视频源，以 https://www.yhmgo.com/ 作为备用视频源
-  - 对于主视频源，需要指出的是，App 内部在从主视频源请求视频地址的时候，使用的是备用视频源网站获取的番剧名，而不是某一固定统一的番剧ID，因此会有一定概率失败
-  - 对于备用视频源，App 会请求其提供的前两个视频线路，并且优先使用线路1，如果出现加载超时，再切换成线路2
+  NekoAnime (v0.3.0+) 目前仅有一个番剧数据源 https://www.yhmgo.com/, 番剧信息通过 HTTP 请求 + HTML
+  解析获取，视频地址的获取方式在老版本（v0.2.x 及以下）中采用的是 WebView，从 v0.3.0 版本开始直接通过
+  HTTP 获取（感谢 [@hehe1005566889](https://github.com/xioneko/neko-anime/issues/12#issue-2060922443)
+  提供的思路），具体代码实现见 <[番剧信息](app/src/main/java/com/xioneko/android/nekoanime/data/network/AnimeDataSource.kt)>
+  和 <[视频地址](app/src/main/java/com/xioneko/android/nekoanime/data/network/YhmgoVideoSource.kt)>
 
 
 ## 许可证
