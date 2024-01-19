@@ -70,12 +70,15 @@ App 的开发仍在进行中 🚧，但是版本迭代可能会比较慢，可�
 
 ## 更新日志
 
-### v0.3.0 (开发中)
+### v0.3.0 (alpha)
 
 **改进功能**
 
 - 改进视频源获取方式，提高视频加载速度 [#12](https://github.com/xioneko/neko-anime/issues/12)
-- ...
+
+**缺陷修复**
+
+- 进入时间表页面发生崩溃 [#13](https://github.com/xioneko/neko-anime/issues/13)
 
 ### v0.2.1 (2023-9-17)
 

@@ -15,8 +15,8 @@ android {
         applicationId "com.xioneko.android.nekoanime"
         minSdk 29
         targetSdk 33
-        versionCode 6
-        versionName "0.2.1"
+        versionCode 7
+        versionName "0.3.0-alpha"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
