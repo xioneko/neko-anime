@@ -125,7 +125,9 @@ internal object HtmlParser {
                                 name = a.attr("title"),
                                 latestEpisode = span.child(0).ownText()
                                     .substringAfter("第")
-                                    .filter { it.isDigit() }.toInt(),
+                                    .filter { it.isDigit() }
+                                    .toIntOrNull()
+                                    ?: 1,
                                 status = if (span.child(0).ownText().contains("完结"))
                                     "已完结" else "连载中",
                             )
