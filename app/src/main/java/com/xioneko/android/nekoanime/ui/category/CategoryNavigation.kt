@@ -1,17 +1,15 @@
 package com.xioneko.android.nekoanime.ui.category
 
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.navOptions
-import com.google.accompanist.navigation.animation.composable
 import com.xioneko.android.nekoanime.data.model.Category
 import com.xioneko.android.nekoanime.data.model.labelValueOf
 
 const val CategoryNavRoute = "category_route"
 
-@OptIn(ExperimentalAnimationApi::class)
 fun NavGraphBuilder.categoryScreen(
     onAnimeClick: (Int) -> Unit,
     onSearchClick: () -> Unit,

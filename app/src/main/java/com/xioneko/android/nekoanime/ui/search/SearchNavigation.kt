@@ -1,6 +1,5 @@
 package com.xioneko.android.nekoanime.ui.search
 
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -13,12 +12,11 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.composable
 import androidx.navigation.navOptions
-import com.google.accompanist.navigation.animation.composable
 
 const val SearchNavRoute = "search_route"
 
-@OptIn(ExperimentalAnimationApi::class)
 fun NavGraphBuilder.searchScreen(
     onAnimeClick: (Int) -> Unit,
     onBackClick: () -> Unit,

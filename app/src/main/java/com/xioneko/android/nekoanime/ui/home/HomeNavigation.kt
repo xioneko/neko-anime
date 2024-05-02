@@ -1,13 +1,12 @@
 package com.xioneko.android.nekoanime.ui.home
 
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.navigation.NavGraphBuilder
-import com.google.accompanist.navigation.animation.composable
+import androidx.navigation.compose.composable
 
 const val HomeNavRoute = "home_route"
 
-@OptIn(ExperimentalAnimationApi::class)
+
 fun NavGraphBuilder.homeScreen(
     padding: PaddingValues,
     onCategoryClick: () -> Unit,

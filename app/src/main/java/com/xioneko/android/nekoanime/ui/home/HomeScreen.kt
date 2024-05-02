@@ -1,5 +1,6 @@
 package com.xioneko.android.nekoanime.ui.home
 
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -86,6 +87,7 @@ import com.xioneko.android.nekoanime.ui.util.getAspectRadio
 import com.xioneko.android.nekoanime.ui.util.isTablet
 import kotlinx.coroutines.delay
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.seconds
 
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -250,15 +252,22 @@ fun HomeScreen(
 private fun Carousel(
     onSlideClick: (Int) -> Unit
 ) {
-    val pagerState = rememberPagerState(Int.MAX_VALUE / 2 + Random.nextInt(0, 10))
-    val slides = Slide.values()
+    val slides = Slide.entries.toTypedArray()
+    val pagerState = rememberPagerState(
+        initialPage = Random.nextInt(0, slides.size),
+        initialPageOffsetFraction = 0f
+    ) { slides.size }
 
     LaunchedEffect(Unit) {
         while (true) {
-            val before = pagerState.currentPage
-            delay(5_000) // 如果手动改变了 Pager，则不进行自动切换
-            if (pagerState.currentPage == before)
-                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+            val beforePage = pagerState.currentPage
+            delay(5.seconds)
+            if (beforePage == pagerState.currentPage)
+                pagerState.animateScrollToPage(
+                    page = (pagerState.currentPage + 1) % slides.size,
+                    pageOffsetFraction = 0f,
+                    animationSpec = tween()
+                )
         }
     }
 
@@ -267,27 +276,26 @@ private fun Carousel(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp)),
-            pageCount = Int.MAX_VALUE,
             state = pagerState,
             contentPadding = PaddingValues(0.dp),
             pageSize = PageSize.Fill,
             beyondBoundsPageCount = 0,
             pageSpacing = 0.dp,
             verticalAlignment = Alignment.CenterVertically,
-        ) {
-            val index = it % slides.size
+        ) { page ->
+            val slide = slides[page]
             Box(
                 Modifier.clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     role = Role.Button,
-                    onClick = { onSlideClick(slides[index].animeId) }
+                    onClick = { onSlideClick(slide.animeId) }
                 )
             ) {
                 Image(
                     modifier = Modifier.fillMaxWidth(),
-                    painter = painterResource(slides[index].imageId),
-                    contentDescription = slides[index].title,
+                    painter = painterResource(slide.imageId),
+                    contentDescription = slide.title,
                     contentScale = ContentScale.Crop,
                 )
                 Box(
@@ -311,13 +319,13 @@ private fun Carousel(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     TextWithShadow(
-                        text = slides[index].title,
+                        text = slide.title,
                         color = basicWhite,
                         fontFamily = NekoAnimeFontFamilies.posterFontFamily,
                         style = MaterialTheme.typography.headlineSmall,
                     )
                     Text(
-                        text = slides[index].description,
+                        text = slide.description,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         color = pink95,

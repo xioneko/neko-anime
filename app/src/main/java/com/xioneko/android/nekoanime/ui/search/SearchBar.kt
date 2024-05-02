@@ -7,7 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.with
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -216,9 +216,10 @@ private fun LeftAnimatedIcon(
     AnimatedContent(
         targetState = isActive,
         transitionSpec = {
-            fadeIn() + slideInHorizontally() with
-                    fadeOut() + slideOutHorizontally() + scaleOut(
-                transformOrigin = TransformOrigin(0f, .5f)
+            (fadeIn() + slideInHorizontally()).togetherWith(
+                fadeOut() + slideOutHorizontally() + scaleOut(
+                    transformOrigin = TransformOrigin(0f, .5f)
+                )
             )
         },
         contentAlignment = Alignment.Center, label = ""
@@ -267,10 +268,9 @@ private fun RightAnimatedIcon(
     AnimatedContent(
         targetState = isActive,
         transitionSpec = {
-            fadeIn() + slideInHorizontally { it / 2 } with
-                    fadeOut() + slideOutHorizontally { it / 2 } + scaleOut(
+            (fadeIn() + slideInHorizontally { it / 2 }).togetherWith(fadeOut() + slideOutHorizontally { it / 2 } + scaleOut(
                 transformOrigin = TransformOrigin(1f, .5f)
-            )
+            ))
         },
         contentAlignment = Alignment.Center, label = ""
     ) { activated ->

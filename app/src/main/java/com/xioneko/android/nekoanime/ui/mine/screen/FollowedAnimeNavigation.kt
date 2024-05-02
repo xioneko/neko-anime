@@ -1,12 +1,10 @@
 package com.xioneko.android.nekoanime.ui.mine.screen
 
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.navigation.NavGraphBuilder
-import com.google.accompanist.navigation.animation.composable
+import androidx.navigation.compose.composable
 
 const val FollowedAnimeNavRoute = "followed_anime_route"
 
-@OptIn(ExperimentalAnimationApi::class)
 fun NavGraphBuilder.followedAnimeScreen(
     onAnimeClick: (Int) -> Unit,
     onBackClick: () -> Unit

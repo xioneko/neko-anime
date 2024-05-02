@@ -17,7 +17,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.with
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -48,6 +48,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -92,7 +93,7 @@ fun NekoAnimePlayer(
     onBack: () -> Unit,
 ) {
 
-    var realPosition by remember(playerState) { mutableStateOf(playerState.position) } // sync
+    var realPosition by remember(playerState) { mutableLongStateOf(playerState.position) } // sync
 
     if (playerState.isPlaying) {
         LaunchedEffect(Unit) {
@@ -438,8 +439,12 @@ private fun AnimatedPlayPauseButton(
     AnimatedContent(
         targetState = isPaused,
         transitionSpec = {
-            scaleIn(tween(delayMillis = 100), 0.8f) + fadeIn(tween(delayMillis = 100)) with
-                    scaleOut(targetScale = 0.7f) + fadeOut()
+            (scaleIn(
+                tween(delayMillis = 100),
+                0.8f
+            ) + fadeIn(tween(delayMillis = 100))).togetherWith(
+                scaleOut(targetScale = 0.7f) + fadeOut()
+            )
         }, label = ""
     ) { paused ->
         val rotation by transition.animateFloat(
@@ -510,7 +515,7 @@ private fun SeekBar(
                     modifier = Modifier
                         .requiredHeight(2.dp)
                         .clipToBounds(),
-                    sliderPositions = it,
+                    sliderState = it,
                     enabled = false,
                     colors = SliderDefaults.colors(
                         disabledActiveTrackColor = basicWhite.copy(0.4f),
@@ -545,7 +550,7 @@ private fun SeekBar(
                     modifier = Modifier
                         .requiredHeight(2.dp)
                         .clip(CircleShape),
-                    sliderPositions = it,
+                    sliderState = it,
                     colors = SliderDefaults.colors(
                         activeTrackColor = basicWhite.copy(0.8f),
                         inactiveTrackColor = basicWhite.copy(0.25f)

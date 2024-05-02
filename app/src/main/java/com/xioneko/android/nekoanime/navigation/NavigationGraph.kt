@@ -7,8 +7,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
-import com.google.accompanist.navigation.animation.AnimatedNavHost
-import com.google.accompanist.navigation.animation.rememberAnimatedNavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.rememberNavController
 import com.xioneko.android.nekoanime.ui.category.categoryScreen
 import com.xioneko.android.nekoanime.ui.category.navigateToCategory
 import com.xioneko.android.nekoanime.ui.mine.screen.FollowedAnimeNavRoute
@@ -21,15 +21,14 @@ import com.xioneko.android.nekoanime.ui.search.navigateToSearchScreen
 import com.xioneko.android.nekoanime.ui.search.searchScreen
 
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun NekoAnimeNavigationGraph(
     modifier: Modifier = Modifier,
     navController: NavHostController,
 ) {
-    val topLevelNavController = rememberAnimatedNavController()
+    val topLevelNavController = rememberNavController()
 
-    AnimatedNavHost(
+    NavHost(
         navController = navController,
         startDestination = TopLevelNavRoute,
         modifier = modifier,

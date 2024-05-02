@@ -300,7 +300,7 @@ class AnimePlayViewModel @Inject constructor(
 
 @Stable
 sealed interface AnimePlayUiState {
-    object Loading : AnimePlayUiState
+    data object Loading : AnimePlayUiState
     class Data(
         val anime: Anime,
         var episode: MutableState<Int>,

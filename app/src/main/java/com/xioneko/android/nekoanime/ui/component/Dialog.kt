@@ -18,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -87,7 +88,7 @@ fun UpdateDialog(
 ) {
     val isTablet = isTablet()
 
-    AlertDialog(
+    BasicAlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier
             .requiredHeightIn(
@@ -97,7 +98,7 @@ fun UpdateDialog(
                 )
             )
             .clip(RoundedCornerShape(12.dp))
-            .background(basicWhite),
+            .background(basicWhite)
     ) {
         Column(
             modifier = Modifier
@@ -170,13 +171,13 @@ fun ConfirmationDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    AlertDialog(
+    BasicAlertDialog(
+        onDismissRequest = onDismiss,
         modifier = Modifier
             .height(96.dp)
             .clip(RoundedCornerShape(6.dp))
             .background(basicWhite)
-            .padding(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 12.dp),
-        onDismissRequest = onDismiss,
+            .padding(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 12.dp)
     ) {
         Column(
             verticalArrangement = Arrangement.SpaceBetween,

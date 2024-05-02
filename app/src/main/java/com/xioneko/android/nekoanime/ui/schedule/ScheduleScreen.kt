@@ -110,7 +110,7 @@ fun ScheduleScreen(
     val aspectRadio = getAspectRadio()
 
     val localDate = LocalDate.now()
-    val pagerState = rememberPagerState(localDate.dayOfWeek.ordinal)
+    val pagerState = rememberPagerState(localDate.dayOfWeek.ordinal, 0f) { 7 }
     val scrollState = rememberScrollState()
     val weeklySchedule by viewModel.weeklySchedule.collectAsStateWithLifecycle()
     val followedAnimeIds by viewModel.followedAnimeIds.collectAsStateWithLifecycle()
@@ -219,7 +219,6 @@ fun ScheduleScreen(
 
                     HorizontalPager(
                         modifier = Modifier.fillMaxSize(),
-                        pageCount = 7,
                         state = pagerState,
                     ) { index ->
                         val lazyListState = remember(pagerState.currentPage) { LazyListState() }

@@ -16,7 +16,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.google.accompanist.navigation.animation.rememberAnimatedNavController
+import androidx.navigation.compose.rememberNavController
 import com.xioneko.android.nekoanime.navigation.NekoAnimeNavigationGraph
 import com.xioneko.android.nekoanime.ui.component.NekoAnimeSnackBar
 import com.xioneko.android.nekoanime.ui.component.NekoAnimeSnackbarHost
@@ -34,7 +34,7 @@ fun NekoAnimeApp(
 ) {
     val context = LocalContext.current
     val isOffline by networkMonitor.isOffline.collectAsStateWithLifecycle(true)
-    val navController: NavHostController = rememberAnimatedNavController()
+    val navController: NavHostController = rememberNavController()
 
     val isUpdateAvailable by updater.isUpdateAvailable.collectAsStateWithLifecycle()
     var shouldShowUpdateDialog by rememberSaveable(isUpdateAvailable) { mutableStateOf(isUpdateAvailable) }

@@ -184,7 +184,7 @@ fun shimmerBrush(
         color.increaseLuminanceBy(0.1f),
         color,
     )
-    val transition = rememberInfiniteTransition()
+    val transition = rememberInfiniteTransition(label = "")
 
     val ratio = targetOffset.x / targetOffset.y
     val horizontalDist = 350f
@@ -193,23 +193,23 @@ fun shimmerBrush(
     val startX by transition.animateFloat(
         initialValue = 0f - horizontalDist,
         targetValue = targetOffset.x,
-        animationSpec = infiniteRepeatable(animation = tween(durationMillis))
+        animationSpec = infiniteRepeatable(animation = tween(durationMillis)), label = ""
     )
     val startY by transition.animateFloat(
         initialValue = 0f - verticalDist,
         targetValue = targetOffset.y,
-        animationSpec = infiniteRepeatable(animation = tween(durationMillis))
+        animationSpec = infiniteRepeatable(animation = tween(durationMillis)), label = ""
     )
 
     val endX by transition.animateFloat(
         initialValue = 0f,
         targetValue = targetOffset.x + horizontalDist,
-        animationSpec = infiniteRepeatable(animation = tween(durationMillis))
+        animationSpec = infiniteRepeatable(animation = tween(durationMillis)), label = ""
     )
     val endY by transition.animateFloat(
         initialValue = 0f,
         targetValue = targetOffset.y + verticalDist,
-        animationSpec = infiniteRepeatable(animation = tween(durationMillis))
+        animationSpec = infiniteRepeatable(animation = tween(durationMillis)), label = ""
     )
 
 

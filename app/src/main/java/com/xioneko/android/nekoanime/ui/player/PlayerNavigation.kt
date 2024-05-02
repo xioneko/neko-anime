@@ -3,21 +3,19 @@ package com.xioneko.android.nekoanime.ui.player
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.ActivityInfo
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
+import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.google.accompanist.navigation.animation.composable
 
 const val AnimePlayNavRoute = "anime_play_route"
 
 
 @SuppressLint("SourceLockedOrientationActivity")
-@OptIn(ExperimentalAnimationApi::class)
 fun NavGraphBuilder.animePlayScreen(
     onGenreClick: (String) -> Unit,
     onAnimeClick: (Int) -> Unit,

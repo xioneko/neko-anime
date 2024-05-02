@@ -494,7 +494,7 @@ private fun AnimeDescription(
     description: String
 ) {
     var expandable by remember { mutableStateOf(false) }
-    var maxLines by remember { mutableStateOf(5) }
+    var maxLines by remember { mutableIntStateOf(5) }
     var expanded by remember { mutableStateOf(false) }
 
     Box(Modifier.padding(horizontal = 12.dp)) {
