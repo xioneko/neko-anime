@@ -17,6 +17,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.onEmpty
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -57,10 +58,11 @@ class MineScreenViewModel @Inject constructor(
                         }
                     }
             }
+            .onEmpty { emit(emptyMap()) }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000),
-                initialValue = emptyMap()
+                initialValue = null
             )
 
     val updateAutoCheck = userDataRepository.updateAutoCheck.stateIn(

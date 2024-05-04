@@ -18,6 +18,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xioneko.android.nekoanime.ui.component.FollowedAnimeCard
 import com.xioneko.android.nekoanime.ui.component.LoadingDots
+import com.xioneko.android.nekoanime.ui.component.NoResults
 import com.xioneko.android.nekoanime.ui.component.SolidTopBar
 import com.xioneko.android.nekoanime.ui.mine.MineScreenViewModel
 import com.xioneko.android.nekoanime.ui.theme.basicWhite
@@ -53,7 +54,12 @@ fun FollowedAnimeScreen(
                 contentAlignment = Alignment.Center,
                 content = { LoadingDots() }
             )
-        else
+        else if (followedAnime!!.isEmpty()) {
+            NoResults(
+                modifier = Modifier.fillMaxSize(),
+                text = "你还没有追番哦~"
+            )
+        } else {
             LazyVerticalGrid(
                 modifier = Modifier.padding(padding),
                 columns = GridCells.Fixed(if (isTablet) 4 else if (aspectRatio < 0.56) 6 else 3),
@@ -65,5 +71,6 @@ fun FollowedAnimeScreen(
                     FollowedAnimeCard(anime = it, onClick = onAnimeClick)
                 }
             }
+        }
     }
 }
