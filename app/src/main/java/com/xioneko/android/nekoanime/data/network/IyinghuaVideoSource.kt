@@ -12,6 +12,9 @@ import retrofit2.Retrofit
 import javax.inject.Inject
 
 
+/**
+ * **Deprecated**: iyinghua 视频源已在 0.3.0 版本中移除
+ */
 class IyinghuaVideoSource @Inject constructor(
     httpClient: OkHttpClient
 ) : VideoDataSource {
