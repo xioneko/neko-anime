@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.hardware.SensorManager
+import android.util.Log
 import android.view.OrientationEventListener
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
@@ -16,16 +17,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
@@ -37,10 +35,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -93,62 +92,131 @@ fun AnimePlayScreen(
     animeId: Int,
     viewModel: AnimePlayViewModel = hiltViewModel(),
     onGenreClick: (String) -> Unit,
-    onAnimeClick: (Int) -> Unit,
     onBackClick: () -> Unit
 ) {
     LaunchedEffect(Unit) { viewModel.loadingUiState(animeId) }
+
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val playerState by viewModel.playerState.collectAsStateWithLifecycle()
 
-    val context = LocalContext.current
-    val configuration = LocalConfiguration.current
+    val enablePortraitFullscreen by viewModel.enablePortraitFullscreen.collectAsStateWithLifecycle()
+    val (isFullscreen, setFullscreen) = rememberFullscreenState(enablePortraitFullscreen)
 
-    val systemUiController = rememberSystemUiController()
-    var isFullscreen by rememberSaveable { mutableStateOf(false) }
-    val enablePortraitFullscreen by viewModel.isEnablePortraitFullscreen.collectAsStateWithLifecycle()
-    val onFullscreenChange: (Boolean) -> Unit = remember {
-        { enable ->
-            isFullscreen = enable
-            if (enablePortraitFullscreen) {
-                if (!enable && configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
-                    context.setScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
-            } else {
-                context.setScreenOrientation(
-                    if (enable) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                    else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    DisposableAnimePlayEffects(
+        viewModel = viewModel,
+        enablePortraitFullscreen = enablePortraitFullscreen,
+        isFullscreen = isFullscreen.value,
+        setFullscreen = setFullscreen,
+        onBackClick = onBackClick,
+    )
+
+    // 定时更新观看记录
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(3000)
+            if (uiState is AnimePlayUiState.Data) {
+                viewModel.upsertWatchRecord(
+                    (uiState as AnimePlayUiState.Data).episode.value
                 )
             }
         }
     }
-    LaunchedEffect(configuration.orientation) {
-        when (configuration.orientation) {
-            Configuration.ORIENTATION_LANDSCAPE -> {
-                isFullscreen = true
-            }
 
-            Configuration.ORIENTATION_PORTRAIT -> {
-                if (!enablePortraitFullscreen) isFullscreen = false
-            }
+    val loadingState by viewModel.loadingState.collectAsStateWithLifecycle()
 
-            else -> {}
+    val forYouAnimeList by viewModel.forYouAnimeStream.collectAsStateWithLifecycle()
+
+
+    Surface(
+        color = basicWhite
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Column {
+                NekoAnimePlayer(
+                    player = viewModel.player,
+                    uiState = uiState,
+                    playerState = playerState,
+                    onEpisodeChange = viewModel::onEpisodeChange,
+                    isFullscreen = isFullscreen.value,
+                    onFullScreenChange = setFullscreen,
+                    onBack = {
+                        if (isFullscreen.value) setFullscreen(false)
+                        else onBackClick()
+                    },
+                )
+                Column(Modifier.navigationBarsPadding()) {
+                    when (uiState) {
+                        AnimePlayUiState.Loading -> {
+                            AnimePlayBodySkeleton()
+                        }
+
+                        is AnimePlayUiState.Data -> {
+                            with(uiState as AnimePlayUiState.Data) {
+                                val isFollowed by viewModel.followed.collectAsStateWithLifecycle()
+                                PlayerNeck(
+                                    anime = anime,
+                                    isFollowed = isFollowed,
+                                    onFollowAnime = viewModel::followAnime,
+                                    onUnfollowAnime = viewModel::unfollowAnime
+                                )
+                                LazyColumn {
+                                    item("Anime Detail") {
+                                        AnimeDetail(anime, onGenreClick)
+                                    }
+                                    item("Episodes List") {
+                                        EpisodesList(
+                                            currentEpisode = episode.value,
+                                            totalEpisodes = anime.latestEpisode,
+                                            onEpisodeChange = viewModel::onEpisodeChange
+                                        )
+                                    }
+                                    item("For You Anime Grid") {
+                                        ForYouAnimeGrid(
+                                            animeList = forYouAnimeList,
+                                            onAnimeClick = {
+                                                viewModel.loadingUiState(it)
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            NekoAnimeSnackbarHost(
+                modifier = Modifier
+                    .navigationBarsPadding()
+                    .align(Alignment.BottomCenter),
+                visible = loadingState is LoadingState.FAILURE,
+                message = { (loadingState as LoadingState.FAILURE).message }
+            ) {
+                NekoAnimeSnackBar(
+                    modifier = Modifier.requiredWidth(220.dp),
+                    snackbarData = it
+                )
+            }
         }
     }
-    LaunchedEffect(isFullscreen) {
-        systemUiController.run {
-            setStatusBarColor(Color.Transparent, false)
-            if (isFullscreen) {
-                isSystemBarsVisible = false
-                systemBarsBehavior =
-                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            } else {
-                isSystemBarsVisible = true
-                systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
-            }
-        }
-    }
+}
 
+@Composable
+fun DisposableAnimePlayEffects(
+    viewModel: AnimePlayViewModel,
+    enablePortraitFullscreen: Boolean?,
+    isFullscreen: Boolean,
+    setFullscreen: (Boolean) -> Unit,
+    onBackClick: () -> Unit,
+) {
+    val context = LocalContext.current
+    val configuration = LocalConfiguration.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+
     DisposableEffect(Unit) {
+        // 根据播放页的状态自动暂停播放器
         val lifecycleObserver = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_PAUSE -> {
@@ -165,10 +233,51 @@ fun AnimePlayScreen(
         }
         lifecycleOwner.lifecycle.addObserver(lifecycleObserver)
 
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(lifecycleObserver)
+        }
+    }
+
+    DisposableEffect(configuration.orientation, enablePortraitFullscreen) {
+        // 通过 context.setOrientation 锁定设备方向后，若设备的实际朝向就位，则恢复自动旋转
+        val orientationListener =
+            object : OrientationEventListener(context, SensorManager.SENSOR_DELAY_NORMAL) {
+                override fun onOrientationChanged(angle: Int) {
+                    if (context.isOrientationLocked() || enablePortraitFullscreen != false) return
+
+                    with(configuration) {
+//                        Log.d("Player", "angle: $angle orientation: $orientation")
+                        when (orientation) {
+                            Configuration.ORIENTATION_PORTRAIT ->
+                                if (angle <= 5 || angle >= 355) {
+                                    viewModel.unlockOrientation(context, orientation)
+                                }
+
+                            Configuration.ORIENTATION_LANDSCAPE ->
+                                if (angle in 85..95 || angle in 265..275) {
+                                    viewModel.unlockOrientation(context, orientation)
+                                }
+
+                            else -> {}
+                        }
+                    }
+                }
+
+            }
+        orientationListener.enable()
+
+        onDispose {
+            orientationListener.disable()
+        }
+    }
+
+    DisposableEffect(isFullscreen) {
+        // 返回键处理
         val backCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                Log.d("Player", "BackPressed")
                 if (isFullscreen) {
-                    onFullscreenChange(false)
+                    setFullscreen(false)
                 } else {
                     onBackClick()
                 }
@@ -176,143 +285,68 @@ fun AnimePlayScreen(
         }
         backDispatcher?.addCallback(backCallback)
 
-        val orientationListener =
-            object : OrientationEventListener(context, SensorManager.SENSOR_DELAY_NORMAL) {
-                override fun onOrientationChanged(angle: Int) {
-                    if (context.isOrientationLocked()) return
-
-                    when (configuration.orientation) {
-                        Configuration.ORIENTATION_PORTRAIT ->
-                            if (angle <= 5 || angle >= 355) {
-                                viewModel.unlockOrientation(context)
-                            }
-
-                        Configuration.ORIENTATION_LANDSCAPE ->
-                            if (angle in 85..95 || angle in 265..275) {
-                                viewModel.unlockOrientation(context)
-                            }
-
-                        else -> {}
-                    }
-                }
-
-            }.apply { enable() }
-
         onDispose {
-            lifecycleOwner.lifecycle.removeObserver(lifecycleObserver)
             backCallback.remove()
-            orientationListener.disable()
         }
     }
+}
 
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(3000)
-            if (viewModel.uiState is AnimePlayUiState.Data) {
-                viewModel.upsertWatchRecord(
-                    (viewModel.uiState as AnimePlayUiState.Data).episode.value
-                )
+@Composable
+fun rememberFullscreenState(
+    enablePortraitFullscreen: Boolean?
+): Pair<State<Boolean>, (Boolean) -> Unit> {
+    val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    val systemUiController = rememberSystemUiController()
+    val isFullscreen = remember { mutableStateOf(false) }
+    val setFullscreen = remember(enablePortraitFullscreen) {
+        callback@{ enableFullscreen: Boolean ->
+            if (enablePortraitFullscreen!!) {
+                isFullscreen.value = enableFullscreen
+                return@callback
+            }
+
+            // 全屏状态改变时，切换设备方向
+            if (enableFullscreen) {
+                context.setScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
+            } else {
+                context.setScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
             }
         }
     }
 
-    val onEpisodeChange: (Int) -> Unit = remember {
-        {
-            with(viewModel) {
-                with(uiState as AnimePlayUiState.Data) {
-                    // 只有获取了 uiState 中 episode 相关信息才可能被调用
-                    upsertWatchRecord(episode.value)
-                    episode.value = it
-                }
-                player.update()
+    // 屏幕方向变化时，更新 isFullscreen 状态
+    LaunchedEffect(configuration.orientation, enablePortraitFullscreen) {
+        Log.d("Player", "Orientation: ${configuration.orientation}")
+        when (configuration.orientation) {
+            Configuration.ORIENTATION_LANDSCAPE -> {
+                isFullscreen.value = true
+            }
+
+            Configuration.ORIENTATION_PORTRAIT -> {
+                isFullscreen.value = false
+            }
+
+            else -> {}
+        }
+    }
+
+    LaunchedEffect(isFullscreen.value) {
+        // 全屏和非全屏下的系统状态栏外观变化
+        systemUiController.run {
+            setStatusBarColor(Color.Transparent, false)
+            if (isFullscreen.value) {
+                isSystemBarsVisible = false
+                systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            } else {
+                isSystemBarsVisible = true
+                systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
             }
         }
     }
 
-    val loadingState by viewModel.loadingState.collectAsStateWithLifecycle()
-
-    val forYouAnimeList by viewModel.forYouAnimeStream.collectAsStateWithLifecycle()
-
-    val playerModifier = remember(isFullscreen) {
-        if (isFullscreen) {
-            Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-        } else {
-            Modifier
-                .wrapContentHeight(Alignment.Top)
-                .fillMaxWidth()
-                .background(Color.Black)
-                .statusBarsPadding()
-                .aspectRatio(16f / 9f)
-        }
-    }
-
-    Surface(
-        color = basicWhite
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            Column {
-                NekoAnimePlayer(
-                    modifier = playerModifier,
-                    player = viewModel.player,
-                    uiState = viewModel.uiState,
-                    playerState = playerState,
-                    onEpisodeChange = onEpisodeChange,
-                    isFullscreen = isFullscreen,
-                    onFullScreenChange = onFullscreenChange,
-                    onBack = {
-                        if (isFullscreen) onFullscreenChange(false)
-                        else onBackClick()
-                    },
-                )
-                Column(Modifier.navigationBarsPadding()) {
-                    if (viewModel.uiState is AnimePlayUiState.Loading) AnimePlayBodySkeleton()
-                    else {
-                        with(viewModel.uiState as AnimePlayUiState.Data) {
-                            val isFollowed by viewModel.followed.collectAsStateWithLifecycle()
-                            PlayerNeck(
-                                anime = anime,
-                                isFollowed = isFollowed,
-                                onFollowAnime = viewModel::followAnime,
-                                onUnfollowAnime = viewModel::unfollowAnime
-                            )
-                            LazyColumn {
-                                item("Anime Detail") {
-                                    AnimeDetail(anime, onGenreClick)
-                                }
-                                item("Episodes List") {
-                                    EpisodesList(
-                                        currentEpisode = episode.value,
-                                        totalEpisodes = anime.latestEpisode,
-                                        onEpisodeChange = onEpisodeChange
-                                    )
-                                }
-                                item("For You Anime Grid") {
-                                    ForYouAnimeGrid(
-                                        animeList = forYouAnimeList,
-                                        onAnimeClick = onAnimeClick
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            NekoAnimeSnackbarHost(
-                modifier = Modifier.align(Alignment.BottomCenter),
-                visible = loadingState is LoadingState.FAILURE,
-                message = { (loadingState as LoadingState.FAILURE).message }
-            ) {
-                NekoAnimeSnackBar(
-                    modifier = Modifier.requiredWidth(220.dp),
-                    snackbarData = it
-                )
-            }
-        }
-    }
+    return isFullscreen to setFullscreen
 }
 
 

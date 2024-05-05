@@ -1,6 +1,5 @@
 package com.xioneko.android.nekoanime.ui.player
 
-import android.util.Log
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.compose.animation.AnimatedContent
@@ -27,6 +26,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,7 +34,9 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
@@ -83,7 +85,6 @@ import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun NekoAnimePlayer(
-    modifier: Modifier = Modifier,
     player: ExoPlayer,
     uiState: AnimePlayUiState,
     playerState: NekoAnimePlayerState,
@@ -113,6 +114,7 @@ fun NekoAnimePlayer(
     var isBottomControllerVisible by remember(isFullscreen) { mutableStateOf(true) }
     var isEpisodesDrawerVisible by remember(isFullscreen) { mutableStateOf(false) }
 
+    // 自动隐藏播放控件
     if (isBottomControllerVisible) {
         LaunchedEffect(Unit) {
             delay(5.seconds)
@@ -122,15 +124,23 @@ fun NekoAnimePlayer(
         }
     }
 
-    if (player.mediaItemCount != 0 && playerState.bufferedPercentage == 0) {
-        LaunchedEffect(Unit) {
-            delay(45.seconds)
-            Log.d("Video", "视频加载超时，尝试备用地址")
-            player.seekToNextMediaItem()
+
+    val playerModifier = remember(isFullscreen) {
+        if (isFullscreen) {
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        } else {
+            Modifier
+                .wrapContentHeight(Alignment.Top)
+                .fillMaxWidth()
+                .background(Color.Black)
+                .statusBarsPadding()
+                .aspectRatio(16f / 9f)
         }
     }
 
-    Box(modifier) {
+    Box(playerModifier) {
         if (playerState.isLoading) {
             LoadingDotsVariant(
                 Modifier

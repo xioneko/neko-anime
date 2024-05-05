@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.xioneko.android.nekoanime.R
 import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.model.AnimeShell
@@ -272,7 +274,10 @@ private fun AnimeImage(imageUrl: String?) {
         modifier = Modifier
             .aspectRatio(ratio = 0.72f)
             .clip(MaterialTheme.shapes.extraSmall),
-        model = imageUrl,
+        model = ImageRequest.Builder(LocalContext.current)
+            .data(imageUrl)
+            .crossfade(true)
+            .build(),
         contentDescription = null,
         placeholder = painterResource(R.drawable.broken_image),
         error = painterResource(R.drawable.broken_image),

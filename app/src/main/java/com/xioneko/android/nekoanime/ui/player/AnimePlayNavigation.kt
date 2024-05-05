@@ -3,7 +3,7 @@ package com.xioneko.android.nekoanime.ui.player
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.ActivityInfo
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavGraphBuilder
@@ -18,7 +18,6 @@ const val AnimePlayNavRoute = "anime_play_route"
 @SuppressLint("SourceLockedOrientationActivity")
 fun NavGraphBuilder.animePlayScreen(
     onGenreClick: (String) -> Unit,
-    onAnimeClick: (Int) -> Unit,
     onBackClick: () -> Unit
 ) {
     composable(
@@ -27,33 +26,27 @@ fun NavGraphBuilder.animePlayScreen(
     ) { backStackEntry ->
 
         val activity = LocalContext.current as? Activity
-        val shouldLockOrientation = rememberSaveable {
-            activity?.let {
-                it.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            } ?: false
+
+//        Log.d("Player", "Before Orientation: " + activity?.requestedOrientation.toString())
+
+        // 由于播放页面可通过播放器全屏按钮锁定设备方向，因此需要在此处保存和恢复设备方向
+        val previousOrientation = rememberSaveable {
+            activity?.requestedOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
-        val restoreOrientationSetting = remember {
-            {
-                if (shouldLockOrientation) {
-//                    Log.d("ROTATE", "Lock")
-                    activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                } else {
-//                    Log.d("ROTATE", "UnLock")
-                    activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-                }
-            }
+
+        LaunchedEffect(Unit) {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
 
         AnimePlayScreen(
             animeId = backStackEntry.arguments?.getInt("animeId")!!,
-            onAnimeClick = onAnimeClick,
             onGenreClick = {
                 onGenreClick(it)
-                restoreOrientationSetting()
+                activity?.requestedOrientation = previousOrientation
             },
             onBackClick = {
                 onBackClick()
-                restoreOrientationSetting()
+                activity?.requestedOrientation = previousOrientation
             }
         )
     }

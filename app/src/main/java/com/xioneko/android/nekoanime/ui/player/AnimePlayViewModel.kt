@@ -6,12 +6,11 @@ import android.content.pm.ActivityInfo
 import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.xioneko.android.nekoanime.data.AnimeRepository
@@ -27,6 +26,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -34,8 +34,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEmpty
@@ -64,7 +65,9 @@ class AnimePlayViewModel @Inject constructor(
 
     private val videoFetchingJob = SupervisorJob(viewModelScope.coroutineContext.job)
 
-    var uiState: AnimePlayUiState by mutableStateOf(AnimePlayUiState.Loading)
+    private val _uiState = MutableStateFlow<AnimePlayUiState>(AnimePlayUiState.Loading)
+
+    val uiState = _uiState.asStateFlow()
 
     @SuppressLint("UnsafeOptInUsageError")
     val player: ExoPlayer = ExoPlayer.Builder(context).build().apply {
@@ -82,14 +85,14 @@ class AnimePlayViewModel @Inject constructor(
 
     lateinit var followed: StateFlow<Boolean>
 
-    private val orientationRequestFlow =
-        MutableStateFlow(context to ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
+    private val orientationRequestFlow = MutableSharedFlow<Pair<Context, Int>>(replay = 1)
 
-    val isEnablePortraitFullscreen = userDataRepository.enablePortraitFullscreen.stateIn(
+    val enablePortraitFullscreen = userDataRepository.enablePortraitFullscreen.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),
-        false,
+        null,
     )
+
 
     init {
         viewModelScope.launch {
@@ -100,30 +103,34 @@ class AnimePlayViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            orientationRequestFlow.collectLatest { (context, orientation) ->
-//                Log.d("ROTATE", "collect $orientation")
-                delay(200)
-                context.setScreenOrientation(orientation)
-//                Log.d("ROTATE", "set to $orientation")
-            }
+            orientationRequestFlow
+                .conflate()
+                .distinctUntilChangedBy { (_, orientation) -> orientation }
+                .collect { (context, _) ->
+                    delay(200) // 避免在设备方向还未就位时提前恢复自动旋转
+                    context.setScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
+                    Log.d("Player", "恢复自动旋转")
+                }
         }
     }
 
-    fun unlockOrientation(context: Context) {
-        orientationRequestFlow.update { context to ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
+    fun unlockOrientation(context: Context, orientation: Int) {
+        orientationRequestFlow.tryEmit(context to orientation)
     }
 
     fun loadingUiState(animeId: Int) {
-        if (uiState is AnimePlayUiState.Data) return
-
         viewModelScope.launch {
+            _uiState.emit(AnimePlayUiState.Loading)
+
             animeRepository.getAnimeById(animeId)
                 .onStart { _loadingState.emit(LoadingState.LOADING) }
-                .onEmpty { _loadingState.emit(LoadingState.FAILURE("🥹 数据源似乎出了问题")) }
+                .onEmpty { notifyFailure("🥹 数据源似乎出了问题") }
                 .combine(userDataRepository.watchHistory.take(1)) { anime, watchRecords ->
-                    uiState = AnimePlayUiState.Data(
-                        anime = anime,
-                        episode = mutableStateOf(watchRecords[animeId]?.recentEpisode ?: 1),
+                    _uiState.emit(
+                        AnimePlayUiState.Data(
+                            anime = anime,
+                            episode = mutableIntStateOf(watchRecords[animeId]?.recentEpisode ?: 1),
+                        )
                     )
 
                     player.update()
@@ -142,37 +149,38 @@ class AnimePlayViewModel @Inject constructor(
         }
     }
 
+    fun onEpisodeChange(episode: Int) {
+        with(_uiState.value as AnimePlayUiState.Data) {
+            upsertWatchRecord(this.episode.value)
+            this.episode.value = episode
+        }
+        player.update()
+    }
 
-    fun ExoPlayer.update() {
-        with(uiState as AnimePlayUiState.Data) {
+    private fun ExoPlayer.update() {
+        with(_uiState.value as AnimePlayUiState.Data) {
             clearMediaItems()
             videoFetchingJob.cancelChildren()
+
+            Log.d("Video", "加载 ${anime.name} 第 ${episode.value} 集")
             viewModelScope.launch(videoFetchingJob) {
-                fetchVideoUrl(episode.value)
+                animeRepository.getVideoUrl(anime, episode.value)
                     .onStart { _loadingState.emit(LoadingState.LOADING) }
                     .onEmpty {
-                        _loadingState.emit(LoadingState.FAILURE("😣 找不到可用的播放地址"))
-                        Log.d("Video", "未找到可用的播放地址")
+                        notifyFailure("😣 找不到可用的播放地址")
+                        Log.d("Video", "找不到可用的播放地址")
                     }
-                    .combine(
-                        userDataRepository.watchHistory.take(1)
-                    ) { urls, watchRecords ->
+                    .collect { urls ->
                         urls.forEach {
                             addMediaItem(MediaItem.fromUri(it))
-                            Log.d("Video", "加载视频地址: $it")
+                            Log.d("Video", "添加播放地址: $it")
                         }
                         prepare()
-                        watchRecords[anime.id]?.positions?.get(episode.value)?.let {
-                            player.seekTo(it)
-                        } ?: player.seekToDefaultPosition()
+                        restoreWatchRecord()
                     }
-                    .collect()
             }
         }
     }
-
-    private fun AnimePlayUiState.Data.fetchVideoUrl(episode: Int) =
-        animeRepository.getVideoUrl(anime, episode)
 
     override fun onCleared() {
         super.onCleared()
@@ -192,7 +200,7 @@ class AnimePlayViewModel @Inject constructor(
     }
 
     fun upsertWatchRecord(episode: Int) {
-        with(uiState as AnimePlayUiState.Data) {
+        with(_uiState.value as AnimePlayUiState.Data) {
             viewModelScope.launch {
                 userDataRepository.upsertWatchRecord(
                     animeId = anime.id,
@@ -204,8 +212,21 @@ class AnimePlayViewModel @Inject constructor(
         }
     }
 
+    fun restoreWatchRecord() {
+        with(_uiState.value as AnimePlayUiState.Data) {
+            viewModelScope.launch {
+                userDataRepository.watchHistory.take(1)
+                    .firstOrNull()
+                    ?.get(anime.id)
+                    ?.let { record ->
+                        player.seekTo(record.positions[episode.value] ?: 0)
+                    }
+            }
+        }
+    }
+
     private fun fetchingForYouAnime() {
-        with(uiState as AnimePlayUiState.Data) {
+        with(_uiState.value as AnimePlayUiState.Data) {
             viewModelScope.launch {
                 var pageIndex = (0..10).random()
                 animeRepository
@@ -231,7 +252,7 @@ class AnimePlayViewModel @Inject constructor(
                             val list = mutableListOf<AnimeShell>()
                             it?.let { list.addAll(it) }
                             animeRepository.getAnimeBy(region = "日本", pageIndex = 0)
-                                .onEmpty { _loadingState.emit(LoadingState.FAILURE("😣 数据源似乎出了问题")) }
+                                .onEmpty { notifyFailure("😣 数据源似乎出了问题") }
                                 .firstOrNull()
                                 ?.let { fallbackList ->
                                     list.addAll(
@@ -291,11 +312,31 @@ class AnimePlayViewModel @Inject constructor(
                         )
                     )
                 }
+
+                override fun onPlayerError(error: PlaybackException) {
+                    super.onPlayerError(error)
+
+                    Log.d("Video", "播放出错：${error.message}")
+                    with(player) {
+                        if (hasNextMediaItem()) {
+                            seekToNextMediaItem()
+                            prepare()
+                            restoreWatchRecord()
+                            Log.d("Video", "尝试加载下一个播放地址")
+                            return
+                        }
+                    }
+                    notifyFailure("😣 找不到可用的播放地址")
+                }
             }
             player.addListener(playerListener)
 
             awaitClose { player.removeListener(playerListener) }
         }
+
+    private fun notifyFailure(message: String) {
+        _loadingState.update { LoadingState.FAILURE(message) }
+    }
 }
 
 @Stable

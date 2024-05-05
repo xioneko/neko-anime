@@ -1,6 +1,5 @@
 package com.xioneko.android.nekoanime.navigation
 
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
@@ -71,7 +70,6 @@ fun NekoAnimeNavigationGraph(
 
         animePlayScreen(
             onGenreClick = { navController.navigateToCategory(genre = it) },
-            onAnimeClick = { navController.navigateToAnimePlay(it) },
             onBackClick = { navController.popBackStack() },
         )
 
