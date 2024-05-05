@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,7 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.xioneko.android.nekoanime.ui.component.AnimeGrid
+import com.xioneko.android.nekoanime.ui.component.LazyAnimeGrid
 import com.xioneko.android.nekoanime.ui.component.shimmerBrush
 import com.xioneko.android.nekoanime.ui.theme.brightNeutral03
 import com.xioneko.android.nekoanime.ui.theme.brightNeutral04
@@ -161,7 +162,8 @@ fun ColumnScope.AnimePlayBodySkeleton() {
                     .clip(RoundedCornerShape(4.dp))
                     .background(shimmerBrush(x = 128.dp, y = 20.dp, color = brightNeutral06))
             )
-            AnimeGrid(
+            LazyAnimeGrid(
+                modifier = Modifier.requiredHeightIn(max = 960.dp),
                 useExpandCardStyle = false,
                 animeList = List(6) { null },
                 onAnimeClick = {}

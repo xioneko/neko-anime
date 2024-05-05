@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -65,7 +66,7 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.model.AnimeShell
 import com.xioneko.android.nekoanime.ui.component.AnimatedFollowIcon
-import com.xioneko.android.nekoanime.ui.component.AnimeGrid
+import com.xioneko.android.nekoanime.ui.component.LazyAnimeGrid
 import com.xioneko.android.nekoanime.ui.component.NekoAnimeSnackBar
 import com.xioneko.android.nekoanime.ui.component.NekoAnimeSnackbarHost
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
@@ -675,8 +676,9 @@ private fun ForYouAnimeGrid(
             color = basicBlack,
             style = MaterialTheme.typography.titleSmall,
         )
-        AnimeGrid(
-            modifier = Modifier.padding(horizontal = 12.dp),
+        LazyAnimeGrid(
+            modifier = Modifier.requiredHeightIn(max = 960.dp),
+            horizontalPadding = 12.dp,
             animeList = animeList,
             onAnimeClick = onAnimeClick
         )

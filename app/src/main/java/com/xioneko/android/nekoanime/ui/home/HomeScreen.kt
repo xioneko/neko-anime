@@ -12,10 +12,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -63,9 +65,8 @@ import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import com.xioneko.android.nekoanime.data.model.AnimeShell
-import com.xioneko.android.nekoanime.ui.component.AnimeGrid
 import com.xioneko.android.nekoanime.ui.component.FollowedAnimeCard
+import com.xioneko.android.nekoanime.ui.component.LazyAnimeGrid
 import com.xioneko.android.nekoanime.ui.component.NekoAnimeSnackBar
 import com.xioneko.android.nekoanime.ui.component.NekoAnimeSnackbarHost
 import com.xioneko.android.nekoanime.ui.component.shimmerBrush
@@ -206,11 +207,16 @@ fun HomeScreen(
                 }
             }
             item("Recent Updates") {
-                AnimeGridWithHead(
+                AnimeGridHead(
                     headline = "最近更新",
-                    animeList = recentUpdates,
+                    onMoreDetails = { navigateToCategory("") }
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                LazyAnimeGrid(
+                    Modifier.requiredHeightIn(max = 960.dp),
+                    horizontalPadding = 12.dp,
                     useExpandCardStyle = true,
-                    onMoreDetails = { navigateToCategory("") },
+                    animeList = recentUpdates,
                     onAnimeClick = onAnimeClick
                 )
             }
@@ -218,11 +224,16 @@ fun HomeScreen(
             viewModel.forYouAnimeStreams.forEachIndexed { index, animeFlow ->
                 item(index) {
                     val genreToAnimeList by animeFlow.collectAsStateWithLifecycle()
-                    AnimeGridWithHead(
+                    AnimeGridHead(
                         headline = genreToAnimeList.first,
-                        animeList = genreToAnimeList.second,
+                        onMoreDetails = navigateToCategory
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    LazyAnimeGrid(
+                        Modifier.requiredHeightIn(max = 960.dp),
+                        horizontalPadding = 12.dp,
                         useExpandCardStyle = false,
-                        onMoreDetails = navigateToCategory,
+                        animeList = genreToAnimeList.second,
                         onAnimeClick = onAnimeClick
                     )
                 }
@@ -344,9 +355,9 @@ private fun Carousel(
                 Box(
                     Modifier
                         .size(8.dp)
-                        .padding(if (pagerState.currentPage % slides.size == it) 0.dp else 1.dp)
+                        .padding(if (pagerState.currentPage == it) 0.dp else 1.dp)
                         .background(
-                            color = if (pagerState.currentPage % slides.size == it)
+                            color = if (pagerState.currentPage == it)
                                 basicWhite.copy(0.9f)
                             else basicWhite.copy(0.4f),
                             shape = CircleShape
@@ -358,45 +369,34 @@ private fun Carousel(
 }
 
 @Composable
-private fun AnimeGridWithHead(
+private fun AnimeGridHead(
     headline: String?,
-    animeList: List<AnimeShell?>,
-    useExpandCardStyle: Boolean,
     onMoreDetails: (genre: String) -> Unit,
-    onAnimeClick: (Int) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (headline == null) {
-                Box(
-                    modifier = Modifier
-                        .size(128.dp, 20.dp)
-                        .clip(MaterialTheme.shapes.small)
-                        .background(shimmerBrush(x = 128.dp, y = 20.dp, brightNeutral06))
-                )
-                Box(
-                    modifier = Modifier
-                        .size(64.dp, 16.dp)
-                        .clip(MaterialTheme.shapes.small)
-                        .background(shimmerBrush(x = 128.dp, y = 16.dp, brightNeutral05))
-                )
-            } else {
-                StylizedHead(text = headline)
-                MoreInfo { onMoreDetails(headline) }
-            }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (headline == null) {
+            Box(
+                modifier = Modifier
+                    .size(128.dp, 20.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .background(shimmerBrush(x = 128.dp, y = 20.dp, brightNeutral06))
+            )
+            Box(
+                modifier = Modifier
+                    .size(64.dp, 16.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .background(shimmerBrush(x = 128.dp, y = 16.dp, brightNeutral05))
+            )
+        } else {
+            StylizedHead(text = headline)
+            MoreInfo { onMoreDetails(headline) }
         }
-        AnimeGrid(
-            modifier = Modifier.padding(horizontal = 12.dp),
-            useExpandCardStyle = useExpandCardStyle,
-            animeList = animeList,
-            onAnimeClick = onAnimeClick
-        )
     }
 }
 
