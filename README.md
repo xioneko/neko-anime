@@ -28,15 +28,15 @@ Compose，遵循了官方指南中的“[现代 Android 应用架构](https://de
 
 <p>
 
-由于本项目**并不是**由一个拥有丰富经验的开发者从 0 到 1 构建起来的，更准确地讲是一个初学者的练习项目，所以肯定存在些许不成熟、不规范或有待改进的地方，欢迎在 [Issues](https://github.com/xioneko/neko-anime/issues) 中讨论 ☺️。
+App 的开发仍在进行中 🚧，但是版本迭代可能会比较慢，可在 GitHub
+上 <b>[⬇️下载最新版本](https://github.com/xioneko/neko-anime/releases)</b>
+，最新的代码可在 [dev](https://github.com/xioneko/neko-anime/tree/dev) 分支上查看。
 
 </p>
 
 <p>
 
-App 的开发仍在进行中 🚧，但是版本迭代可能会比较慢，可在 GitHub
-上 [⬇️下载最新版本](https://github.com/xioneko/neko-anime/releases)
-，最新的代码可在 [dev](https://github.com/xioneko/neko-anime/tree/dev) 分支上查看。
+这个项目最初是为了学习 Android 开发而诞生的，后续的更新和维护就靠爱发电了😋，如果有什么功能或者技术上的好建议，欢迎在 [Issues](https://github.com/xioneko/neko-anime/issues) 中讨论☺️。
 
 </p>
 
@@ -64,21 +64,39 @@ App 的开发仍在进行中 🚧，但是版本迭代可能会比较慢，可�
 
 ## 构建
 
-- Android Studio Flamingo | 2023.1.1
-- compileSdk 33
+- Android Studio Flamingo | 2023.3.1
+- compileSdk 34
 - Gradle JDK 17
 
 ## 更新日志
 
-### v0.3.0 (alpha)
+### v0.3.0 (2024-5-5)
+**新增功能**
+- 支持长按倍速播放和滑动改变播放进度 [#15](https://github.com/xioneko/neko-anime/issues/15)
+- 添加无结果页（搜索、历史记录、追番列表）
 
 **改进功能**
 
 - 改进视频源获取方式，提高视频加载速度 [#12](https://github.com/xioneko/neko-anime/issues/12)
+- 压缩资源体积，提升 App 整体性能
 
 **缺陷修复**
 
 - 进入时间表页面发生崩溃 [#13](https://github.com/xioneko/neko-anime/issues/13)
+
+**界面美化**
+
+- 改进播放器控件 UI 
+
+**开发重构**
+
+- 升级部分依赖项
+- 重构播放页模块
+
+**版本备注**
+
+- 此版本未在平板或折叠屏设备进行充分测试
+- 折叠屏用户若进入播放页异常，可尝试打开 “允许在竖屏状态下全屏播放” 选项
 
 ### v0.2.1 (2023-9-17)
 
