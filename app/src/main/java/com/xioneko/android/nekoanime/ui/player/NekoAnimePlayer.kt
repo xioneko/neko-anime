@@ -145,6 +145,16 @@ fun NekoAnimePlayer(
         }
     }
 
+    LaunchedEffect(fastForwarding) {
+        if (fastForwarding) {
+            player.setPlaybackSpeed(2f)
+            isBottomControllerVisible = false
+            if (isFullscreen) isTopControllerVisible = false
+        } else {
+            player.setPlaybackSpeed(1f)
+        }
+    }
+
 
     val playerModifier = remember(isFullscreen) {
         if (isFullscreen) {
@@ -170,22 +180,6 @@ fun NekoAnimePlayer(
             )
         }
         AndroidView(
-            modifier = Modifier.pointerInput(isFullscreen) {
-                detectTapGestures(
-                    onTap = {
-                        isBottomControllerVisible = !isBottomControllerVisible
-                        if (isFullscreen)
-                            isTopControllerVisible = !isTopControllerVisible
-                    },
-                    onDoubleTap = {
-                        player.playWhenReady = !player.playWhenReady
-                        if (!player.playWhenReady) {
-                            isBottomControllerVisible = true
-                            isTopControllerVisible = true
-                        }
-                    }
-                )
-            },
             modifier = Modifier
                 .pointerInput(isFullscreen) {
                     detectTapGestures(
@@ -226,6 +220,23 @@ fun NekoAnimePlayer(
                         )
                     }
                 }
+                .pointerInput(player.isPlaying) {
+                    if (player.isPlaying) {
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = {
+                                vibrate(context)
+                                fastForwarding = true
+                            },
+                            onDragEnd = {
+                                fastForwarding = false
+                            },
+                            onDragCancel = {
+                                fastForwarding = false
+                            },
+                            onDrag = { _, _ -> }
+                        )
+                    }
+                },
             factory = { context ->
                 PlayerView(context).apply {
                     useController = false
@@ -282,6 +293,24 @@ fun NekoAnimePlayer(
                 )
             }
         }
+
+        if (fastForwarding) {
+            Box(
+                modifier = Modifier
+                    .padding(top = 12.dp)
+                    .align(Alignment.TopCenter)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(Color.Black.copy(0.5f))
+                    .padding(12.dp, 6.dp)
+            ) {
+                Text(
+                    text = "▶▷▶ 倍速播放中",
+                    color = basicWhite.copy(0.8f),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+
 
         AnimatedVisibility(
             modifier = Modifier.align(Alignment.BottomCenter),
