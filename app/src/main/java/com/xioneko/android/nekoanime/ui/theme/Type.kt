@@ -15,6 +15,10 @@ object NekoAnimeFontFamilies {
         Font(R.font.hei_bold, FontWeight.Bold),
         Font(R.font.hei_regular, FontWeight.Normal)
     )
+    val robotoFamily = FontFamily(
+        Font(R.font.roboto_regular, FontWeight.Normal),
+        Font(R.font.roboto_bold, FontWeight.Bold),
+    )
 }
 
 

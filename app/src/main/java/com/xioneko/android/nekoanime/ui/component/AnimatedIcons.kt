@@ -21,7 +21,7 @@ fun AnimatedFollowIcon(
     )
     val animationProgress by animateFloatAsState(
         targetValue = if (isFollowed) 1f else 0f,
-        animationSpec = tween(800, easing = LinearEasing)
+        animationSpec = tween(800, easing = LinearEasing), label = ""
     )
 
     LottieAnimation(
@@ -42,7 +42,7 @@ fun AnimatedRadioButton(
 
     val selectProgress by animateFloatAsState(
         targetValue = if (selected) 0.5f else 0f,
-        animationSpec = tween(durationMillis, easing = LinearEasing)
+        animationSpec = tween(durationMillis, easing = LinearEasing), label = ""
     )
 
     LottieAnimation(
@@ -68,7 +68,7 @@ fun AnimatedSwitchButton(
     } else {
         val animationProgress by animateFloatAsState(
             targetValue = if (checked) 1f else 0f,
-            animationSpec = tween(400, easing = LinearEasing)
+            animationSpec = tween(400, easing = LinearEasing), label = ""
         )
 
         LottieAnimation(

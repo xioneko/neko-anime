@@ -48,6 +48,8 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -99,6 +101,7 @@ fun AnimePlayScreen(
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val playerState by viewModel.playerState.collectAsStateWithLifecycle()
+    val progressDragState by viewModel.progressDragState.collectAsStateWithLifecycle()
 
     val enablePortraitFullscreen by viewModel.enablePortraitFullscreen.collectAsStateWithLifecycle()
     val (isFullscreen, setFullscreen) = rememberFullscreenState(enablePortraitFullscreen)
@@ -139,15 +142,29 @@ fun AnimePlayScreen(
                     player = viewModel.player,
                     uiState = uiState,
                     playerState = playerState,
-                    onEpisodeChange = viewModel::onEpisodeChange,
                     isFullscreen = isFullscreen.value,
+                    progressDragState = progressDragState,
                     onFullScreenChange = setFullscreen,
+                    onEpisodeChange = viewModel::onEpisodeChange,
+                    onProgressDrag = viewModel::onProgressDrag,
                     onBack = {
                         if (isFullscreen.value) setFullscreen(false)
                         else onBackClick()
                     },
                 )
-                Column(Modifier.navigationBarsPadding()) {
+                Column(
+                    Modifier
+                        .navigationBarsPadding()
+                        .pointerInput(progressDragState.isDragging) { // 避免多点触控
+                            awaitPointerEventScope {
+                                while (true) {
+                                    awaitPointerEvent(PointerEventPass.Initial).changes.forEach { change ->
+                                        if (change.pressed && progressDragState.isDragging) change.consume()
+                                    }
+                                }
+                            }
+                        }
+                ) {
                     when (uiState) {
                         AnimePlayUiState.Loading -> {
                             AnimePlayBodySkeleton()
@@ -247,7 +264,7 @@ fun DisposableAnimePlayEffects(
                     if (context.isOrientationLocked() || enablePortraitFullscreen != false) return
 
                     with(configuration) {
-//                        Log.d("Player", "angle: $angle orientation: $orientation")
+                        Log.d("Player", "angle: $angle orientation: $orientation")
                         when (orientation) {
                             Configuration.ORIENTATION_PORTRAIT ->
                                 if (angle <= 5 || angle >= 355) {
@@ -276,7 +293,7 @@ fun DisposableAnimePlayEffects(
         // 返回键处理
         val backCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                Log.d("Player", "BackPressed")
+                Log.d("Player", "BackPressed, isFullscreen $isFullscreen")
                 if (isFullscreen) {
                     setFullscreen(false)
                 } else {
@@ -302,11 +319,11 @@ fun rememberFullscreenState(
     val isFullscreen = remember { mutableStateOf(false) }
     val setFullscreen = remember(enablePortraitFullscreen) {
         callback@{ enableFullscreen: Boolean ->
-            if (enablePortraitFullscreen!!) {
+            if (enablePortraitFullscreen == true) {
                 isFullscreen.value = enableFullscreen
                 return@callback
             }
-
+            Log.d("Player", "setFullscreen: $enableFullscreen")
             // 全屏状态改变时，切换设备方向
             if (enableFullscreen) {
                 context.setScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)

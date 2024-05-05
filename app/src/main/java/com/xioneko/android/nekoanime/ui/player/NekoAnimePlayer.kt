@@ -15,11 +15,15 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -56,16 +60,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.viewinterop.AndroidView
@@ -73,12 +82,14 @@ import androidx.compose.ui.zIndex
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.xioneko.android.nekoanime.ui.component.LoadingDotsVariant
+import com.xioneko.android.nekoanime.ui.theme.NekoAnimeFontFamilies
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
-import com.xioneko.android.nekoanime.ui.theme.basicBlack
 import com.xioneko.android.nekoanime.ui.theme.basicWhite
 import com.xioneko.android.nekoanime.ui.util.KeepScreenOn
 import com.xioneko.android.nekoanime.ui.util.isTablet
+import com.xioneko.android.nekoanime.ui.util.vibrate
 import kotlinx.coroutines.delay
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
 
@@ -88,18 +99,21 @@ fun NekoAnimePlayer(
     player: ExoPlayer,
     uiState: AnimePlayUiState,
     playerState: NekoAnimePlayerState,
+    progressDragState: ProgressDragState,
     isFullscreen: Boolean,
     onEpisodeChange: (Int) -> Unit,
     onFullScreenChange: (Boolean) -> Unit,
+    onProgressDrag: (ProgressDragEvent) -> Unit,
     onBack: () -> Unit,
 ) {
+    val context = LocalContext.current
+    var userPosition by remember { mutableLongStateOf(0L) }
+    var fastForwarding by remember { mutableStateOf(false) }
 
-    var realPosition by remember(playerState) { mutableLongStateOf(playerState.position) } // sync
-
-    if (playerState.isPlaying) {
+    if (!progressDragState.isDragging) {
         LaunchedEffect(Unit) {
             while (true) {
-                realPosition = player.currentPosition
+                userPosition = player.currentPosition
                 delay(500)
             }
         }
@@ -115,12 +129,19 @@ fun NekoAnimePlayer(
     var isEpisodesDrawerVisible by remember(isFullscreen) { mutableStateOf(false) }
 
     // 自动隐藏播放控件
-    if (isBottomControllerVisible) {
+    if (isBottomControllerVisible && !progressDragState.isDragging) {
         LaunchedEffect(Unit) {
             delay(5.seconds)
             isBottomControllerVisible = false
             if (isFullscreen)
                 isTopControllerVisible = false
+        }
+    }
+
+    LaunchedEffect(progressDragState.isDragging) {
+        if (progressDragState.isDragging) {
+            isBottomControllerVisible = false // 避免多点触控
+            if (isFullscreen) isTopControllerVisible = false  // 上下播放控件同步隐藏
         }
     }
 
@@ -165,6 +186,46 @@ fun NekoAnimePlayer(
                     }
                 )
             },
+            modifier = Modifier
+                .pointerInput(isFullscreen) {
+                    detectTapGestures(
+                        onTap = {
+                            isBottomControllerVisible = !isBottomControllerVisible
+                            if (isFullscreen)
+                                isTopControllerVisible = !isTopControllerVisible
+                        },
+                        onDoubleTap = {
+                            player.playWhenReady = !player.playWhenReady
+                            if (!player.playWhenReady) {
+                                isBottomControllerVisible = true
+                                isTopControllerVisible = true
+                            }
+                        },
+                    )
+                }
+                .pointerInput(player.duration) {
+                    if (player.duration > 0) {
+                        var positionOffset = 0L
+                        var startPosition = 0L
+                        detectHorizontalDragGestures(
+                            onDragStart = {
+                                onProgressDrag(ProgressDragEvent.Start)
+                                startPosition = player.currentPosition
+                            },
+                            onDragEnd = {
+                                onProgressDrag(ProgressDragEvent.End)
+                                positionOffset = 0L
+                                startPosition = 0L
+                            },
+                            onHorizontalDrag = { _, dragAmount ->
+                                positionOffset += dragAmount.toLong() * 500
+                                val newPosition =
+                                    (startPosition + positionOffset).coerceIn(0, player.duration)
+                                onProgressDrag(ProgressDragEvent.Update(newPosition))
+                            },
+                        )
+                    }
+                }
             factory = { context ->
                 PlayerView(context).apply {
                     useController = false
@@ -180,8 +241,8 @@ fun NekoAnimePlayer(
             modifier = Modifier
                 .align(Alignment.TopCenter),
             visible = isTopControllerVisible,
-            enter = fadeIn(spring(stiffness = 4_000f)),
-            exit = fadeOut(spring(stiffness = 1_000f))
+            enter = slideInVertically(spring()) { -it },
+            exit = slideOutVertically(spring()) { -it }
         ) {
             TopController(
                 modifier = Modifier.background(
@@ -194,11 +255,39 @@ fun NekoAnimePlayer(
             )
         }
 
+        if (progressDragState.isDragging) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(Color.Black.copy(0.5f))
+                    .padding(12.dp, 9.dp),
+            ) {
+                val position =
+                    formatMilliseconds(progressDragState.endPosition)
+                val duration = formatMilliseconds(player.duration)
+                Text(
+                    text = buildAnnotatedString {
+                        withStyle(style = SpanStyle(color = basicWhite)) {
+                            append(position)
+                        }
+                        withStyle(style = SpanStyle(color = basicWhite.copy(0.6f))) {
+                            append(" / ")
+                            append(duration)
+                        }
+                    },
+                    style = MaterialTheme.typography.titleMedium,
+                    fontFamily = NekoAnimeFontFamilies.robotoFamily,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+
         AnimatedVisibility(
             modifier = Modifier.align(Alignment.BottomCenter),
             visible = isBottomControllerVisible,
-            enter = fadeIn(spring(stiffness = 4_000f)),
-            exit = fadeOut(spring(stiffness = 1_000f))
+            enter = slideInVertically(spring()) { it },
+            exit = slideOutVertically(spring()) { it }
         ) {
             BottomController(
                 modifier = Modifier.background(
@@ -207,16 +296,20 @@ fun NekoAnimePlayer(
                 isPaused = playerState.isPaused,
                 currentEpisode = if (uiState is AnimePlayUiState.Data) uiState.episode.value else 1,
                 totalEpisodes = if (uiState is AnimePlayUiState.Data) uiState.anime.latestEpisode else 1,
-                currentPosition = realPosition,
+                currentPosition = userPosition,
                 totalDurationMs = playerState.totalDurationMs,
                 bufferedPercentage = playerState.bufferedPercentage,
                 isFullscreen = isFullscreen,
                 onPlay = player::play,
                 onPause = player::pause,
                 onFullScreen = { onFullScreenChange(true) },
-                seekTo = {
-                    player.seekTo(it)
-                    realPosition = it
+                onPositionChange = {
+                    if (!progressDragState.isDragging) onProgressDrag(ProgressDragEvent.Start)
+                    userPosition = it
+                    onProgressDrag(ProgressDragEvent.Update(it))
+                },
+                onPositionChangeFinished = {
+                    onProgressDrag(ProgressDragEvent.End)
                 },
                 onEpisodeChange = onEpisodeChange,
                 showEpisodesDrawer = {
@@ -249,7 +342,6 @@ fun NekoAnimePlayer(
     }
 
 }
-
 
 @Composable
 private fun TopController(
@@ -301,7 +393,8 @@ private fun TopController(
                 .padding(top = 15.dp, end = 15.dp, bottom = 15.dp),
             painter = painterResource(NekoAnimeIcons.Player.more),
             contentDescription = "menu",
-            tint = basicWhite
+//            tint = basicWhite
+            tint = Color.Transparent // TODO: change color
         )
     }
 }
@@ -319,30 +412,36 @@ private fun BottomController(
     onPlay: () -> Unit,
     onPause: () -> Unit,
     onFullScreen: () -> Unit,
-    seekTo: (Long) -> Unit,
+    onPositionChange: (Long) -> Unit,
+    onPositionChangeFinished: (Long) -> Unit,
     onEpisodeChange: (Int) -> Unit,
     showEpisodesDrawer: () -> Unit,
 ) {
-    val totalDuration = formatMilliseconds(totalDurationMs)
-    val currentPos = formatMilliseconds(currentPosition, totalDuration.length > 5)
+    val totalDuration = remember(totalDurationMs) { formatMilliseconds(totalDurationMs) }
+    val currentPos = remember(currentPosition) {
+        formatMilliseconds(
+            currentPosition,
+            includeHour = totalDuration.length > 5
+        )
+    }
     if (isFullscreen) {
         Column(
             modifier = modifier
                 .fillMaxWidth()
                 .displayCutoutPadding()
                 .padding(vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
+                    .padding(start = 20.dp, end = 20.dp, bottom = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = currentPos,
                     color = basicWhite,
+                    fontFamily = NekoAnimeFontFamilies.robotoFamily,
                     style = MaterialTheme.typography.labelSmall
                 )
                 SeekBar(
@@ -350,11 +449,13 @@ private fun BottomController(
                     currentPosition = currentPosition,
                     totalDurationMs = totalDurationMs,
                     bufferedPercentage = bufferedPercentage,
-                    seekTo = seekTo
+                    onPositionChange = onPositionChange,
+                    onPositionChangeFinished = onPositionChangeFinished
                 )
                 Text(
                     text = totalDuration,
                     color = basicWhite,
+                    fontFamily = NekoAnimeFontFamilies.robotoFamily,
                     style = MaterialTheme.typography.labelSmall
                 )
             }
@@ -365,9 +466,10 @@ private fun BottomController(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(24.dp),
                 ) {
                     AnimatedPlayPauseButton(
+                        modifier = Modifier.scale(1.2f),
                         isPaused = isPaused,
                         onPlay = onPlay,
                         onPause = onPause
@@ -395,7 +497,7 @@ private fun BottomController(
                     ),
                     text = "选集",
                     color = basicWhite,
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
         }
@@ -403,7 +505,7 @@ private fun BottomController(
         Row(
             modifier = modifier
                 .fillMaxWidth()
-                .padding(12.dp, 8.dp),
+                .padding(12.dp, 6.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -417,11 +519,13 @@ private fun BottomController(
                 currentPosition = currentPosition,
                 totalDurationMs = totalDurationMs,
                 bufferedPercentage = bufferedPercentage,
-                seekTo = seekTo
+                onPositionChange = onPositionChange,
+                onPositionChangeFinished = onPositionChangeFinished
             )
             Text(
                 text = "$currentPos / $totalDuration",
                 color = basicWhite,
+                fontFamily = NekoAnimeFontFamilies.robotoFamily,
                 style = MaterialTheme.typography.labelSmall
             )
             Icon(
@@ -442,6 +546,7 @@ private fun BottomController(
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun AnimatedPlayPauseButton(
+    modifier: Modifier = Modifier,
     isPaused: Boolean,
     onPlay: () -> Unit,
     onPause: () -> Unit,
@@ -469,7 +574,7 @@ private fun AnimatedPlayPauseButton(
         }
         if (paused) {
             Icon(
-                modifier = Modifier
+                modifier = modifier
                     .rotate(rotation)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
@@ -483,7 +588,7 @@ private fun AnimatedPlayPauseButton(
             )
         } else {
             Icon(
-                modifier = Modifier
+                modifier = modifier
                     .rotate(rotation)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
@@ -506,12 +611,14 @@ private fun SeekBar(
     currentPosition: Long,
     bufferedPercentage: Int,
     totalDurationMs: Long,
-    seekTo: (Long) -> Unit,
+    onPositionChange: (Long) -> Unit,
+    onPositionChangeFinished: (Long) -> Unit,
 ) {
     Box(
         modifier = modifier
             .requiredHeight(24.dp)
-            .clipToBounds(),
+            .clipToBounds()
+            .padding(start = 4.dp),
         contentAlignment = Alignment.Center
     ) {
         Slider(
@@ -538,19 +645,14 @@ private fun SeekBar(
         Slider(
             modifier = Modifier.fillMaxWidth(),
             value = currentPosition.toFloat(),
-            onValueChange = { seekTo(it.toLong()) },
+            onValueChange = { onPositionChange(it.toLong()) },
+            onValueChangeFinished = { onPositionChangeFinished(currentPosition) },
             valueRange = 0f..totalDurationMs.toFloat(),
             thumb = {
-                Icon(
-                    modifier = Modifier
-                        .offset(1.dp, 5.dp)
-                        .blur(2.dp),
-                    painter = painterResource(NekoAnimeIcons.Player.thumb),
-                    contentDescription = "thumb shadow",
-                    tint = basicBlack.copy(0.5f)
-                )
                 Image(
-                    modifier = Modifier.offset(y = 4.dp),
+                    modifier = Modifier
+                        .scale(1.2f)
+                        .offset(y = 4.dp),
                     painter = painterResource(NekoAnimeIcons.Player.thumb),
                     contentDescription = "thumb"
                 )
@@ -672,8 +774,14 @@ private fun formatMilliseconds(millis: Long, includeHour: Boolean? = null): Stri
     val useHours = includeHour ?: (hours > 0)
 
     return if (useHours) {
-        String.format("%d:%02d:%02d", hours, minutes - hours * 60, seconds - minutes * 60)
+        String.format(
+            Locale.CHINA,
+            "%d:%02d:%02d",
+            hours,
+            minutes - hours * 60,
+            seconds - minutes * 60
+        )
     } else {
-        String.format("%02d:%02d", minutes, seconds - minutes * 60)
+        String.format(Locale.CHINA, "%02d:%02d", minutes, seconds - minutes * 60)
     }
 }

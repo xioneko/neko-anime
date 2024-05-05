@@ -61,6 +61,8 @@ class AnimePlayViewModel @Inject constructor(
 
     private val _loadingState = MutableStateFlow<LoadingState>(LoadingState.IDLE)
 
+    private val _progressDragState = MutableStateFlow(ProgressDragState())
+
     private val _playerState = MutableStateFlow(NekoAnimePlayerState())
 
     private val videoFetchingJob = SupervisorJob(viewModelScope.coroutineContext.job)
@@ -82,6 +84,8 @@ class AnimePlayViewModel @Inject constructor(
     val loadingState: StateFlow<LoadingState> = _loadingState.asStateFlow()
 
     val forYouAnimeStream = MutableStateFlow(List<AnimeShell?>(FOR_YOU_ANIME_GRID_SIZE) { null })
+
+    val progressDragState: StateFlow<ProgressDragState> = _progressDragState.asStateFlow()
 
     lateinit var followed: StateFlow<Boolean>
 
@@ -225,6 +229,41 @@ class AnimePlayViewModel @Inject constructor(
         }
     }
 
+    fun onProgressDrag(event: ProgressDragEvent) {
+        when (event) {
+            is ProgressDragEvent.Start -> {
+                _progressDragState.update {
+                    it.copy(
+                        isDragging = true,
+                        startPosition = player.currentPosition,
+                    )
+                }
+            }
+
+            is ProgressDragEvent.Update -> {
+                _progressDragState.update {
+                    it.copy(endPosition = event.position)
+                }
+            }
+
+            is ProgressDragEvent.End -> {
+                _progressDragState.update {
+                    it.copy(isDragging = false)
+                }
+                with(progressDragState.value) {
+                    player.seekTo(endPosition)
+                }
+            }
+
+            is ProgressDragEvent.Cancel -> {
+                _progressDragState.update {
+                    it.copy(isDragging = false)
+                }
+            }
+        }
+    }
+
+
     private fun fetchingForYouAnime() {
         with(_uiState.value as AnimePlayUiState.Data) {
             viewModelScope.launch {
@@ -347,6 +386,19 @@ sealed interface AnimePlayUiState {
         var episode: MutableState<Int>,
     ) : AnimePlayUiState
 }
+
+sealed class ProgressDragEvent {
+    data object Start : ProgressDragEvent()
+    data object End : ProgressDragEvent()
+    data object Cancel : ProgressDragEvent()
+    data class Update(val position: Long) : ProgressDragEvent()
+}
+
+data class ProgressDragState(
+    val isDragging: Boolean = false,
+    val startPosition: Long = 0L,
+    val endPosition: Long = 0L
+)
 
 data class NekoAnimePlayerState(
     val isLoading: Boolean = true,
