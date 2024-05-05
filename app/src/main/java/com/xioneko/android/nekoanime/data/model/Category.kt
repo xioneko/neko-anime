@@ -6,7 +6,7 @@ import java.time.LocalDate
  * 适配页面：https://www.yhmgo.com/list/
  */
 enum class Category(
-    val key: String,
+    @Suppress("unused") val key: String,
     val title: String,
     val options: List<Pair<String, String>>, // <输出值，标签值>
 ) {

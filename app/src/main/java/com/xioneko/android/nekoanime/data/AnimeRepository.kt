@@ -58,8 +58,8 @@ class AnimeRepository @Inject constructor(
         refresh: Boolean = false,
     ): Flow<Anime> =
         animeDataSource.getSearchResults(animeName, pageIndex)
-            .mapNotNull {
-                store.stream(StoreReadRequest.cached(AnimeKey.FetchAnime(it.id), refresh))
+            .mapNotNull { anime ->
+                store.stream(StoreReadRequest.cached(AnimeKey.FetchAnime(anime.id), refresh))
                     .firstOrNull { it is StoreReadResponse.Data }
                     .let { (it as StoreReadResponse.Data).value }
             }

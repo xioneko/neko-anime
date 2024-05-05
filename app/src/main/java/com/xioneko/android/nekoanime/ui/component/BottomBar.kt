@@ -54,7 +54,7 @@ fun NekoAnimeBottomAppBar(
         Row(
             modifier = Modifier.padding(8.dp)
         ) {
-            TopLevelScreen.values().forEach { destination ->
+            TopLevelScreen.entries.forEach { destination ->
                 BottomAppBarItem(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -80,7 +80,7 @@ fun BottomAppBarItem(
     val animatedIcon by rememberLottieComposition(LottieCompositionSpec.RawRes(iconId))
     val animationProgress: Float by animateFloatAsState(
         targetValue = if (selected) 1f else 0f,
-        animationSpec = tween(800, easing = LinearEasing)
+        animationSpec = tween(800, easing = LinearEasing), label = ""
     )
 
     Box(

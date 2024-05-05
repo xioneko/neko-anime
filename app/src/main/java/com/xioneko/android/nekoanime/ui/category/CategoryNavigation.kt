@@ -19,14 +19,14 @@ fun NavGraphBuilder.categoryScreen(
         route =
         "$CategoryNavRoute/?region={region}&type={type}&year={year}&quarter={quarter}&status={status}&genre={genre}&order={order}",
         arguments = buildList {
-            Category.values().forEach { category ->
+            Category.entries.forEach { category ->
                 add(navArgument(category.toString().lowercase()) {})
             }
         },
     ) { backStackEntry ->
         CategoryScreen(
             filter = buildMap {
-                Category.values().forEach { category ->
+                Category.entries.forEach { category ->
                     val value = backStackEntry.arguments?.getString(category.toString().lowercase()) ?: ""
                     put(category, value to category.labelValueOf(value))
                 }

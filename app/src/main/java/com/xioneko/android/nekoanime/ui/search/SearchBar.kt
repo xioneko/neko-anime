@@ -1,7 +1,6 @@
 package com.xioneko.android.nekoanime.ui.search
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleOut
@@ -202,7 +201,6 @@ private fun ClearIcon(
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun LeftAnimatedIcon(
     modifier: Modifier = Modifier,
@@ -254,7 +252,6 @@ private fun LeftAnimatedIcon(
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun RightAnimatedIcon(
     modifier: Modifier = Modifier,

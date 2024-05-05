@@ -1,7 +1,6 @@
 package com.xioneko.android.nekoanime.ui
 
 import android.annotation.SuppressLint
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.requiredWidth
@@ -26,7 +25,6 @@ import com.xioneko.android.nekoanime.util.NekoAnimeUpdater
 import com.xioneko.android.nekoanime.util.NetworkMonitor
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun NekoAnimeApp(
     networkMonitor: NetworkMonitor,

@@ -176,7 +176,7 @@ fun ScheduleScreen(
                     else Arrangement.spacedBy(15.dp)
                 ) {
                     val animationScope = rememberCoroutineScope()
-                    DayOfWeek.values().forEach {
+                    DayOfWeek.entries.forEach {
                         val selected = pagerState.currentPage == it.ordinal
                         if (selected) animationScope.launch {
                             scrollState.animateScrollTo(it.ordinal)
@@ -450,7 +450,7 @@ private fun FilterMenu(
         Column(
             modifier = Modifier.padding(10.dp, 5.dp)
         ) {
-            ScheduleFilterType.values().forEach {
+            ScheduleFilterType.entries.forEach {
                 RadioWithLabel(
                     modifier = Modifier
                         .fillMaxWidth()

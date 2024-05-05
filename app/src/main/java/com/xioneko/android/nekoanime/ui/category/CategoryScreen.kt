@@ -168,7 +168,7 @@ fun FiltersBar(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     var drawer: Category? by remember { mutableStateOf(null) }
-    val otherCategories = remember { Category.values().toSet() - mainCategories.toSet() }
+    val otherCategories = remember { Category.entries.toSet() - mainCategories.toSet() }
     val hideDrawer = { drawer = null }
 
     Column(modifier) {
@@ -275,7 +275,7 @@ private fun CategoryHead(
         )
         val animationProgress by animateFloatAsState(
             targetValue = if (expand) 1f else 0f,
-            animationSpec = tween(300, easing = LinearEasing)
+            animationSpec = tween(300, easing = LinearEasing), label = ""
         )
 
 
