@@ -1,5 +1,6 @@
 package com.xioneko.android.nekoanime.ui.player
 
+import android.util.Log
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.compose.animation.AnimatedContent
@@ -22,6 +23,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -53,6 +55,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -109,8 +112,14 @@ fun NekoAnimePlayer(
     val context = LocalContext.current
     var userPosition by remember { mutableLongStateOf(0L) }
     var fastForwarding by remember { mutableStateOf(false) }
+    var isSeekBarDragging by remember { mutableStateOf(false) }
+    val isDraggingProgress by remember(progressDragState) {
+        derivedStateOf {
+            progressDragState !is ProgressDragState.None
+        }
+    }
 
-    if (!progressDragState.isDragging) {
+    if (!isDraggingProgress && !isSeekBarDragging) {
         LaunchedEffect(Unit) {
             while (true) {
                 userPosition = player.currentPosition
@@ -129,7 +138,7 @@ fun NekoAnimePlayer(
     var isEpisodesDrawerVisible by remember(isFullscreen) { mutableStateOf(false) }
 
     // 自动隐藏播放控件
-    if (isBottomControllerVisible && !progressDragState.isDragging) {
+    if (isBottomControllerVisible && !isDraggingProgress && !isSeekBarDragging) {
         LaunchedEffect(Unit) {
             delay(5.seconds)
             isBottomControllerVisible = false
@@ -138,8 +147,8 @@ fun NekoAnimePlayer(
         }
     }
 
-    LaunchedEffect(progressDragState.isDragging) {
-        if (progressDragState.isDragging) {
+    LaunchedEffect(isDraggingProgress) {
+        if (isDraggingProgress) {
             isBottomControllerVisible = false // 避免多点触控
             if (isFullscreen) isTopControllerVisible = false  // 上下播放控件同步隐藏
         }
@@ -152,6 +161,14 @@ fun NekoAnimePlayer(
             if (isFullscreen) isTopControllerVisible = false
         } else {
             player.setPlaybackSpeed(1f)
+        }
+    }
+
+    LaunchedEffect(isSeekBarDragging, userPosition) {
+        if (isSeekBarDragging) {
+            delay(300)
+            player.seekTo(userPosition)
+            isSeekBarDragging = false
         }
     }
 
@@ -203,7 +220,7 @@ fun NekoAnimePlayer(
                         var startPosition = 0L
                         detectHorizontalDragGestures(
                             onDragStart = {
-                                onProgressDrag(ProgressDragEvent.Start)
+                                onProgressDrag(ProgressDragEvent.Start(false))
                                 startPosition = player.currentPosition
                             },
                             onDragEnd = {
@@ -266,7 +283,7 @@ fun NekoAnimePlayer(
             )
         }
 
-        if (progressDragState.isDragging) {
+        if (isDraggingProgress) {
             Box(
                 modifier = Modifier
                     .align(Alignment.Center)
@@ -275,7 +292,7 @@ fun NekoAnimePlayer(
                     .padding(12.dp, 9.dp),
             ) {
                 val position =
-                    formatMilliseconds(progressDragState.endPosition)
+                    formatMilliseconds((progressDragState as ProgressDragState.Data).endPosition)
                 val duration = formatMilliseconds(player.duration)
                 Text(
                     text = buildAnnotatedString {
@@ -333,12 +350,10 @@ fun NekoAnimePlayer(
                 onPause = player::pause,
                 onFullScreen = { onFullScreenChange(true) },
                 onPositionChange = {
-                    if (!progressDragState.isDragging) onProgressDrag(ProgressDragEvent.Start)
-                    userPosition = it
-                    onProgressDrag(ProgressDragEvent.Update(it))
-                },
-                onPositionChangeFinished = {
-                    onProgressDrag(ProgressDragEvent.End)
+                    if (player.duration > 0) {
+                        userPosition = it
+                        isSeekBarDragging = true
+                    }
                 },
                 onEpisodeChange = onEpisodeChange,
                 showEpisodesDrawer = {
@@ -442,7 +457,6 @@ private fun BottomController(
     onPause: () -> Unit,
     onFullScreen: () -> Unit,
     onPositionChange: (Long) -> Unit,
-    onPositionChangeFinished: (Long) -> Unit,
     onEpisodeChange: (Int) -> Unit,
     showEpisodesDrawer: () -> Unit,
 ) {
@@ -479,7 +493,6 @@ private fun BottomController(
                     totalDurationMs = totalDurationMs,
                     bufferedPercentage = bufferedPercentage,
                     onPositionChange = onPositionChange,
-                    onPositionChangeFinished = onPositionChangeFinished
                 )
                 Text(
                     text = totalDuration,
@@ -549,7 +562,6 @@ private fun BottomController(
                 totalDurationMs = totalDurationMs,
                 bufferedPercentage = bufferedPercentage,
                 onPositionChange = onPositionChange,
-                onPositionChangeFinished = onPositionChangeFinished
             )
             Text(
                 text = "$currentPos / $totalDuration",
@@ -641,7 +653,6 @@ private fun SeekBar(
     bufferedPercentage: Int,
     totalDurationMs: Long,
     onPositionChange: (Long) -> Unit,
-    onPositionChangeFinished: (Long) -> Unit,
 ) {
     Box(
         modifier = modifier
@@ -675,7 +686,6 @@ private fun SeekBar(
             modifier = Modifier.fillMaxWidth(),
             value = currentPosition.toFloat(),
             onValueChange = { onPositionChange(it.toLong()) },
-            onValueChangeFinished = { onPositionChangeFinished(currentPosition) },
             valueRange = 0f..totalDurationMs.toFloat(),
             thumb = {
                 Image(

@@ -155,11 +155,14 @@ fun AnimePlayScreen(
                 Column(
                     Modifier
                         .navigationBarsPadding()
-                        .pointerInput(progressDragState.isDragging) { // 避免多点触控
+                        .pointerInput(progressDragState !is ProgressDragState.None) { // 避免多点触控
                             awaitPointerEventScope {
                                 while (true) {
                                     awaitPointerEvent(PointerEventPass.Initial).changes.forEach { change ->
-                                        if (change.pressed && progressDragState.isDragging) change.consume()
+                                        if (change.pressed
+                                            && progressDragState !is ProgressDragState.None
+                                        )
+                                            change.consume()
                                     }
                                 }
                             }
