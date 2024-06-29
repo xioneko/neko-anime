@@ -46,8 +46,8 @@ class UserDataRepository @Inject constructor(
 
 
     suspend fun upsertWatchRecord(animeId: Int, episode: Int, positionMs: Long, percentageProgress: Int) {
-        val positions = watchHistory.first()[episode]?.positions?.toMutableMap() ?: mutableMapOf()
-        val progress = watchHistory.first()[episode]?.progress?.toMutableMap() ?: mutableMapOf()
+        val positions = watchHistory.first()[animeId]?.positions?.toMutableMap() ?: mutableMapOf()
+        val progress = watchHistory.first()[animeId]?.progress?.toMutableMap() ?: mutableMapOf()
         userDataSource.addWatchRecord(
             animeId,
             WatchRecord(Calendar.getInstance(), episode,

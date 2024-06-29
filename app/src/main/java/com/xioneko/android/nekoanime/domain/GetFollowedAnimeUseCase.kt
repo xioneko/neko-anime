@@ -2,6 +2,7 @@ package com.xioneko.android.nekoanime.domain
 
 import com.xioneko.android.nekoanime.data.AnimeRepository
 import com.xioneko.android.nekoanime.data.UserDataRepository
+import com.xioneko.android.nekoanime.data.model.WatchRecord
 import com.xioneko.android.nekoanime.domain.model.FollowedAnime
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -43,11 +44,20 @@ class GetFollowedAnimeUseCase @Inject constructor(
                         name = it.name,
                         imageUrl = it.imageUrl,
                         currentEpisode = watchRecords[it.id]?.recentEpisode ?: 0,
-                        isFinished = (watchRecords[it.id]?.progress?.get(it.latestEpisode)
-                            ?: 0) > 90,
+                        isFinished = checkFinished(watchRecords[it.id], it.latestEpisode),
                     )
                 }
             }
         )
+    }
+
+    private fun checkFinished(watchRecord: WatchRecord?, latestEpisode: Int): Boolean {
+        if (watchRecord == null) return false
+        for (ep in 1..latestEpisode) {
+            if (watchRecord.progress[ep] == null
+                || watchRecord.progress[ep]!! < 90
+            ) return false
+        }
+        return true
     }
 }
