@@ -9,7 +9,7 @@
 [![Android](https://img.shields.io/badge/android-10+-green)](https://developer.android.com/about/versions/10)
 [![Release](https://img.shields.io/github/v/release/xioneko/neko-anime)](https://github.com/xioneko/neko-anime/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/xioneko/neko-anime/total)](https://github.com/xioneko/neko-anime/releases/)
-[![Powered-by](https://img.shields.io/badge/powered%20by-%E6%A8%B1%E8%8A%B1%E5%8A%A8%E6%BC%AB-ea5c7b)](http://www.yhmgo.com/)
+[![Powered-by](https://img.shields.io/badge/powered%20by-%E6%A8%B1%E8%8A%B1%E5%8A%A8%E6%BC%AB-ea5c7b)](https://yhdm6.top/)
 [![License](https://img.shields.io/badge/license-GPLv3-yellow)](https://www.gnu.org/licenses/gpl-3.0.html)
 
 </p>
@@ -18,7 +18,7 @@
 ## 介绍
 <p>
 
-Neko Anime 使用樱花动漫 [🌸](https://www.yhmgo.com/)
+Neko Anime 使用樱花动漫 [🌸](https://yhdm6.top/)
 作为数据源，灵感来源于项目 [Imomoe](https://github.com/androiddevnotesforks/Imomoe)。技术栈方面采用了
 Kotlin 搭配 Jetpack
 Compose，遵循了官方指南中的“[现代 Android 应用架构](https://developer.android.com/topic/architecture)
@@ -64,11 +64,19 @@ App 的开发仍在进行中 🚧，但是版本迭代可能会比较慢，可�
 
 ## 构建
 
-- Android Studio Flamingo | 2023.3.1
+- Android Studio Flamingo | 2024.1.1
 - compileSdk 34
 - Gradle JDK 17
 
 ## 更新日志
+
+### v0.4.0 (2024-6-29)
+**缺陷修复**
+- 更换樱花动漫数据源
+
+**新增功能**
+- 播放线路自动切换
+- 支持播放缓存
 
 ### v0.3.1 (2024-5-20)
 **缺陷修复**
@@ -179,16 +187,6 @@ App 的开发仍在进行中 🚧，但是版本迭代可能会比较慢，可�
 ### v0.1.0 (2023-5-24)
 - 第一个发布版本，大多数功能基本实现
 - 待实现功能包括但不限于，番剧下载、明亮/暗黑模式切换、个性化番剧推荐、触摸滑动改变播放时间条。
-
-## FAQ
-
-- **番剧数据来源是什么？怎么获取番剧列表和视频地址的？**
-
-  NekoAnime (v0.3.0+) 目前仅有一个番剧数据源 https://www.yhmgo.com/, 番剧信息通过 HTTP 请求 + HTML
-  解析获取，视频地址的获取方式在老版本（v0.2.x 及以下）中采用的是 WebView，从 v0.3.0 版本开始直接通过
-  HTTP 获取（感谢 [@hehe1005566889](https://github.com/xioneko/neko-anime/issues/12#issue-2060922443)
-  提供的思路），具体代码实现见 <[番剧信息](app/src/main/java/com/xioneko/android/nekoanime/data/network/AnimeDataSource.kt)>
-  和 <[视频地址](app/src/main/java/com/xioneko/android/nekoanime/data/network/YhmgoVideoSource.kt)>
 
 
 ## 许可证
