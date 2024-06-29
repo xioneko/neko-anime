@@ -96,6 +96,10 @@ class AnimeRepository @androidx.annotation.OptIn(UnstableApi::class)
             ?.let { emit((it as StoreReadResponse.Data).value.videoSource[episode]!!) }
     }
 
+    @androidx.annotation.OptIn(UnstableApi::class)
     @OptIn(ExperimentalStoreApi::class)
-    suspend fun clearCache() = store.clear()
+    suspend fun clearCache() = withContext(Dispatchers.IO) {
+        store.clear()
+        mediaCache.clear()
+    }
 }
