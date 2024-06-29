@@ -6,24 +6,30 @@ import androidx.room.TypeConverters
 import com.xioneko.android.nekoanime.data.db.util.CalendarConverter
 import com.xioneko.android.nekoanime.data.db.util.ListConverter
 import com.xioneko.android.nekoanime.data.db.util.MapConverter
+import com.xioneko.android.nekoanime.data.db.util.SetConverter
 import com.xioneko.android.nekoanime.data.model.Anime
 import java.util.Calendar
 
 @Entity(tableName = "Anime")
-@TypeConverters(ListConverter::class, MapConverter::class, CalendarConverter::class)
+@TypeConverters(
+    ListConverter::class,
+    MapConverter::class,
+    SetConverter::class,
+    CalendarConverter::class,
+)
 data class AnimeEntity(
     @PrimaryKey val id: Int,
     val name: String,
     val imageUrl: String,
-    val latestEpisode: Int,
     val status: String,
-    val release: String,
-    val genres: List<String>,
+    val latestEpisode: Int,
+    val tags: List<String>,
     val type: String,
-    val year: Int,
+    val year: String,
     val description: String,
-    val videoSource: Map<Int, List<String>>, // episode -> url
-    val lastModified: Calendar
+    val streamIds: Set<Int>,
+    val videoSource: Map<Int, String>,
+    val lastUpdate: Calendar
 )
 
 
@@ -33,11 +39,11 @@ fun AnimeEntity.asAnime() = Anime(
     imageUrl = imageUrl,
     latestEpisode = latestEpisode,
     status = status,
-    release = release,
-    genres = genres,
     type = type,
+    tags = tags,
     year = year,
     description = description,
+    streamIds = streamIds,
     videoSource = videoSource,
-    lastModified = lastModified
+    lastUpdate = lastUpdate
 )

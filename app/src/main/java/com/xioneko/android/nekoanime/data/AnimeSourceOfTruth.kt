@@ -14,7 +14,7 @@ import javax.inject.Singleton
 class AnimeSourceOfTruth @Inject constructor(
     private val dao: AnimeDao,
 ) {
-    operator fun invoke(): SourceOfTruth<AnimeKey, Anime> = SourceOfTruth.of(
+    operator fun invoke(): SourceOfTruth<AnimeKey, Anime, Anime> = SourceOfTruth.of(
         reader = { key: AnimeKey ->
             flow {
                 when (key) {

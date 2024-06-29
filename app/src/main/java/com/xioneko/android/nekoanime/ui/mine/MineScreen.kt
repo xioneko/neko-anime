@@ -1,6 +1,7 @@
 package com.xioneko.android.nekoanime.ui.mine
 
 import android.content.pm.ActivityInfo
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -16,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,8 +24,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -44,9 +42,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.xioneko.android.nekoanime.data.model.ThemeConfig
 import com.xioneko.android.nekoanime.ui.component.AnimatedSwitchButton
-import com.xioneko.android.nekoanime.ui.component.NekoAnimeSnackBar
 import com.xioneko.android.nekoanime.ui.component.TransparentTopBar
 import com.xioneko.android.nekoanime.ui.component.WorkingInProgressDialog
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
@@ -99,16 +95,6 @@ fun MineScreen(
                 iconId = NekoAnimeIcons.light,
                 onIconClick = { /* TODO: 主题模式切换 */  showWorkingInProgressDialog = true }
             )
-        },
-        snackbarHost = {
-            SnackbarHost(
-                hostState = snackbarHostState
-            ) {
-                NekoAnimeSnackBar(
-                    modifier = Modifier.requiredWidth(210.dp),
-                    snackbarData = it
-                )
-            }
         },
         containerColor = pink99,
         contentWindowInsets = WindowInsets(0)
@@ -177,32 +163,32 @@ fun MineScreen(
                     .fillMaxWidth()
                     .then(cardModifier)
             ) {
-                ItemWithNewPage(
-                    modifier = itemModifier,
-                    text = "重新选择我的兴趣点",
-                    onClick = {
-                        /* TODO：兴趣点选择 */
-                        showWorkingInProgressDialog = true
-                    }
-                )
+//                ItemWithNewPage(
+//                    modifier = itemModifier,
+//                    text = "重新选择我的兴趣点",
+//                    onClick = {
+//                        /* TODO：兴趣点选择 */
+//                        showWorkingInProgressDialog = true
+//                    }
+//                )
 
-                ItemWithSwitch(
-                    modifier = itemModifier,
-                    text = "夜间主题跟随系统",
-                    checked = if (themeConfig == null) null else
-                        themeConfig == ThemeConfig.THEME_CONFIG_FOLLOW_SYSTEM,
-                    onCheckedChange = { followSystem ->
-                        viewModel.setTheme(
-                            if (followSystem) {
-                                ThemeConfig.THEME_CONFIG_FOLLOW_SYSTEM
-                            } else if (isSystemInDarkTheme) {
-                                ThemeConfig.THEME_CONFIG_DARK
-                            } else {
-                                ThemeConfig.THEME_CONFIG_LIGHT
-                            }
-                        )
-                    }
-                )
+//                ItemWithSwitch(
+//                    modifier = itemModifier,
+//                    text = "夜间主题跟随系统",
+//                    checked = if (themeConfig == null) null else
+//                        themeConfig == ThemeConfig.THEME_CONFIG_FOLLOW_SYSTEM,
+//                    onCheckedChange = { followSystem ->
+//                        viewModel.setTheme(
+//                            if (followSystem) {
+//                                ThemeConfig.THEME_CONFIG_FOLLOW_SYSTEM
+//                            } else if (isSystemInDarkTheme) {
+//                                ThemeConfig.THEME_CONFIG_DARK
+//                            } else {
+//                                ThemeConfig.THEME_CONFIG_LIGHT
+//                            }
+//                        )
+//                    }
+//                )
 
                 ItemWithSwitch(
                     modifier = itemModifier,
@@ -239,10 +225,7 @@ fun MineScreen(
                     action = {
                         viewModel.clearAnimeCache(
                             onFinished = {
-                                snackbarHostState.showSnackbar(
-                                    message = "已清除全部番剧数据缓存",
-                                    duration = SnackbarDuration.Short
-                                )
+                                Toast.makeText(context, "已清除全部缓存", Toast.LENGTH_SHORT).show()
                             }
                         )
                     }

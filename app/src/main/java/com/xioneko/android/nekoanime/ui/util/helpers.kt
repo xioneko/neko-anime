@@ -13,6 +13,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
+import kotlin.random.Random
 
 @Composable
 fun getAspectRadio(): Float {
@@ -65,5 +66,15 @@ fun vibrate(context: Context) {
         @Suppress("DEPRECATION")
         context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
     }
-    vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
+    vibrator.vibrate(VibrationEffect.createOneShot(100, 16))
+}
+
+fun <T> List<T>.getRandomElements(n: Int): List<T> {
+    if (size <= n) return this
+    val result = toMutableList()
+    for (i in 0 until n) {
+        val randomIndex = i + Random.nextInt(result.size - i)
+        result[i] = result[randomIndex].also { result[randomIndex] = result[i] }
+    }
+    return result.take(n)
 }

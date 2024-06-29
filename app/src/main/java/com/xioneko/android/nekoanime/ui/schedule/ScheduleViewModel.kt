@@ -32,7 +32,7 @@ class ScheduleViewModel @Inject constructor(
 
     val weeklySchedule = animeRepository.getWeeklySchedule()
         .onStart { _loadingState.emit(LoadingState.LOADING) }
-        .onEmpty { _loadingState.emit(LoadingState.FAILURE("😣 数据源似乎出了问题")) }
+        .onEmpty { _loadingState.emit(LoadingState.FAILURE("数据源似乎出了问题")) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),

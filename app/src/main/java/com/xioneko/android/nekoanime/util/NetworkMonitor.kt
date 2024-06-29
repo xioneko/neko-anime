@@ -7,14 +7,17 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import androidx.core.content.getSystemService
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.debounce
 import javax.inject.Inject
 
 class NetworkMonitor @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
+    @OptIn(FlowPreview::class)
     val isOffline: Flow<Boolean> = callbackFlow {
         val connectivityManager = context.getSystemService<ConnectivityManager>()
 
@@ -40,5 +43,5 @@ class NetworkMonitor @Inject constructor(
         awaitClose {
             connectivityManager?.unregisterNetworkCallback(callback)
         }
-    }
+    }.debounce(3000)
 }

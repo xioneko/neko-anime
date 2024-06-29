@@ -37,7 +37,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,8 +60,8 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.airbnb.lottie.compose.rememberLottieDynamicProperties
 import com.airbnb.lottie.compose.rememberLottieDynamicProperty
-import com.xioneko.android.nekoanime.data.ANIME_LIST_PAGE_SIZE
-import com.xioneko.android.nekoanime.data.model.Category
+import com.xioneko.android.nekoanime.data.ANIME_GRID_PAGE_SIZE
+import com.xioneko.android.nekoanime.data.model.AnimeCategory
 import com.xioneko.android.nekoanime.data.model.defaultLabel
 import com.xioneko.android.nekoanime.ui.component.LoadingDots
 import com.xioneko.android.nekoanime.ui.component.NarrowAnimeCard
@@ -81,16 +80,18 @@ import com.xioneko.android.nekoanime.ui.util.isTablet
 
 @Composable
 fun CategoryScreen(
-    filter: Map<Category, Pair<String, String>>,
-    viewModel: CategoryViewModel = hiltViewModel(),
+    filter: Map<AnimeCategory, Pair<String, String>>,
     onAnimeClick: (Int) -> Unit,
     onSearchClick: () -> Unit,
     onBackClick: () -> Unit,
 ) {
+    val viewModel =
+        hiltViewModel<CategoryViewModel, CategoryViewModel.CategoryViewModelFactory> { factory ->
+            factory.create(filter)
+        }
+
     val aspectRatio = getAspectRadio()
     val isTablet = isTablet()
-
-    LaunchedEffect(Unit) { viewModel.initFilterState(filter) }
 
     val lazyGridState = rememberLazyGridState()
 
@@ -99,9 +100,8 @@ fun CategoryScreen(
         derivedStateOf {
             with(lazyGridState.layoutInfo) {
                 viewModel.fetcherState.hasMore &&
-                        (totalItemsCount > 12 &&
-                                visibleItemsInfo.last().index >
-                                viewModel.fetcherState.page * ANIME_LIST_PAGE_SIZE - 8)
+                        totalItemsCount > 12 &&
+                        visibleItemsInfo.last().index > viewModel.fetcherState.page * ANIME_GRID_PAGE_SIZE - 8
             }
         }
     }
@@ -162,13 +162,17 @@ fun CategoryScreen(
 @Composable
 fun FiltersBar(
     modifier: Modifier = Modifier,
-    filter: Map<Category, Pair<String, String>>,
-    mainCategories: List<Category> = listOf(Category.Genre, Category.Year, Category.Order),
-    onFilter: (Category, Pair<String, String>) -> Unit,
+    filter: Map<AnimeCategory, Pair<String, String>>,
+    mainCategories: List<AnimeCategory> = listOf(
+        AnimeCategory.Year,
+        AnimeCategory.Genre,
+        AnimeCategory.Order
+    ),
+    onFilter: (AnimeCategory, Pair<String, String>) -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    var drawer: Category? by remember { mutableStateOf(null) }
-    val otherCategories = remember { Category.entries.toSet() - mainCategories.toSet() }
+    var drawer: AnimeCategory? by remember { mutableStateOf(null) }
+    val otherCategories = remember { AnimeCategory.entries.toSet() - mainCategories.toSet() }
     val hideDrawer = { drawer = null }
 
     Column(modifier) {
@@ -256,7 +260,7 @@ private fun CategoryHead(
     modifier: Modifier = Modifier,
     expand: Boolean,
     active: Boolean,
-    category: Category,
+    category: AnimeCategory,
     label: String
 ) {
     Row(
@@ -334,9 +338,9 @@ private fun AnimatedDrawer(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MainFilterDrawer(
-    filter: Map<Category, Pair<String, String>>,
-    onFilter: (Category, Pair<String, String>) -> Unit,
-    drawer: Category
+    filter: Map<AnimeCategory, Pair<String, String>>,
+    onFilter: (AnimeCategory, Pair<String, String>) -> Unit,
+    drawer: AnimeCategory
 ) {
     val isTablet = isTablet()
     FlowRow(
@@ -366,9 +370,9 @@ private fun MainFilterDrawer(
 
 @Composable
 private fun ExtraFilterDrawer(
-    filter: Map<Category, Pair<String, String>>,
-    categories: List<Category> = listOf(Category.Region, Category.Type, Category.Quarter),
-    onFilter: (Category, Pair<String, String>) -> Unit,
+    filter: Map<AnimeCategory, Pair<String, String>>,
+    categories: List<AnimeCategory> = listOf(AnimeCategory.Type),
+    onFilter: (AnimeCategory, Pair<String, String>) -> Unit,
 ) {
     Column {
         for (category in categories) {

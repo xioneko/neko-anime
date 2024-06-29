@@ -6,8 +6,10 @@ import android.content.res.Configuration
 import android.hardware.SensorManager
 import android.util.Log
 import android.view.OrientationEventListener
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.annotation.OptIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,7 +24,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeightIn
-import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -64,13 +65,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.media3.common.util.UnstableApi
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.model.AnimeShell
 import com.xioneko.android.nekoanime.ui.component.AnimatedFollowIcon
 import com.xioneko.android.nekoanime.ui.component.LazyAnimeGrid
-import com.xioneko.android.nekoanime.ui.component.NekoAnimeSnackBar
-import com.xioneko.android.nekoanime.ui.component.NekoAnimeSnackbarHost
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
 import com.xioneko.android.nekoanime.ui.theme.basicBlack
 import com.xioneko.android.nekoanime.ui.theme.basicWhite
@@ -89,16 +89,20 @@ import com.xioneko.android.nekoanime.ui.util.isTablet
 import com.xioneko.android.nekoanime.ui.util.setScreenOrientation
 import kotlinx.coroutines.delay
 
-@SuppressLint("SourceLockedOrientationActivity")
+@OptIn(UnstableApi::class)
+@SuppressLint("SourceLockedOrientationActivity", "ReturnFromAwaitPointerEventScope")
 @Composable
 fun AnimePlayScreen(
     animeId: Int,
-    viewModel: AnimePlayViewModel = hiltViewModel(),
-    onGenreClick: (String) -> Unit,
+    onTagClick: (String) -> Unit,
     onBackClick: () -> Unit
 ) {
-    LaunchedEffect(Unit) { viewModel.loadingUiState(animeId) }
+    val viewModel =
+        hiltViewModel<AnimePlayViewModel, AnimePlayViewModel.AnimePlayViewModelFactory> { factory ->
+            factory.create(animeId)
+        }
 
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val playerState by viewModel.playerState.collectAsStateWithLifecycle()
     val progressDragState by viewModel.progressDragState.collectAsStateWithLifecycle()
@@ -119,17 +123,23 @@ fun AnimePlayScreen(
         while (true) {
             delay(3000)
             if (uiState is AnimePlayUiState.Data) {
-                viewModel.upsertWatchRecord(
-                    (uiState as AnimePlayUiState.Data).episode.value
-                )
+                viewModel.upsertWatchRecord(viewModel.episode.value!!)
             }
         }
     }
 
     val loadingState by viewModel.loadingState.collectAsStateWithLifecycle()
-
     val forYouAnimeList by viewModel.forYouAnimeStream.collectAsStateWithLifecycle()
 
+    LaunchedEffect(loadingState) {
+        if (loadingState is LoadingState.FAILURE) {
+            Toast.makeText(
+                context,
+                (loadingState as LoadingState.FAILURE).message,
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
 
     Surface(
         color = basicWhite
@@ -141,6 +151,7 @@ fun AnimePlayScreen(
                 NekoAnimePlayer(
                     player = viewModel.player,
                     uiState = uiState,
+                    episode = viewModel.episode.value,
                     playerState = playerState,
                     isFullscreen = isFullscreen.value,
                     progressDragState = progressDragState,
@@ -175,7 +186,7 @@ fun AnimePlayScreen(
 
                         is AnimePlayUiState.Data -> {
                             with(uiState as AnimePlayUiState.Data) {
-                                val isFollowed by viewModel.followed.collectAsStateWithLifecycle()
+                                val isFollowed by viewModel.followedFlow.collectAsStateWithLifecycle()
                                 PlayerNeck(
                                     anime = anime,
                                     isFollowed = isFollowed,
@@ -184,11 +195,11 @@ fun AnimePlayScreen(
                                 )
                                 LazyColumn {
                                     item("Anime Detail") {
-                                        AnimeDetail(anime, onGenreClick)
+                                        AnimeDetail(anime, onTagClick)
                                     }
                                     item("Episodes List") {
                                         EpisodesList(
-                                            currentEpisode = episode.value,
+                                            currentEpisode = viewModel.episode.value!!,
                                             totalEpisodes = anime.latestEpisode,
                                             onEpisodeChange = viewModel::onEpisodeChange
                                         )
@@ -207,22 +218,11 @@ fun AnimePlayScreen(
                     }
                 }
             }
-            NekoAnimeSnackbarHost(
-                modifier = Modifier
-                    .navigationBarsPadding()
-                    .align(Alignment.BottomCenter),
-                visible = loadingState is LoadingState.FAILURE,
-                message = { (loadingState as LoadingState.FAILURE).message }
-            ) {
-                NekoAnimeSnackBar(
-                    modifier = Modifier.requiredWidth(220.dp),
-                    snackbarData = it
-                )
-            }
         }
     }
 }
 
+@OptIn(UnstableApi::class)
 @Composable
 fun DisposableAnimePlayEffects(
     viewModel: AnimePlayViewModel,
@@ -263,6 +263,7 @@ fun DisposableAnimePlayEffects(
         // 通过 context.setOrientation 锁定设备方向后，若设备的实际朝向就位，则恢复自动旋转
         val orientationListener =
             object : OrientationEventListener(context, SensorManager.SENSOR_DELAY_NORMAL) {
+                @OptIn(UnstableApi::class)
                 override fun onOrientationChanged(angle: Int) {
                     if (context.isOrientationLocked() || enablePortraitFullscreen != false) return
 
@@ -409,7 +410,7 @@ private fun PlayerNeck(
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(
-                    text = "更新至第${anime.latestEpisode}话(${anime.status})",
+                    text = anime.status,
                     color = darkPink60,
                     style = MaterialTheme.typography.labelSmall
                 )
@@ -449,7 +450,7 @@ private fun PlayerNeck(
 @Composable
 private fun AnimeDetail(
     anime: Anime,
-    onGenreClick: (String) -> Unit
+    onTagClick: (String) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -474,7 +475,7 @@ private fun AnimeDetail(
                     contentDescription = "release"
                 )
                 Text(
-                    text = "${anime.release}上映",
+                    text = "${anime.year}年上映",
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -504,14 +505,14 @@ private fun AnimeDetail(
             Icon(
                 modifier = Modifier.size(20.dp),
                 painter = painterResource(NekoAnimeIcons.tag),
-                contentDescription = "genre"
+                contentDescription = "tags"
             )
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(5.dp),
                 contentPadding = PaddingValues(end = 5.dp)
             ) {
-                for (genre in anime.genres) {
+                for (genre in anime.tags) {
                     item(genre) {
                         Row(
                             modifier = Modifier
@@ -520,7 +521,7 @@ private fun AnimeDetail(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,
                                     role = Role.Button,
-                                    onClick = { onGenreClick(genre) }
+                                    onClick = { onTagClick(genre) }
                                 )
                                 .padding(8.dp, 5.dp, 4.dp, 5.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -635,8 +636,8 @@ private fun EpisodesList(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             for (ep in 1..totalEpisodes) {
-                if (currentEpisode == ep) {
-                    item(ep) {
+                item(ep) {
+                    if (currentEpisode == ep) {
                         Box(
                             modifier = Modifier
                                 .size(50.dp)
@@ -646,13 +647,11 @@ private fun EpisodesList(
                                 Text(
                                     text = "$ep",
                                     color = pink10,
-                                    style = MaterialTheme.typography.bodyLarge
+                                    style = MaterialTheme.typography.bodyLarge,
                                 )
                             }
                         )
-                    }
-                } else {
-                    item(ep) {
+                    } else {
                         Box(
                             modifier = Modifier
                                 .size(50.dp)
@@ -668,7 +667,7 @@ private fun EpisodesList(
                                 Text(
                                     text = "$ep",
                                     color = neutral10,
-                                    style = MaterialTheme.typography.bodyLarge
+                                    style = MaterialTheme.typography.bodyLarge,
                                 )
                             }
                         )

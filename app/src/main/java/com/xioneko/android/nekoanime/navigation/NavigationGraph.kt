@@ -39,7 +39,7 @@ fun NekoAnimeNavigationGraph(
     ) {
         topLevelScreen(
             navController = topLevelNavController,
-            navigateToCategory = { navController.navigateToCategory(genre = it) },
+            navigateToCategory = { navController.navigateToCategory(type = it) },
             navigateToFollowedAnime = { navController.navigate(FollowedAnimeNavRoute) },
             navigateToHistory = { navController.navigate(WatchHistoryNavRoute) },
             navigateToDownload = { },
@@ -69,7 +69,10 @@ fun NekoAnimeNavigationGraph(
         )
 
         animePlayScreen(
-            onGenreClick = { navController.navigateToCategory(genre = it) },
+            onTagClick = {
+                // TODO: 考虑跳转到搜索页
+//                navController.navigateToCategory(genre = it)
+            },
             onBackClick = { navController.popBackStack() },
         )
 

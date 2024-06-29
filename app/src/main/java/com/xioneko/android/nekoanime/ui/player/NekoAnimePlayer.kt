@@ -1,6 +1,5 @@
 package com.xioneko.android.nekoanime.ui.player
 
-import android.util.Log
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.compose.animation.AnimatedContent
@@ -23,7 +22,6 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -101,6 +99,7 @@ import kotlin.time.Duration.Companion.seconds
 fun NekoAnimePlayer(
     player: ExoPlayer,
     uiState: AnimePlayUiState,
+    episode: Int?,
     playerState: NekoAnimePlayerState,
     progressDragState: ProgressDragState,
     isFullscreen: Boolean,
@@ -277,7 +276,7 @@ fun NekoAnimePlayer(
                     Brush.verticalGradient(listOf(Color.Black.copy(0.5f), Color.Transparent))
                 ),
                 title = if (uiState is AnimePlayUiState.Data)
-                    "${uiState.anime.name} 第${uiState.episode.value}话" else "",
+                    "${uiState.anime.name} 第${episode}话" else "",
                 isFullscreen = isFullscreen,
                 onBack = onBack
             )
@@ -340,7 +339,7 @@ fun NekoAnimePlayer(
                     Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(0.5f)))
                 ),
                 isPaused = playerState.isPaused,
-                currentEpisode = if (uiState is AnimePlayUiState.Data) uiState.episode.value else 1,
+                currentEpisode = episode ?: 1,
                 totalEpisodes = if (uiState is AnimePlayUiState.Data) uiState.anime.latestEpisode else 1,
                 currentPosition = userPosition,
                 totalDurationMs = playerState.totalDurationMs,
@@ -370,7 +369,7 @@ fun NekoAnimePlayer(
             exit = slideOutHorizontally { it / 2 }
         ) {
             EpisodesDrawer(
-                currentEpisode = if (uiState is AnimePlayUiState.Data) uiState.episode.value else 1,
+                currentEpisode = episode ?: 1,
                 totalEpisodes = if (uiState is AnimePlayUiState.Data) uiState.anime.latestEpisode else 1,
                 onEpisodeChange = {
                     onEpisodeChange(it)

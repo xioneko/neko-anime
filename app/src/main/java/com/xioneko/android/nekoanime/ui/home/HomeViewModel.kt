@@ -1,15 +1,17 @@
 package com.xioneko.android.nekoanime.ui.home
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xioneko.android.nekoanime.data.AnimeRepository
+import com.xioneko.android.nekoanime.data.model.AnimeCategory
 import com.xioneko.android.nekoanime.data.model.AnimeShell
-import com.xioneko.android.nekoanime.data.model.Category
 import com.xioneko.android.nekoanime.domain.GetFollowedAnimeUseCase
 import com.xioneko.android.nekoanime.ui.util.LoadingState
+import com.xioneko.android.nekoanime.ui.util.getRandomElements
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -17,11 +19,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.onEmpty
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -50,7 +53,7 @@ class HomeViewModel @Inject constructor(
     val loadingState: StateFlow<LoadingState> = _loadingState.asStateFlow()
 
     val forYouAnimeStreams: List<MutableStateFlow<Pair<String?, List<AnimeShell?>>>> =
-        List(4) { MutableStateFlow(null to List<AnimeShell?>(FOR_YOU_ANIME_GRID_SIZE) { null }) }
+        List(3) { MutableStateFlow(null to List<AnimeShell?>(FOR_YOU_ANIME_GRID_SIZE) { null }) }
 
     val followedAnime = getFollowedAnimeUseCase().stateIn(
         scope = viewModelScope,
@@ -59,12 +62,15 @@ class HomeViewModel @Inject constructor(
     )
 
     init {
-        refresh()
+        if (loadingState.value is LoadingState.IDLE) {
+            refresh()
+        }
     }
+
     fun refresh(onFinished: (() -> Unit)? = null) {
         with(fetchingScope) {
+            _loadingState.update { LoadingState.LOADING }
             launch {
-                _loadingState.emit(LoadingState.LOADING)
                 joinAll(
                     launch {
                         _recentUpdates.emit(List(RECENT_UPDATES_SIZE) { null })
@@ -83,37 +89,51 @@ class HomeViewModel @Inject constructor(
 
     private suspend fun fetchRecentUpdates() {
         animeRepository
-            .getAnimeBy(region = "日本", pageIndex = 0)
+            .getAnimeBy(type = 1, page = 0)
             .map { it.take(RECENT_UPDATES_SIZE) }
-            .onEmpty { _loadingState.emit(LoadingState.FAILURE("😣 数据源似乎出了问题")) }
+            .catch { notifyFailure("数据源似乎出了问题", it) }
             .onEach { _recentUpdates.emit(it) }
             .collect()
     }
 
     private suspend fun fetchForYouAnime() = supervisorScope {
-        generateForYouGenres().forEachIndexed { index, genre ->
-            launch {
-                animeRepository
-                    .getAnimeBy(
-                        region = "日本",
-                        orderBy = listOf("点击量", "点击量").random(),
-                        genre = genre,
-                        pageIndex = (0..2).random()
-                        // TODO: 不同风格的番剧数量不一，无法确定页码在有效范围内，暂时缩小范围
-                    )
-                    .map { it.take(FOR_YOU_ANIME_GRID_SIZE) }
-                    .onEmpty { _loadingState.emit(LoadingState.FAILURE("😣 数据源似乎出了问题")) }
-                    .onEach { forYouAnimeStreams[index].emit(genre to it) }
-                    .collect()
+        AnimeCategory.Type.options.filter { it.second != "欧美动漫" } // 欧美动漫数量较少，暂时不显示
+            .forEachIndexed { index, (type, label) ->
+                launch {
+                    var randomLetter = ('A'..'Z').random()
+                    var randomPage = (1..5).random()
+                    val forYouList = mutableListOf<AnimeShell>()
+                    var errorOccurred = false
+                    while (true) {
+                        animeRepository
+                            .getAnimeBy(
+                                type = type.toInt(),
+                                letter = randomLetter.toString(),
+                                page = randomPage
+                            )
+                            .map { it.getRandomElements(FOR_YOU_ANIME_GRID_SIZE - forYouList.size) }
+                            .catch {
+                                notifyFailure("数据源似乎出了问题", it)
+                                errorOccurred = true
+                            }
+                            .collect {
+                                forYouList.addAll(it)
+                            }
+                        if (errorOccurred) break
+                        else if (forYouList.size < FOR_YOU_ANIME_GRID_SIZE) {
+                            randomLetter = if (randomLetter == 'Z') 'A' else randomLetter.inc()
+                            randomPage = if (randomPage == 1) 1 else randomPage / 2
+                        } else {
+                            forYouAnimeStreams[index].emit(label to forYouList)
+                            break
+                        }
+                    }
+                }
             }
-        }
     }
 
-    private fun generateForYouGenres(): Set<String> = buildSet {
-        val options = Category.Genre.options.drop(1).take(20)
-        while (size < 4) {
-            add(options.random().first)
-        }
+    private fun notifyFailure(message: String, error: Throwable? = null) {
+        Log.d("Home", message, error)
+        _loadingState.update { LoadingState.FAILURE(message) }
     }
-
 }

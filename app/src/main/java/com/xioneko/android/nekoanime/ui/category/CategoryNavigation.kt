@@ -5,7 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.navOptions
-import com.xioneko.android.nekoanime.data.model.Category
+import com.xioneko.android.nekoanime.data.model.AnimeCategory
 import com.xioneko.android.nekoanime.data.model.labelValueOf
 
 const val CategoryNavRoute = "category_route"
@@ -16,18 +16,19 @@ fun NavGraphBuilder.categoryScreen(
     onBackClick: () -> Unit,
 ) {
     composable(
-        route =
-        "$CategoryNavRoute/?region={region}&type={type}&year={year}&quarter={quarter}&status={status}&genre={genre}&order={order}",
+        route = "$CategoryNavRoute/?type={type}&year={year}&genre={genre}&order={order}",
         arguments = buildList {
-            Category.entries.forEach { category ->
+            AnimeCategory.entries.forEach { category ->
                 add(navArgument(category.toString().lowercase()) {})
             }
         },
     ) { backStackEntry ->
         CategoryScreen(
             filter = buildMap {
-                Category.entries.forEach { category ->
-                    val value = backStackEntry.arguments?.getString(category.toString().lowercase()) ?: ""
+                AnimeCategory.entries.forEach { category ->
+                    val value =
+                        backStackEntry.arguments?.getString(category.toString().lowercase()) ?: ""
+                    // TODO: 处理 value 不合法的情况
                     put(category, value to category.labelValueOf(value))
                 }
             },
@@ -39,15 +40,12 @@ fun NavGraphBuilder.categoryScreen(
 }
 
 fun NavHostController.navigateToCategory(
-    region: String = "日本",
-    type: String = "",
+    type: Int = 1,
     year: String = "",
-    quarter: String = "",
-    status: String = "",
     genre: String = "",
-    orderBy: String = "",
+    orderBy: String = "time",
 ) {
     navigate(
-        "$CategoryNavRoute/?region=$region&type=$type&year=$year&quarter=$quarter&status=$status&genre=$genre&order=$orderBy",
+        "$CategoryNavRoute/?type=$type&year=$year&genre=$genre&order=$orderBy",
         navOptions { launchSingleTop = true })
 }

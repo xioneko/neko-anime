@@ -16,6 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xioneko.android.nekoanime.ui.search.screen.CandidatesView
 import com.xioneko.android.nekoanime.ui.search.screen.ResultsView
 import com.xioneko.android.nekoanime.ui.search.screen.SearchHistoryView
@@ -33,35 +34,37 @@ fun SearchScreen(
     val focusManager = LocalFocusManager.current
     val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
 
+    val searchText by viewModel.searchTextFlow.collectAsStateWithLifecycle()
+    val candidates by viewModel.candidatesFlow.collectAsStateWithLifecycle()
+
     var shouldShowResults by rememberSaveable { mutableStateOf(false) }
-    val shouldShowCandidates = viewModel.searchText.isNotBlank()
+    val shouldShowCandidates = searchText.isNotBlank()
     val shouldShowHistory = uiState.searching
 
-    val onSearch = {
-        val keyword = viewModel.searchText.trim()
+    val onSearch = { text: String ->
+        val keyword = text.trim()
         if (keyword.isNotEmpty()) {
+            shouldShowResults = true
             focusManager.clearFocus()
             viewModel.addSearchRecord(keyword)
             viewModel.fetchAnimeResults(keyword)
-            shouldShowResults = true
         }
     }
     val onExit = {
         onEnterExit(false)
         shouldShowResults = false
         focusManager.clearFocus()
-        viewModel.searchText = ""
+
     }
 
 
     if (uiState.searching) {
-
         DisposableEffect(backDispatcher) {
             val backCallback = object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
                     if (shouldShowResults) {
                         shouldShowResults = false
-                        viewModel.searchText = ""
+                        viewModel.onInputChange("")
                         uiState.focusRequester.requestFocus()
                     } else onExit()
                 }
@@ -76,13 +79,13 @@ fun SearchScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .zIndex(1f),
-            text = viewModel.searchText,
+            text = searchText,
             searching = uiState.searching,
             focusRequester = uiState.focusRequester,
             searchBarState = uiState,
             onLeftIconClick = onHistoryClick,
             onRightIconClick = onCategoryClick,
-            onInputChange = { viewModel.searchText = it },
+            onInputChange = viewModel::onInputChange,
             onFocusChange = { focused ->
                 if (focused) {
                     shouldShowResults = false
@@ -91,7 +94,7 @@ fun SearchScreen(
                     onExit()
                 }
             },
-            onSearch = onSearch,
+            onSearch = { onSearch(searchText) },
         )
 
         Box {
@@ -103,8 +106,8 @@ fun SearchScreen(
                     source = viewModel.searchHistory,
                     onClearHistory = viewModel::clearSearchHistory,
                     onRecordClick = {
-                        viewModel.searchText = it
-                        onSearch()
+                        viewModel.onInputChange(it)
+                        onSearch(it)
                     }
                 )
             }
@@ -114,11 +117,11 @@ fun SearchScreen(
                 enter = fadeIn(), exit = fadeOut()
             ) {
                 CandidatesView(
-                    input = viewModel.searchText.trim(),
-                    fetch = viewModel::getCandidatesOf,
+                    input = searchText.trim(),
+                    candidates = candidates,
                     onCandidateClick = {
-                        viewModel.searchText = it
-                        onSearch()
+                        viewModel.onInputChange(it)
+                        onSearch(it)
                     }
                 )
             }
@@ -129,8 +132,6 @@ fun SearchScreen(
             ) {
                 ResultsView(
                     uiState = viewModel.resultsViewState,
-                    onFollow = viewModel::addFollowedAnime,
-                    onUnfollow = viewModel::unfollowedAnime,
                     onAnimeClick = onAnimeClick,
                 )
             }

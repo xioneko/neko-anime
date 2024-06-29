@@ -19,8 +19,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,31 +34,17 @@ import com.xioneko.android.nekoanime.ui.theme.basicWhite
 import com.xioneko.android.nekoanime.ui.theme.neutral03
 import com.xioneko.android.nekoanime.ui.theme.pink40
 import com.xioneko.android.nekoanime.ui.util.isTablet
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.take
 
 @Composable
 internal fun CandidatesView(
     input: String,
-    fetch: (String) -> Flow<String>,
+    candidates: List<String>,
     onCandidateClick: (String) -> Unit,
 ) {
     val isTablet = isTablet()
 
-    val candidateList = remember(input) {
-        mutableStateListOf<Pair<MutableTransitionState<Boolean>, String>>()
-    }
-
-    LaunchedEffect(input) {
-        fetch(input)
-            .take(12)
-            .onEach { candidate ->
-                val visible = MutableTransitionState(false).apply { targetState = true }
-                candidateList.add(visible to candidate)
-            }
-            .collect()
+    val transitionState = remember {
+        MutableTransitionState(false).apply { targetState = true }
     }
 
     Column(
@@ -71,8 +55,8 @@ internal fun CandidatesView(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(if (isTablet) 14.dp else 10.dp),
     ) {
-        for (candidate in candidateList) {
-            AnimatedVisibility(visibleState = candidate.first, enter = fadeIn(), exit = fadeOut()) {
+        for (candidate in candidates) {
+            AnimatedVisibility(visibleState = transitionState, enter = fadeIn(), exit = fadeOut()) {
                 CandidateItem(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -80,9 +64,9 @@ internal fun CandidatesView(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                             role = Role.DropdownList,
-                            onClick = { onCandidateClick(candidate.second) }
+                            onClick = { onCandidateClick(candidate) }
                         ),
-                    text = candidate.second,
+                    text = candidate,
                     keyword = input
                 )
             }

@@ -1,19 +1,16 @@
 package com.xioneko.android.nekoanime.data
 
+import androidx.media3.common.util.UnstableApi
 import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.model.AnimeKey
 import com.xioneko.android.nekoanime.data.model.AnimeShell
-import com.xioneko.android.nekoanime.data.network.AnimeDataSource
-import com.xioneko.android.nekoanime.data.network.NetworkDataFetcher
-import com.xioneko.android.nekoanime.data.network.VideoSourceManager
+import com.xioneko.android.nekoanime.data.network.AnimeDataFetcher
+import com.xioneko.android.nekoanime.data.network.YhdmDataSource
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.retry
+import kotlinx.coroutines.withContext
 import org.mobilenativefoundation.store.store5.ExperimentalStoreApi
 import org.mobilenativefoundation.store.store5.Store
 import org.mobilenativefoundation.store.store5.StoreBuilder
@@ -24,19 +21,21 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 
-const val ANIME_LIST_PAGE_SIZE = 24
+const val ANIME_LIST_PAGE_SIZE = 36
+const val ANIME_GRID_PAGE_SIZE = 60
 
 @Singleton
-class AnimeRepository @Inject constructor(
+class AnimeRepository @androidx.annotation.OptIn(UnstableApi::class)
+@Inject constructor(
     animeSourceOfTruth: AnimeSourceOfTruth,
     animeDataValidator: AnimeDataValidator,
-    networkDataFetcher: NetworkDataFetcher,
-    private val animeDataSource: AnimeDataSource,
-    private val videoSourceManager: VideoSourceManager
+    animeDataFetcher: AnimeDataFetcher,
+    private val yhdmDataSource: YhdmDataSource,
+    private val mediaCache: SimpleMediaCache
 ) {
     private val store: Store<AnimeKey, Anime> =
-        StoreBuilder.from<AnimeKey, Anime, Anime>(
-            fetcher = networkDataFetcher(),
+        StoreBuilder.from(
+            fetcher = animeDataFetcher(),
             sourceOfTruth = animeSourceOfTruth(),
         )
             .validator(animeDataValidator)
@@ -52,54 +51,49 @@ class AnimeRepository @Inject constructor(
     }
 
 
-    fun getAnimeByName(
-        animeName: String,
-        pageIndex: Int,
-        refresh: Boolean = false,
-    ): Flow<Anime> =
-        animeDataSource.getSearchResults(animeName, pageIndex)
-            .mapNotNull { anime ->
-                store.stream(StoreReadRequest.cached(AnimeKey.FetchAnime(anime.id), refresh))
-                    .firstOrNull { it is StoreReadResponse.Data }
-                    .let { (it as StoreReadResponse.Data).value }
-            }
+    fun searchAnime(
+        keyword: String = "",
+        tag: String = "",
+        actor: String = "",
+        page: Int,
+    ): Flow<List<AnimeShell>> =
+        yhdmDataSource.getSearchResults(keyword, tag, actor, page)
 
 
-    fun getRelativeAnime(animeName: String, pageIndex: Int = 0): Flow<String> =
-        animeDataSource.getSearchResults(animeName, pageIndex)
-            .map { it.name }
+    fun getSearchSuggests(keyword: String, limit: Int): Flow<List<String>> =
+        yhdmDataSource.getSearchSuggests(keyword, limit)
 
 
     fun getAnimeBy(
-        region: String = "",
-        type: String = "",
-        year: String = "",
-        quarter: String = "",
-        status: String = "",
+        type: Int = 1,
+        orderBy: String = "time",
         genre: String = "",
-        orderBy: String = "",
-        pageIndex: Int,
+        year: String = "",
+        letter: String = "",
+        page: Int,
     ): Flow<List<AnimeShell>> =
-        animeDataSource
-            .getRetrievalResults(region, type, year, quarter, status, genre, orderBy, pageIndex)
+        yhdmDataSource
+            .getRetrievalResults(type, orderBy, genre, year, letter, page)
 
 
     fun getWeeklySchedule(): Flow<Map<DayOfWeek, List<AnimeShell>>> =
-        animeDataSource.getWeeklyScheduleResults()
+        yhdmDataSource.getWeeklyScheduleResults()
 
 
     fun getVideoUrl(
         anime: Anime,
         episode: Int,
+        streamId: Int,
         refresh: Boolean = false,
-    ): Flow<List<String>> = flow {
-        store.stream(StoreReadRequest.cached(AnimeKey.FetchVideo(anime, episode), refresh))
-            .onEach { it.throwIfError() }
-            .retry { videoSourceManager.tryNext() }
-            .catch {/* 尝试所有视频源后，如果依然无法解析到视频地址，则不发送任何 String */ }
+    ): Flow<String> = flow {
+        store.stream(
+            StoreReadRequest.cached(
+                AnimeKey.FetchVideo(anime, episode, streamId),
+                refresh
+            )
+        )
             .firstOrNull { it is StoreReadResponse.Data }
             ?.let { emit((it as StoreReadResponse.Data).value.videoSource[episode]!!) }
-
     }
 
     @OptIn(ExperimentalStoreApi::class)

@@ -6,46 +6,44 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xioneko.android.nekoanime.data.ANIME_LIST_PAGE_SIZE
-import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.ui.component.LoadingDots
+import com.xioneko.android.nekoanime.ui.component.NarrowAnimeCard
 import com.xioneko.android.nekoanime.ui.component.NoResults
 import com.xioneko.android.nekoanime.ui.search.ResultsViewState
-import com.xioneko.android.nekoanime.ui.search.SearchResult
 import com.xioneko.android.nekoanime.ui.theme.basicWhite
+import com.xioneko.android.nekoanime.ui.util.getAspectRadio
+import com.xioneko.android.nekoanime.ui.util.isTablet
 import kotlinx.coroutines.flow.update
 
 
 @Composable
-internal fun ResultsView(
+fun ResultsView(
     uiState: ResultsViewState,
-    onFollow: (Anime) -> Unit,
-    onUnfollow: (Anime) -> Unit,
     onAnimeClick: (Int) -> Unit,
 ) {
-    val lazyListState = rememberLazyListState()
+    val aspectRatio = getAspectRadio()
+    val isTablet = isTablet()
+    val lazyGridState = rememberLazyGridState()
+    val shouldShowLoadingDots by remember { derivedStateOf { uiState.loadingPageCount.value > 0 } }
     val shouldFetchMore by remember(uiState.hasMore.value) {
         derivedStateOf {
-            with(lazyListState.layoutInfo) {
-                if (!uiState.hasMore.value) false
-                else (totalItemsCount > 8 &&
-                        visibleItemsInfo.lastOrNull()?.let {
-                            it.index > totalItemsCount - ANIME_LIST_PAGE_SIZE / 4
-                        } ?: false)
+            with(lazyGridState.layoutInfo) {
+                uiState.hasMore.value &&
+                        totalItemsCount > 12 &&
+                        visibleItemsInfo.last().index > totalItemsCount - ANIME_LIST_PAGE_SIZE / 4
 
             }
         }
@@ -59,30 +57,24 @@ internal fun ResultsView(
             .fillMaxSize()
             .background(basicWhite),
     ) {
-        LazyColumn(
+        LazyVerticalGrid(
             modifier = Modifier.fillMaxSize(),
-            state = lazyListState,
-            contentPadding = PaddingValues(0.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-            reverseLayout = false,
-            userScrollEnabled = true,
+            state = lazyGridState,
+            columns = GridCells.Fixed(if (isTablet) 4 else if (aspectRatio < 0.56) 6 else 3),
+            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 36.dp, bottom = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            items(uiState.results, { it.first.id }, { "Anime Result" }) { item ->
-                val followed by item.second.collectAsStateWithLifecycle(true)
-                SearchResult(
-                    modifier = Modifier.fillMaxWidth(),
-                    anime = item.first,
-                    isFollowed = followed,
-                    onClick = onAnimeClick,
-                    onFollowAnime = onFollow,
-                    onUnfollowAnime = onUnfollow
-                )
+            for (animeShell in uiState.results) {
+                item(animeShell.id) {
+                    NarrowAnimeCard(anime = animeShell, onClick = onAnimeClick)
+                }
             }
-            if (uiState.loadingPageCount.value > 0) {
+            if (shouldShowLoadingDots) {
                 item(
                     key = "Loading",
                     contentType = "Loading",
+                    span = { GridItemSpan(maxLineSpan) },
                     content = { LoadingDots() }
                 )
             }

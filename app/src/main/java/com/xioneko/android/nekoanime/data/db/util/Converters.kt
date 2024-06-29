@@ -7,28 +7,36 @@ import java.util.Calendar
 
 class ListConverter {
     @TypeConverter
-    fun ListToJson(value: List<String>) = Json.encodeToString(value)
+    fun listToJson(value: List<String>) = Json.encodeToString(value)
 
     @TypeConverter
-    fun JsonToList(value: String): List<String> = Json.decodeFromString(value)
+    fun jsonToList(value: String): List<String> = Json.decodeFromString(value)
 }
 
 class MapConverter {
     @TypeConverter
-    fun MapToJson(value: Map<Int, List<String>>) = Json.encodeToString(value)
+    fun mapToJson(value: Map<Int, String>) = Json.encodeToString(value)
 
     @TypeConverter
-    fun JsonToMap(value: String): Map<Int, List<String>> = Json.decodeFromString(value)
+    fun jsonToMap(value: String): Map<Int, String> = Json.decodeFromString(value)
+}
+
+class SetConverter {
+    @TypeConverter
+    fun setToJson(value: Set<Int>) = Json.encodeToString(value)
+
+    @TypeConverter
+    fun jsonToSet(value: String): Set<Int> = Json.decodeFromString(value)
 }
 
 class CalendarConverter {
     @TypeConverter
-    fun LongToCalendar(value: Long): Calendar {
+    fun longToCalendar(value: Long): Calendar {
         return Calendar.Builder().setInstant(value).build()
     }
 
     @TypeConverter
-    fun CalendarToLong(date: Calendar): Long {
+    fun calendarToLong(date: Calendar): Long {
         return date.timeInMillis
     }
 }

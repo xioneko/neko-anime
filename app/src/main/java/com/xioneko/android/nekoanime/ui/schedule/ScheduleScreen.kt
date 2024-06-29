@@ -1,7 +1,7 @@
 package com.xioneko.android.nekoanime.ui.schedule
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -55,8 +54,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
@@ -67,8 +66,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xioneko.android.nekoanime.data.model.AnimeShell
 import com.xioneko.android.nekoanime.ui.component.AnimatedRadioButton
 import com.xioneko.android.nekoanime.ui.component.LoadingDots
-import com.xioneko.android.nekoanime.ui.component.NekoAnimeSnackBar
-import com.xioneko.android.nekoanime.ui.component.NekoAnimeSnackbarHost
 import com.xioneko.android.nekoanime.ui.component.TransparentTopBar
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
 import com.xioneko.android.nekoanime.ui.theme.basicBlack
@@ -76,18 +73,15 @@ import com.xioneko.android.nekoanime.ui.theme.basicWhite
 import com.xioneko.android.nekoanime.ui.theme.darkPink60
 import com.xioneko.android.nekoanime.ui.theme.neutral01
 import com.xioneko.android.nekoanime.ui.theme.neutral08
-import com.xioneko.android.nekoanime.ui.theme.neutral10
 import com.xioneko.android.nekoanime.ui.theme.pink10
 import com.xioneko.android.nekoanime.ui.theme.pink40
 import com.xioneko.android.nekoanime.ui.theme.pink50
-import com.xioneko.android.nekoanime.ui.theme.pink60
 import com.xioneko.android.nekoanime.ui.theme.pink70
 import com.xioneko.android.nekoanime.ui.theme.pink80
 import com.xioneko.android.nekoanime.ui.theme.pink99
 import com.xioneko.android.nekoanime.ui.util.LoadingState
 import com.xioneko.android.nekoanime.ui.util.getAspectRadio
 import com.xioneko.android.nekoanime.ui.util.isTablet
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.conflate
@@ -99,13 +93,14 @@ import okhttp3.internal.format
 import java.time.DayOfWeek
 import java.time.LocalDate
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationApi::class, FlowPreview::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ScheduleScreen(
     padding: PaddingValues,
     viewModel: ScheduleViewModel = hiltViewModel(),
     onAnimeClick: (Int) -> Unit
 ) {
+    val context = LocalContext.current
     val isTablet = isTablet()
     val aspectRadio = getAspectRadio()
 
@@ -117,6 +112,16 @@ fun ScheduleScreen(
     val loadingState by viewModel.loadingState.collectAsStateWithLifecycle()
 
     var shouldShowFilterMenu by remember { mutableStateOf(false) }
+
+    LaunchedEffect(loadingState) {
+        if (loadingState is LoadingState.FAILURE) {
+            Toast.makeText(
+                context,
+                (loadingState as LoadingState.FAILURE).message,
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
 
 
     Scaffold(
@@ -132,17 +137,6 @@ fun ScheduleScreen(
                 iconTint = if (viewModel.filterType == ScheduleFilterType.ALL) basicBlack else pink40,
                 onIconClick = { shouldShowFilterMenu = !shouldShowFilterMenu }
             )
-        },
-        snackbarHost = {
-            NekoAnimeSnackbarHost(
-                visible = loadingState is LoadingState.FAILURE,
-                message = { (loadingState as LoadingState.FAILURE).message }
-            ) {
-                NekoAnimeSnackBar(
-                    modifier = Modifier.requiredWidth(200.dp),
-                    snackbarData = it
-                )
-            }
         },
         containerColor = pink99,
         contentWindowInsets = WindowInsets(0),
@@ -258,7 +252,10 @@ fun ScheduleScreen(
                                     for (animeShell in weeklySchedule[DayOfWeek.of(index + 1)]!!) {
                                         when (viewModel.filterType) {
                                             ScheduleFilterType.FOLLOWED -> if (animeShell.id !in followedAnimeIds) continue
-                                            ScheduleFilterType.SERIALIZING -> if (animeShell.status != "连载中") continue
+                                            ScheduleFilterType.SERIALIZING -> if (!animeShell.status.contains(
+                                                    "更新"
+                                                )
+                                            ) continue
                                             else -> {}
                                         }
                                         item(animeShell.id) {
@@ -387,26 +384,9 @@ private fun ItemCard(
         color = basicWhite,
     ) {
         Row(
-            modifier = Modifier.padding(6.dp, 15.dp),
+            modifier = Modifier.padding(15.dp, 15.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                modifier = Modifier.width(if (isTablet) 64.dp else 56.dp),
-                text = "第${animeShell.latestEpisode}话",
-                textAlign = TextAlign.Center,
-                color = darkPink60,
-                style = MaterialTheme.typography.labelSmall
-            )
-            Box(
-                modifier = Modifier
-                    .padding(end = 8.dp)
-                    .size(1.dp, 36.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(pink60.copy(0f), pink60, pink60.copy(0f))
-                        )
-                    )
-            )
             Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
                 Text(
                     text = animeShell.name,
@@ -416,7 +396,7 @@ private fun ItemCard(
                 )
                 Text(
                     text = animeShell.status,
-                    color = neutral10,
+                    color = darkPink60,
                     style = MaterialTheme.typography.labelSmall
                 )
             }

@@ -262,48 +262,35 @@ class AnimePlayViewModel @Inject constructor(
     }
 
 
-    private fun fetchingForYouAnime() {
+    private suspend fun fetchingForYouAnime() {
         with(_uiState.value as AnimePlayUiState.Data) {
-            viewModelScope.launch {
-                var pageIndex = (0..10).random()
-                animeRepository
-                    .getAnimeBy(
-                        region = "日本",
-                        genre = anime.genres.random(),
-                        orderBy = Category.Order.options.random().first,
-                        pageIndex = pageIndex
-                    )
-                    .onEmpty { error("尝试缩小 pageIndex<$pageIndex> 范围") }
-                    .retry {
-                        if (pageIndex == 0) false
-                        else true
-                            .also { pageIndex = floor(pageIndex / 2f).toInt() }
+            val forYouList = mutableListOf<AnimeShell>()
+            var errorOccurred = false
+            for (tag in anime.tags.shuffled()) {
+                animeRepository.searchAnime(tag = tag, page = (1..5).random())
+                    .map { it.getRandomElements(FOR_YOU_ANIME_GRID_SIZE - forYouList.size) }
+                    .catch {
+                        notifyFailure("数据源似乎出了问题")
+                        errorOccurred = true
                     }
-                    .catch {}
-                    .firstOrNull()
-                    ?.filterNot { it.id == anime.id }
-                    .let {
-                        if (it != null && it.size >= FOR_YOU_ANIME_GRID_SIZE) {
-                            forYouAnimeStream.emit(it.subList(0, FOR_YOU_ANIME_GRID_SIZE))
-                        } else {
-                            val list = mutableListOf<AnimeShell>()
-                            it?.let { list.addAll(it) }
-                            animeRepository.getAnimeBy(region = "日本", pageIndex = 0)
-                                .onEmpty { notifyFailure("😣 数据源似乎出了问题") }
-                                .firstOrNull()
-                                ?.let { fallbackList ->
-                                    list.addAll(
-                                        fallbackList.subList(0, FOR_YOU_ANIME_GRID_SIZE - list.size)
-                                    )
-                                    forYouAnimeStream.emit(list)
-                                }
-                        }
+                    .collect {
+                        forYouList.addAll(it)
                     }
-
-
+                if (forYouList.size == FOR_YOU_ANIME_GRID_SIZE || errorOccurred) break
             }
+            if (errorOccurred) return
+            if (forYouList.size < FOR_YOU_ANIME_GRID_SIZE) {
+                animeRepository.getAnimeBy(type = 1, page = (1..30).random())
+                    .map { it.getRandomElements(FOR_YOU_ANIME_GRID_SIZE - forYouList.size) }
+                    .catch { notifyFailure("数据源似乎出了问题") }
+                    .collect {
+                        forYouList.addAll(it)
+                    }
+            }
+            forYouAnimeStream.emit(forYouList)
         }
     }
+
 
     private fun producePlayerState() =
         callbackFlow {

@@ -1,5 +1,6 @@
 package com.xioneko.android.nekoanime.ui.home
 
+import android.widget.Toast
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -18,7 +19,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeightIn
-import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -53,6 +53,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
@@ -65,10 +66,9 @@ import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.xioneko.android.nekoanime.data.model.AnimeCategory
 import com.xioneko.android.nekoanime.ui.component.FollowedAnimeCard
 import com.xioneko.android.nekoanime.ui.component.LazyAnimeGrid
-import com.xioneko.android.nekoanime.ui.component.NekoAnimeSnackBar
-import com.xioneko.android.nekoanime.ui.component.NekoAnimeSnackbarHost
 import com.xioneko.android.nekoanime.ui.component.shimmerBrush
 import com.xioneko.android.nekoanime.ui.search.SearchScreen
 import com.xioneko.android.nekoanime.ui.search.rememberSearchBarState
@@ -100,8 +100,9 @@ fun HomeScreen(
     onHistoryClick: () -> Unit,
     onAnimeClick: (Int) -> Unit,
     onFollowedAnimeClick: () -> Unit,
-    navigateToCategory: (genre: String) -> Unit,
+    navigateToCategory: (type: Int) -> Unit,
 ) {
+    val context = LocalContext.current
     val aspectRatio = getAspectRadio()
     val isTablet = isTablet()
 
@@ -134,6 +135,16 @@ fun HomeScreen(
             }
         }
     )
+
+    LaunchedEffect(loadingState) {
+        if (loadingState is LoadingState.FAILURE) {
+            Toast.makeText(
+                context,
+                (loadingState as LoadingState.FAILURE).message,
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
 
     LaunchedEffect(viewModel.isSearching, scrollProgress) {
         systemUiController.setStatusBarColor(
@@ -209,7 +220,7 @@ fun HomeScreen(
             item("Recent Updates") {
                 AnimeGridHead(
                     headline = "最近更新",
-                    onMoreDetails = { navigateToCategory("") }
+                    onMoreAnime = { navigateToCategory(1) }
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 LazyAnimeGrid(
@@ -226,7 +237,7 @@ fun HomeScreen(
                     val genreToAnimeList by animeFlow.collectAsStateWithLifecycle()
                     AnimeGridHead(
                         headline = genreToAnimeList.first,
-                        onMoreDetails = navigateToCategory
+                        onMoreAnime = navigateToCategory
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     LazyAnimeGrid(
@@ -245,16 +256,6 @@ fun HomeScreen(
             state = pullRefreshState,
             contentColor = pink40
         )
-        NekoAnimeSnackbarHost(
-            modifier = Modifier.align(Alignment.BottomCenter),
-            visible = loadingState is LoadingState.FAILURE,
-            message = { (loadingState as LoadingState.FAILURE).message }
-        ) {
-            NekoAnimeSnackBar(
-                modifier = Modifier.requiredWidth(200.dp),
-                snackbarData = it
-            )
-        }
     }
 }
 
@@ -371,7 +372,7 @@ private fun Carousel(
 @Composable
 private fun AnimeGridHead(
     headline: String?,
-    onMoreDetails: (genre: String) -> Unit,
+    onMoreAnime: (type: Int) -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -395,7 +396,11 @@ private fun AnimeGridHead(
             )
         } else {
             StylizedHead(text = headline)
-            MoreInfo { onMoreDetails(headline) }
+            MoreInfo {
+                onMoreAnime(
+                    AnimeCategory.Type.options.find { it.second == headline }?.first?.toInt() ?: 1
+                )
+            }
         }
     }
 }

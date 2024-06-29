@@ -52,7 +52,7 @@ import com.xioneko.android.nekoanime.ui.theme.pink40
 fun NarrowAnimeCard(
     modifier: Modifier = Modifier,
     anime: Anime,
-    subTitle: String = "第${anime.latestEpisode}话",
+    subTitle: String = anime.status,
     onClick: (Int) -> Unit
 ) = NarrowAnimeCard(modifier, anime.asAnimeShell(), subTitle, onClick)
 
@@ -61,7 +61,7 @@ fun NarrowAnimeCard(
 fun NarrowAnimeCard(
     modifier: Modifier = Modifier,
     anime: AnimeShell,
-    subTitle: String = "第${anime.latestEpisode}话",
+    subTitle: String = anime.status,
     onClick: (Int) -> Unit
 ) {
     Column(
@@ -111,6 +111,7 @@ fun NarrowAnimeCard(
 fun ExpandedAnimeCard(
     modifier: Modifier = Modifier,
     anime: AnimeShell,
+    subTitle: String = anime.status,
     onClick: (Int) -> Unit,
 ) {
     Column(
@@ -131,7 +132,7 @@ fun ExpandedAnimeCard(
             style = MaterialTheme.typography.bodySmall
         )
         Text(
-            text = "第${anime.latestEpisode}话",
+            text = subTitle,
             color = darkPink60,
             style = MaterialTheme.typography.labelSmall,
         )

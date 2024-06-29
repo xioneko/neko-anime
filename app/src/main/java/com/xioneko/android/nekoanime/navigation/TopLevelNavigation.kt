@@ -24,7 +24,7 @@ const val TopLevelNavRoute = "top_level_route"
 
 fun NavGraphBuilder.topLevelScreen(
     navController: NavHostController,
-    navigateToCategory: (genre: String) -> Unit,
+    navigateToCategory: (type: Int) -> Unit,
     navigateToFollowedAnime: () -> Unit,
     navigateToHistory: () -> Unit,
     navigateToDownload: () -> Unit,
@@ -60,7 +60,7 @@ fun NavGraphBuilder.topLevelScreen(
                 homeScreen(
                     padding = padding,
                     onAnimeClick = navigateToAnimePlay,
-                    onCategoryClick = { navigateToCategory("") },
+                    onCategoryClick = { navigateToCategory(1) },
                     onFollowedAnimeClick = navigateToFollowedAnime,
                     onHistoryClick = navigateToHistory,
                     navigateToCategory = navigateToCategory

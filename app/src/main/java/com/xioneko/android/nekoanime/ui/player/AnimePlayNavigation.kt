@@ -17,7 +17,7 @@ const val AnimePlayNavRoute = "anime_play_route"
 
 @SuppressLint("SourceLockedOrientationActivity")
 fun NavGraphBuilder.animePlayScreen(
-    onGenreClick: (String) -> Unit,
+    onTagClick: (String) -> Unit,
     onBackClick: () -> Unit
 ) {
     composable(
@@ -40,8 +40,8 @@ fun NavGraphBuilder.animePlayScreen(
 
         AnimePlayScreen(
             animeId = backStackEntry.arguments?.getInt("animeId")!!,
-            onGenreClick = {
-                onGenreClick(it)
+            onTagClick = {
+                onTagClick(it)
                 activity?.requestedOrientation = previousOrientation
             },
             onBackClick = {

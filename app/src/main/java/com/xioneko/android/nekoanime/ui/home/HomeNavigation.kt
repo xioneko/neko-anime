@@ -13,7 +13,7 @@ fun NavGraphBuilder.homeScreen(
     onHistoryClick: () -> Unit,
     onAnimeClick: (Int) -> Unit,
     onFollowedAnimeClick: () -> Unit,
-    navigateToCategory:  (genre: String) -> Unit
+    navigateToCategory: (type: Int) -> Unit
 ) {
     composable(
         route = HomeNavRoute,

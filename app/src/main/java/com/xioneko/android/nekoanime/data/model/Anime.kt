@@ -7,32 +7,32 @@ data class Anime(
     val id: Int,
     val name: String,
     val imageUrl: String,
-    val latestEpisode: Int,
     val status: String,
-    val release: String,
-    val genres: List<String> = emptyList(),
+    val latestEpisode: Int,
+    val tags: List<String> = emptyList(),
     val type: String,
-    val year: Int,
+    val year: String,
     val description: String,
-    val videoSource: Map<Int, List<String>> = emptyMap(), // episode -> url
-    val lastModified: Calendar
+    val streamIds: Set<Int>,
+    val videoSource: Map<Int, String> = emptyMap(), // nid -> url
+    val lastUpdate: Calendar
 )
 
 fun Anime.asAnimeShell() = AnimeShell(
-    id, name, imageUrl, latestEpisode, status
+    id, name, imageUrl, status
 )
 
 fun Anime.asEntity() = AnimeEntity(
     id = id,
     name = name,
     imageUrl = imageUrl,
-    latestEpisode = latestEpisode,
     status = status,
-    release = release,
-    genres = genres,
+    latestEpisode = latestEpisode,
+    tags = tags,
     type = type,
     year = year,
     description = description,
+    streamIds = streamIds,
     videoSource = videoSource,
-    lastModified = lastModified,
+    lastUpdate = lastUpdate,
 )
