@@ -38,7 +38,7 @@ fun SearchScreen(
     val candidates by viewModel.candidatesFlow.collectAsStateWithLifecycle()
 
     var shouldShowResults by rememberSaveable { mutableStateOf(false) }
-    val shouldShowCandidates = searchText.isNotBlank()
+    val shouldShowCandidates = uiState.searching && searchText.isNotBlank()
     val shouldShowHistory = uiState.searching
 
     val onSearch = { text: String ->
@@ -51,10 +51,10 @@ fun SearchScreen(
         }
     }
     val onExit = {
+        viewModel.onInputChange("")
         onEnterExit(false)
         shouldShowResults = false
         focusManager.clearFocus()
-
     }
 
 
@@ -83,7 +83,7 @@ fun SearchScreen(
             searching = uiState.searching,
             focusRequester = uiState.focusRequester,
             searchBarState = uiState,
-            onLeftIconClick = onHistoryClick,
+            onLeftIconClick = if (uiState.searching) onExit else onHistoryClick,
             onRightIconClick = onCategoryClick,
             onInputChange = viewModel::onInputChange,
             onFocusChange = { focused ->
