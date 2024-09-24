@@ -3,34 +3,32 @@ package com.xioneko.android.nekoanime.ui.category
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
-import androidx.navigation.navOptions
+import androidx.navigation.toRoute
 import com.xioneko.android.nekoanime.data.model.AnimeCategory
-import com.xioneko.android.nekoanime.data.model.labelValueOf
+import com.xioneko.android.nekoanime.data.model.pairValueOf
+import kotlinx.serialization.Serializable
 
-const val CategoryNavRoute = "category_route"
+@Serializable
+data class CategoryNavRoute(
+    val type: String,
+    val year: String,
+    val genre: String,
+    val orderBy: String,
+)
 
 fun NavGraphBuilder.categoryScreen(
     onAnimeClick: (Int) -> Unit,
     onSearchClick: () -> Unit,
     onBackClick: () -> Unit,
 ) {
-    composable(
-        route = "$CategoryNavRoute/?type={type}&year={year}&genre={genre}&order={order}",
-        arguments = buildList {
-            AnimeCategory.entries.forEach { category ->
-                add(navArgument(category.toString().lowercase()) {})
-            }
-        },
-    ) { backStackEntry ->
+    composable<CategoryNavRoute> { backStackEntry ->
+        val navRoute = backStackEntry.toRoute<CategoryNavRoute>()
         CategoryScreen(
             filter = buildMap {
-                AnimeCategory.entries.forEach { category ->
-                    val value =
-                        backStackEntry.arguments?.getString(category.toString().lowercase()) ?: ""
-                    // TODO: 处理 value 不合法的情况
-                    put(category, value to category.labelValueOf(value))
-                }
+                put(AnimeCategory.Type, AnimeCategory.Type.pairValueOf(navRoute.type))
+                put(AnimeCategory.Year, AnimeCategory.Year.pairValueOf(navRoute.year))
+                put(AnimeCategory.Genre, AnimeCategory.Genre.pairValueOf(navRoute.genre))
+                put(AnimeCategory.Order, AnimeCategory.Order.pairValueOf(navRoute.orderBy))
             },
             onAnimeClick = onAnimeClick,
             onSearchClick = onSearchClick,
@@ -45,7 +43,5 @@ fun NavHostController.navigateToCategory(
     genre: String = "",
     orderBy: String = "time",
 ) {
-    navigate(
-        "$CategoryNavRoute/?type=$type&year=$year&genre=$genre&order=$orderBy",
-        navOptions { launchSingleTop = true })
+    navigate(CategoryNavRoute(type.toString(), year, genre, orderBy))
 }

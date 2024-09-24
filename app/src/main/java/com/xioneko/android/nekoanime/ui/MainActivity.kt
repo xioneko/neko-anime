@@ -13,6 +13,7 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeTheme
 import com.xioneko.android.nekoanime.ui.util.setScreenOrientation
+import com.xioneko.android.nekoanime.util.NekoAnimeUpdater
 import com.xioneko.android.nekoanime.util.NetworkMonitor
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -28,10 +29,12 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var networkMonitor: NetworkMonitor
 
+    @Inject
+    lateinit var updater: NekoAnimeUpdater
+
     val viewModel: MainActivityViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-
         val splashScreen = installSplashScreen()
 
         super.onCreate(savedInstanceState)
@@ -44,15 +47,24 @@ class MainActivity : ComponentActivity() {
                 if (viewModel.isLandscapeModeDisabled())
                     setScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
             }
-        }
 
-        splashScreen.setKeepOnScreenCondition { viewModel.isSplashScreenVisible.value }
+            if (intent.action != Intent.ACTION_VIEW) {
+                splashScreen.setKeepOnScreenCondition { viewModel.isSplashScreenVisible.value }
+                lifecycleScope.launch {
+                    if (viewModel.shouldCheckForUpdate()) {
+                        updater.checkForUpdate()
+                    }
+                }
+            } else {
+                updater.silent()
+            }
+        }
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
             NekoAnimeTheme {
-                NekoAnimeApp(networkMonitor, viewModel.updater)
+                NekoAnimeApp(networkMonitor, updater)
             }
         }
     }

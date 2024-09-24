@@ -50,3 +50,6 @@ fun AnimeCategory.defaultLabel() = options.first().second
 fun AnimeCategory.labelValueOf(option: String): String =
     options.find { it.first == option }?.second
         ?: throw RuntimeException("Invalid Option: $option")
+
+fun AnimeCategory.pairValueOf(value: String): Pair<String, String> =
+    value to labelValueOf(value)

@@ -7,7 +7,7 @@ import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
 
 
 enum class TopLevelScreen(
-    val route: String,
+    val route: Any,
     val iconId: Int,
     val label: String,
 ) {

@@ -1,27 +1,25 @@
 package com.xioneko.android.nekoanime.ui.mine.screen
 
 import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import kotlinx.serialization.Serializable
 
-
-const val WatchHistoryNavRoute = "watch_history_route"
+@Serializable
+data object WatchHistoryNavRoute
 
 fun NavGraphBuilder.historyScreen(
     onAnimeClick: (Int) -> Unit,
     onBackClick: () -> Unit
 ) {
-    composable(
-        route = WatchHistoryNavRoute,
-        arguments = emptyList(),
-        deepLinks = emptyList(),
-        enterTransition = null,
-        exitTransition = null,
-        popEnterTransition = null,
-        popExitTransition = null,
-    ) {
+    composable<WatchHistoryNavRoute> {
         WatchHistoryScreen(
             onAnimeClick = onAnimeClick,
             onBackClick = onBackClick
         )
     }
+}
+
+fun NavHostController.navigateToHistory() {
+    navigate(WatchHistoryNavRoute)
 }

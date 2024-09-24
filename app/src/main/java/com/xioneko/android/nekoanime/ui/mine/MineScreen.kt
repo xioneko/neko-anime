@@ -5,7 +5,6 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,7 +23,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -63,22 +61,19 @@ fun MineScreen(
     onDownloadClick: () -> Unit,
     onFollowedAnimeClick: () -> Unit,
     onHistoryClick: () -> Unit,
-    onAnimeClick: (Int) -> Unit,
 ) {
     val context = LocalContext.current
     val isTablet = isTablet()
     val aspectRadio = getAspectRadio()
 
-    val themeConfig by viewModel.themeConfig.collectAsStateWithLifecycle()
-    val isSystemInDarkTheme = isSystemInDarkTheme()
+//    val themeConfig by viewModel.themeConfig.collectAsStateWithLifecycle()
+//    val isSystemInDarkTheme = isSystemInDarkTheme()
 
     val updateAutoCheck by viewModel.updateAutoCheck.collectAsStateWithLifecycle()
 
     val disableLandscapeMode by viewModel.disableLandscapeMode.collectAsStateWithLifecycle()
 
     val enablePortraitFullscreen by viewModel.enablePortraitFullscreen.collectAsStateWithLifecycle()
-
-    val snackbarHostState = remember { SnackbarHostState() }
 
     var showWorkingInProgressDialog by remember { mutableStateOf(false) }
     if (showWorkingInProgressDialog) {
@@ -155,7 +150,7 @@ fun MineScreen(
                         .then(cardModifier),
                     iconId = NekoAnimeIcons.download,
                     text = "我的下载",
-                    onClick = { showWorkingInProgressDialog = true }
+                    onClick = onDownloadClick,
                 )
             }
             Column(
@@ -298,36 +293,35 @@ private fun PrimaryBox(
     }
 }
 
-@Composable
-private fun ItemWithNewPage(
-    modifier: Modifier = Modifier,
-    text: String,
-    onClick: () -> Unit,
-) {
-    Box(
-        modifier = modifier
-            .background(basicWhite)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 15.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Icon(
-                painter = painterResource(NekoAnimeIcons.arrowRight),
-                contentDescription = "more",
-            )
-        }
-    }
-
-}
+//@Composable
+//private fun ItemWithNewPage(
+//    modifier: Modifier = Modifier,
+//    text: String,
+//    onClick: () -> Unit,
+//) {
+//    Box(
+//        modifier = modifier
+//            .background(basicWhite)
+//            .clickable(onClick = onClick)
+//            .padding(horizontal = 15.dp),
+//        contentAlignment = Alignment.Center,
+//    ) {
+//        Row(
+//            modifier = Modifier.fillMaxWidth(),
+//            horizontalArrangement = Arrangement.SpaceBetween,
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//            Text(
+//                text = text,
+//                style = MaterialTheme.typography.bodyMedium
+//            )
+//            Icon(
+//                painter = painterResource(NekoAnimeIcons.arrowRight),
+//                contentDescription = "more",
+//            )
+//        }
+//    }
+//}
 
 @Composable
 private fun ItemWithSwitch(

@@ -5,10 +5,10 @@ import com.xioneko.android.nekoanime.R
 object NekoAnimeIcons {
     val arrowLeft = R.drawable.ic_arrow_left
     val arrowRight = R.drawable.ic_arrow_right
+    val arrowDown = R.drawable.ic_arrow_down
     val category = R.drawable.ic_category
     val close = R.drawable.ic_close
     val date = R.drawable.ic_date
-    val date2 = R.drawable.ic_date2
     val download = R.drawable.ic_download
     val episode = R.drawable.ic_episode
     val filter = R.drawable.ic_filter
@@ -22,6 +22,8 @@ object NekoAnimeIcons {
     val tv = R.drawable.ic_tv
     val light = R.drawable.ic_light
     val love = R.drawable.ic_love
+    val retry = R.drawable.ic_retry
+    val play = R.drawable.ic_play_outline
 
     object Player {
         val back = R.drawable.ic_back
@@ -45,5 +47,6 @@ object NekoAnimeIcons {
         val videoLoading = R.raw.v_loading
         val radio = R.raw.ic_radio
         val switch = R.raw.ic_switch
+        val checkbox = R.raw.ic_checkbox
     }
 }

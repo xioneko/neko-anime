@@ -59,6 +59,10 @@ class NekoAnimeUpdater @Inject constructor(
         _isUpdateAvailable.emit(latestVersion != versionName)
     }
 
+    fun silent() {
+        _isUpdateAvailable.value = false
+    }
+
     fun openDownloadLink(context: Context) {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("$BASE_URL/releases/latest"))
         context.startActivity(intent)

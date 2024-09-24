@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeFontFamilies
@@ -69,12 +70,15 @@ fun SolidTopBar(
                         indication = null,
                         role = Role.Button,
                         onClick = onLeftIconClick
-                    ),
+                    )
+                    .padding(end = 10.dp),
                 painter = painterResource(leftIconId),
                 contentDescription = null,
             )
             Text(
                 modifier = Modifier.align(Alignment.Center),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 text = title,
                 style = MaterialTheme.typography.titleMedium
             )
@@ -87,7 +91,8 @@ fun SolidTopBar(
                             indication = null,
                             role = Role.Button,
                             onClick = onRightIconClick
-                        ),
+                        )
+                        .padding(start = 10.dp),
                     painter = painterResource(rightIconId),
                     contentDescription = null,
                 )

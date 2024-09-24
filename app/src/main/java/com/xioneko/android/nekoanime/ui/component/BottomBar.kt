@@ -59,7 +59,7 @@ fun NekoAnimeBottomAppBar(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                    selected = destination.route == currentDestination?.route,
+                    selected = currentDestination?.route == destination.route::class.qualifiedName,
                     onClick = { onNavigateTo(destination) },
                     iconId = destination.iconId,
                     label = destination.label,

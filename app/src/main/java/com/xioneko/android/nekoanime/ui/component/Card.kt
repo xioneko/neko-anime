@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -74,7 +75,10 @@ fun NarrowAnimeCard(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Box(Modifier.clip(MaterialTheme.shapes.extraSmall)) {
-            AnimeImage(anime.imageUrl)
+            AnimeImage(
+                modifier = Modifier.aspectRatio(0.72f),
+                imageUrl = anime.imageUrl
+            )
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -122,7 +126,10 @@ fun ExpandedAnimeCard(
             onClick = { onClick(anime.id) }
         ),
     ) {
-        AnimeImage(anime.imageUrl)
+        AnimeImage(
+            modifier = Modifier.aspectRatio(0.72f),
+            imageUrl = anime.imageUrl
+        )
         Text(
             modifier = Modifier.padding(top = 6.dp),
             text = anime.name,
@@ -249,7 +256,10 @@ fun FollowedAnimeCard(
                 onClick = { onClick(anime.id) }
             ),
         ) {
-            AnimeImage(anime.imageUrl)
+            AnimeImage(
+                modifier = Modifier.aspectRatio(0.72f),
+                imageUrl = anime.imageUrl
+            )
             Text(
                 modifier = Modifier.padding(top = 6.dp),
                 text = anime.name,
@@ -270,15 +280,15 @@ fun FollowedAnimeCard(
 }
 
 @Composable
-private fun AnimeImage(imageUrl: String?) {
+fun AnimeImage(modifier: Modifier = Modifier, imageUrl: String?) {
     AsyncImage(
-        modifier = Modifier
-            .aspectRatio(ratio = 0.72f)
+        modifier = modifier
             .clip(MaterialTheme.shapes.extraSmall),
         model = ImageRequest.Builder(LocalContext.current)
             .data(imageUrl)
             .crossfade(true)
             .build(),
+        contentScale = ContentScale.Crop,
         contentDescription = null,
         placeholder = painterResource(R.drawable.broken_image),
         error = painterResource(R.drawable.broken_image),

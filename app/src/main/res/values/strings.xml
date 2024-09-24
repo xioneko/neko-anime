@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">NekoAnime</string>
+    <string name="download_notification_channel_name">Download</string>
+    <string name="app_scheme">nekoanime</string>
 </resources>

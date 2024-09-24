@@ -3,22 +3,16 @@ package com.xioneko.android.nekoanime.ui.schedule
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import kotlinx.serialization.Serializable
 
-const val ScheduleNavRoute = "schedule_route"
+@Serializable
+data object ScheduleNavRoute
 
 fun NavGraphBuilder.scheduleScreen(
     padding: PaddingValues,
     onAnimeClick: (Int) -> Unit
 ) {
-    composable(
-        route = ScheduleNavRoute,
-        arguments = emptyList(),
-        deepLinks = emptyList(),
-        enterTransition = null,
-        exitTransition = null,
-        popEnterTransition = null,
-        popExitTransition = null,
-    ) {
+    composable<ScheduleNavRoute> {
         ScheduleScreen(
             padding = padding,
             onAnimeClick = onAnimeClick

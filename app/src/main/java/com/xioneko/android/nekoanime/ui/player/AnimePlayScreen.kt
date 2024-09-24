@@ -17,19 +17,26 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -42,6 +49,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,10 +74,17 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.offline.Download.STATE_COMPLETED
+import androidx.media3.exoplayer.offline.Download.STATE_DOWNLOADING
+import androidx.media3.exoplayer.offline.Download.STATE_QUEUED
+import androidx.media3.exoplayer.offline.Download.STATE_STOPPED
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.xioneko.android.nekoanime.data.AnimeDownloadHelper.Companion.STATE_PREPARING
 import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.model.AnimeShell
+import com.xioneko.android.nekoanime.data.model.asAnimeShell
 import com.xioneko.android.nekoanime.ui.component.AnimatedFollowIcon
+import com.xioneko.android.nekoanime.ui.component.BottomSheet
 import com.xioneko.android.nekoanime.ui.component.LazyAnimeGrid
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
 import com.xioneko.android.nekoanime.ui.theme.basicBlack
@@ -80,29 +95,36 @@ import com.xioneko.android.nekoanime.ui.theme.neutral08
 import com.xioneko.android.nekoanime.ui.theme.neutral10
 import com.xioneko.android.nekoanime.ui.theme.pink10
 import com.xioneko.android.nekoanime.ui.theme.pink30
+import com.xioneko.android.nekoanime.ui.theme.pink50
 import com.xioneko.android.nekoanime.ui.theme.pink60
 import com.xioneko.android.nekoanime.ui.theme.pink70
 import com.xioneko.android.nekoanime.ui.theme.pink97
 import com.xioneko.android.nekoanime.ui.util.LoadingState
+import com.xioneko.android.nekoanime.ui.util.currentScreenSizeDp
 import com.xioneko.android.nekoanime.ui.util.isOrientationLocked
 import com.xioneko.android.nekoanime.ui.util.isTablet
 import com.xioneko.android.nekoanime.ui.util.setScreenOrientation
 import kotlinx.coroutines.delay
 
+@ExperimentalLayoutApi
+@ExperimentalMaterial3Api
 @OptIn(UnstableApi::class)
 @SuppressLint("SourceLockedOrientationActivity", "ReturnFromAwaitPointerEventScope")
 @Composable
 fun AnimePlayScreen(
     animeId: Int,
+    episode: Int? = null,
+    onDownloadedAnimeClick: (AnimeShell) -> Unit,
     onTagClick: (String) -> Unit,
     onBackClick: () -> Unit
 ) {
     val viewModel =
         hiltViewModel<AnimePlayViewModel, AnimePlayViewModel.AnimePlayViewModelFactory> { factory ->
-            factory.create(animeId)
+            factory.create(animeId, episode)
         }
 
     val context = LocalContext.current
+    val (_, screenHeight) = currentScreenSizeDp()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val playerState by viewModel.playerState.collectAsStateWithLifecycle()
     val progressDragState by viewModel.progressDragState.collectAsStateWithLifecycle()
@@ -129,7 +151,6 @@ fun AnimePlayScreen(
     }
 
     val loadingState by viewModel.loadingState.collectAsStateWithLifecycle()
-    val forYouAnimeList by viewModel.forYouAnimeStream.collectAsStateWithLifecycle()
 
     LaunchedEffect(loadingState) {
         if (loadingState is LoadingState.FAILURE) {
@@ -141,51 +162,59 @@ fun AnimePlayScreen(
         }
     }
 
+    var showBottomSheet by rememberSaveable { mutableStateOf(false) }
+
     Surface(
+        modifier = Modifier.fillMaxSize(),
         color = basicWhite
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            Column {
-                NekoAnimePlayer(
-                    player = viewModel.player,
-                    uiState = uiState,
-                    episode = viewModel.episode.value,
-                    playerState = playerState,
-                    isFullscreen = isFullscreen.value,
-                    progressDragState = progressDragState,
-                    onFullScreenChange = setFullscreen,
-                    onEpisodeChange = viewModel::onEpisodeChange,
-                    onProgressDrag = viewModel::onProgressDrag,
-                    onBack = {
-                        if (isFullscreen.value) setFullscreen(false)
-                        else onBackClick()
-                    },
-                )
-                Column(
-                    Modifier
-                        .navigationBarsPadding()
-                        .pointerInput(progressDragState !is ProgressDragState.None) { // 避免多点触控
-                            awaitPointerEventScope {
-                                while (true) {
-                                    awaitPointerEvent(PointerEventPass.Initial).changes.forEach { change ->
-                                        if (change.pressed
-                                            && progressDragState !is ProgressDragState.None
-                                        )
-                                            change.consume()
-                                    }
+        Column {
+            NekoAnimePlayer(
+                player = viewModel.player,
+                uiState = uiState,
+                episode = viewModel.episode.value,
+                playerState = playerState,
+                isFullscreen = isFullscreen.value,
+                progressDragState = progressDragState,
+                onFullScreenChange = setFullscreen,
+                onEpisodeChange = viewModel::onEpisodeChange,
+                onProgressDrag = viewModel::onProgressDrag,
+                onBack = {
+                    if (isFullscreen.value) setFullscreen(false)
+                    else onBackClick()
+                },
+                onStartDownloadDrawerOpen = {
+                    if (isFullscreen.value) setFullscreen(false)
+                    if (uiState is AnimePlayUiState.Data) {
+                        showBottomSheet = true
+                    }
+                }
+            )
+            Box(
+                Modifier
+                    .navigationBarsPadding()
+                    .pointerInput(progressDragState !is ProgressDragState.None) { // 避免多点触控
+                        awaitPointerEventScope {
+                            while (true) {
+                                awaitPointerEvent(PointerEventPass.Initial).changes.forEach { change ->
+                                    if (change.pressed
+                                        && progressDragState !is ProgressDragState.None
+                                    )
+                                        change.consume()
                                 }
                             }
                         }
-                ) {
-                    when (uiState) {
-                        AnimePlayUiState.Loading -> {
-                            AnimePlayBodySkeleton()
-                        }
+                    }) {
+                when (uiState) {
+                    AnimePlayUiState.Loading -> {
+                        AnimePlayBodySkeleton()
+                    }
 
-                        is AnimePlayUiState.Data -> {
-                            with(uiState as AnimePlayUiState.Data) {
+                    is AnimePlayUiState.Data -> {
+                        val forYouAnimeList by viewModel.forYouAnimeStream.collectAsStateWithLifecycle()
+
+                        with(uiState as AnimePlayUiState.Data) {
+                            Column {
                                 val isFollowed by viewModel.followedFlow.collectAsStateWithLifecycle()
                                 PlayerNeck(
                                     anime = anime,
@@ -213,6 +242,21 @@ fun AnimePlayScreen(
                                         )
                                     }
                                 }
+                            }
+                            if (showBottomSheet) {
+                                val downloadState by viewModel.downloadsState.collectAsStateWithLifecycle()
+
+                                OfflineCacheBottomSheet(
+                                    modifier = Modifier.heightIn(
+                                        min = (screenHeight / 4).dp,
+                                        max = (screenHeight / 2).dp
+                                    ),
+                                    totalEpisodes = anime.latestEpisode,
+                                    downloadsState = downloadState,
+                                    onDismiss = { showBottomSheet = false },
+                                    onOfflineCache = { viewModel.onOfflineCache(context, it) },
+                                    onDownloadedAnimeClick = { onDownloadedAnimeClick(anime.asAnimeShell()) }
+                                )
                             }
                         }
                     }
@@ -637,45 +681,48 @@ private fun EpisodesList(
         ) {
             for (ep in 1..totalEpisodes) {
                 item(ep) {
-                    if (currentEpisode == ep) {
-                        Box(
-                            modifier = Modifier
-                                .size(50.dp)
-                                .background(pink70, RoundedCornerShape(12.dp)),
-                            contentAlignment = Alignment.Center,
-                            content = {
-                                Text(
-                                    text = "$ep",
-                                    color = pink10,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                )
-                            }
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .size(50.dp)
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null,
-                                    role = Role.RadioButton,
-                                    onClick = { onEpisodeChange(ep) }
-                                )
-                                .border(1.dp, pink60, RoundedCornerShape(12.dp)),
-                            contentAlignment = Alignment.Center,
-                            content = {
-                                Text(
-                                    text = "$ep",
-                                    color = neutral10,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                )
-                            }
-                        )
-                    }
+                    EpisodeBox(
+                        selected = ep == currentEpisode,
+                        episode = ep,
+                        onSelect = { if (ep != currentEpisode) onEpisodeChange(ep) }
+                    )
                 }
             }
         }
     }
+}
+
+@Composable
+private fun EpisodeBox(
+    modifier: Modifier = Modifier,
+    selected: Boolean,
+    onSelect: () -> Unit = {},
+    episode: Int,
+) {
+    val styleModifier = if (selected) {
+        Modifier.background(pink70, RoundedCornerShape(12.dp))
+    } else {
+        Modifier.border(1.dp, pink60, RoundedCornerShape(12.dp))
+    }
+    Box(
+        modifier = modifier
+            .size(50.dp)
+            .then(styleModifier)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                role = Role.Button,
+                onClick = onSelect
+            ),
+        contentAlignment = Alignment.Center,
+        content = {
+            Text(
+                text = "$episode",
+                color = if (selected) pink10 else neutral10,
+                style = MaterialTheme.typography.bodyLarge,
+            )
+        }
+    )
 }
 
 @Composable
@@ -701,5 +748,154 @@ private fun ForYouAnimeGrid(
             animeList = animeList,
             onAnimeClick = onAnimeClick
         )
+    }
+}
+
+@Composable
+private fun OfflineCacheBottomSheet(
+    modifier: Modifier = Modifier,
+    totalEpisodes: Int,
+    downloadsState: Map<Int, Int>?,
+    onDismiss: () -> Unit,
+    onOfflineCache: (Int) -> Unit,
+    onDownloadedAnimeClick: () -> Unit,
+) {
+    BottomSheet(
+        onDismiss = onDismiss,
+        skipPartiallyExpanded = true,
+    ) { requestDismiss ->
+        Column(modifier.padding(bottom = 15.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 15.dp, end = 15.dp)
+                    .offset(y = (-12).dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "离线缓存",
+                    color = basicBlack,
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                Row(
+                    modifier = Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {
+                            requestDismiss {
+                                onDownloadedAnimeClick()
+                            }
+                        }
+                    ),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "查看",
+                        color = neutral10,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Icon(
+                        painter = painterResource(NekoAnimeIcons.arrowRight),
+                        contentDescription = "查看"
+                    )
+                }
+            }
+            HorizontalDivider(color = neutral01)
+            OfflineCacheEpisodesGrid(
+                modifier = Modifier.navigationBarsPadding(),
+                totalEpisodes = totalEpisodes,
+                downloadsStatus = downloadsState,
+                onOfflineCache = onOfflineCache
+            )
+        }
+    }
+}
+
+
+@OptIn(UnstableApi::class)
+@Composable
+private fun OfflineCacheEpisodesGrid(
+    modifier: Modifier = Modifier,
+    totalEpisodes: Int,
+    downloadsStatus: Map<Int, Int>?,
+    onOfflineCache: (Int) -> Unit,
+) {
+    val completedStates = setOf(STATE_COMPLETED)
+    val notCompletedStates = setOf(
+        STATE_PREPARING,
+        STATE_QUEUED,
+        STATE_STOPPED,
+        STATE_DOWNLOADING
+    )
+
+    LazyVerticalGrid(
+        modifier = modifier,
+        columns = GridCells.Adaptive(50.dp),
+        contentPadding = PaddingValues(horizontal = 15.dp, vertical = 20.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        items(totalEpisodes) { index ->
+            val episode = index + 1
+            val status = downloadsStatus?.get(episode)
+            var isCompleted by remember(status) {
+                mutableStateOf(
+                    when (status) {
+                        in completedStates -> true
+                        in notCompletedStates -> false
+                        else -> null
+                    }
+                )
+            }
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Box {
+                    EpisodeBox(
+                        selected = false,
+                        episode = episode,
+                        onSelect = {
+                            if (isCompleted == null) {
+                                onOfflineCache(episode)
+                                isCompleted = false // 乐观更新
+                            }
+                        }
+                    )
+                    if (isCompleted != null) {
+                        Box(
+                            Modifier
+                                .align(Alignment.BottomEnd)
+                                .offset(5.dp, 5.dp)
+                                .size(16.dp)
+                                .background(
+                                    if (isCompleted!!) pink30 else pink50,
+                                    CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isCompleted!!) {
+                                Icon(
+                                    modifier = Modifier.size(12.dp),
+                                    painter = painterResource(
+                                        NekoAnimeIcons.play
+                                    ),
+                                    tint = Color.White,
+                                    contentDescription = "Download Complete"
+                                )
+                            } else {
+                                Icon(
+                                    modifier = Modifier.size(12.dp),
+                                    painter = painterResource(
+                                        NekoAnimeIcons.arrowDown
+                                    ),
+                                    tint = Color.White,
+                                    contentDescription = "Downloading"
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
     }
 }

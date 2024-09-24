@@ -19,8 +19,10 @@ import com.xioneko.android.nekoanime.ui.home.HomeNavRoute
 import com.xioneko.android.nekoanime.ui.home.homeScreen
 import com.xioneko.android.nekoanime.ui.mine.mineScreen
 import com.xioneko.android.nekoanime.ui.schedule.scheduleScreen
+import kotlinx.serialization.Serializable
 
-const val TopLevelNavRoute = "top_level_route"
+@Serializable
+data object TopLevelNavRoute
 
 fun NavGraphBuilder.topLevelScreen(
     navController: NavHostController,
@@ -30,7 +32,7 @@ fun NavGraphBuilder.topLevelScreen(
     navigateToDownload: () -> Unit,
     navigateToAnimePlay: (Int) -> Unit,
 ) {
-    composable(TopLevelNavRoute) {
+    composable<TopLevelNavRoute> {
 
         val currentDestination =
             navController.currentBackStackEntryAsState().value?.destination
@@ -73,7 +75,6 @@ fun NavGraphBuilder.topLevelScreen(
 
                 mineScreen(
                     padding = padding,
-                    onAnimeClick = navigateToAnimePlay,
                     onFollowedAnimeClick = navigateToFollowedAnime,
                     onHistoryClick = navigateToHistory,
                     onDownloadClick = navigateToDownload

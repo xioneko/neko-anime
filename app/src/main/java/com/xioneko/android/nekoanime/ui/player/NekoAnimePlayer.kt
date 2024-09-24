@@ -106,6 +106,7 @@ fun NekoAnimePlayer(
     onEpisodeChange: (Int) -> Unit,
     onFullScreenChange: (Boolean) -> Unit,
     onProgressDrag: (ProgressDragEvent) -> Unit,
+    onStartDownloadDrawerOpen: () -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -278,7 +279,8 @@ fun NekoAnimePlayer(
                 title = if (uiState is AnimePlayUiState.Data)
                     "${uiState.anime.name} 第${episode}话" else "",
                 isFullscreen = isFullscreen,
-                onBack = onBack
+                onBack = onBack,
+                onDownload = onStartDownloadDrawerOpen,
             )
         }
 
@@ -392,53 +394,78 @@ private fun TopController(
     title: String,
     isFullscreen: Boolean,
     onBack: () -> Unit,
+    onDownload: () -> Unit,
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .displayCutoutPadding(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
+    var showMenu by remember { mutableStateOf(false) }
+    Column {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            modifier = modifier
+                .fillMaxWidth()
+                .displayCutoutPadding(),
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    modifier = Modifier
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            role = Role.Button,
+                            onClick = onBack
+                        )
+                        .padding(top = 15.dp, start = 15.dp, bottom = 15.dp),
+                    painter = painterResource(NekoAnimeIcons.Player.back),
+                    contentDescription = "back",
+                    tint = basicWhite
+                )
+                if (isFullscreen)
+                // TODO: 文字溢出，自动滚动
+                    Text(
+                        text = title,
+                        maxLines = 1,
+                        color = basicWhite,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+            }
             Icon(
                 modifier = Modifier
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         role = Role.Button,
-                        onClick = onBack
+                        onClick = {
+                            showMenu = !showMenu
+                        }
                     )
-                    .padding(top = 15.dp, start = 15.dp, bottom = 15.dp),
-                painter = painterResource(NekoAnimeIcons.Player.back),
-                contentDescription = "back",
+                    .padding(top = 15.dp, end = 15.dp, bottom = 15.dp),
+                painter = painterResource(NekoAnimeIcons.Player.more),
+                contentDescription = "menu",
                 tint = basicWhite
             )
-            if (isFullscreen)
-            // TODO: 文字溢出，自动滚动
-                Text(
-                    text = title,
-                    maxLines = 1,
-                    color = basicWhite,
-                    style = MaterialTheme.typography.bodyMedium
-                )
         }
-        Icon(
+        AnimatedVisibility(
             modifier = Modifier
-                .clickable(
+                .align(Alignment.End)
+                .padding(end = 15.dp),
+            visible = showMenu
+        ) {
+            Icon(
+                modifier =
+                Modifier.clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     role = Role.Button,
-                    onClick = { /* TODO: menu */ }
-                )
-                .padding(top = 15.dp, end = 15.dp, bottom = 15.dp),
-            painter = painterResource(NekoAnimeIcons.Player.more),
-            contentDescription = "menu",
-//            tint = basicWhite
-            tint = Color.Transparent // TODO: change color
-        )
+                    onClick = onDownload
+                ),
+                painter = painterResource(NekoAnimeIcons.Player.download),
+                contentDescription = "download",
+                tint = basicWhite
+            )
+        }
+
     }
 }
 
@@ -583,7 +610,6 @@ private fun BottomController(
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun AnimatedPlayPauseButton(
     modifier: Modifier = Modifier,

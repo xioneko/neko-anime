@@ -3,8 +3,10 @@ package com.xioneko.android.nekoanime.ui.mine
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import kotlinx.serialization.Serializable
 
-const val MineNavRoute = "mine_route"
+@Serializable
+data object MineNavRoute
 
 
 fun NavGraphBuilder.mineScreen(
@@ -12,23 +14,13 @@ fun NavGraphBuilder.mineScreen(
     onDownloadClick: () -> Unit,
     onFollowedAnimeClick: () -> Unit,
     onHistoryClick: () -> Unit,
-    onAnimeClick: (Int) -> Unit,
 ) {
-    composable(
-        route = MineNavRoute,
-        arguments = emptyList(),
-        deepLinks = emptyList(),
-        enterTransition = null,
-        exitTransition = null,
-        popEnterTransition = null,
-        popExitTransition = null,
-    ) {
+    composable<MineNavRoute> {
         MineScreen(
             padding = padding,
             onDownloadClick = onDownloadClick,
             onFollowedAnimeClick = onFollowedAnimeClick,
             onHistoryClick = onHistoryClick,
-            onAnimeClick = onAnimeClick
         )
     }
 }

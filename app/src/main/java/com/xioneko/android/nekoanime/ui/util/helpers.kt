@@ -16,6 +16,14 @@ import androidx.compose.ui.platform.LocalView
 import kotlin.random.Random
 
 @Composable
+fun currentScreenSizeDp(): Pair<Int, Int> {
+    val configuration = LocalConfiguration.current
+    return remember(configuration) {
+        configuration.screenWidthDp to configuration.screenHeightDp
+    }
+}
+
+@Composable
 fun getAspectRadio(): Float {
     val configuration = LocalConfiguration.current
     return remember(configuration) {
@@ -26,10 +34,12 @@ fun getAspectRadio(): Float {
 @Composable
 fun isTablet(): Boolean {
     val configuration = LocalConfiguration.current
-    return if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-        configuration.screenHeightDp > 600
-    } else {
-        configuration.screenWidthDp > 600
+    return remember(configuration) {
+        if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            configuration.screenHeightDp > 600
+        } else {
+            configuration.screenWidthDp > 600
+        }
     }
 }
 

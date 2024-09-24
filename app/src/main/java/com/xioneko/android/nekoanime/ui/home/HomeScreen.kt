@@ -2,7 +2,6 @@ package com.xioneko.android.nekoanime.ui.home
 
 import android.widget.Toast
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -259,7 +258,6 @@ fun HomeScreen(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun Carousel(
     onSlideClick: (Int) -> Unit
@@ -291,7 +289,7 @@ private fun Carousel(
             state = pagerState,
             contentPadding = PaddingValues(0.dp),
             pageSize = PageSize.Fill,
-            beyondBoundsPageCount = 0,
+            beyondViewportPageCount = 0,
             pageSpacing = 0.dp,
             verticalAlignment = Alignment.CenterVertically,
         ) { page ->

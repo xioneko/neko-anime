@@ -1,26 +1,25 @@
 package com.xioneko.android.nekoanime.ui.mine.screen
 
 import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import kotlinx.serialization.Serializable
 
-const val FollowedAnimeNavRoute = "followed_anime_route"
+@Serializable
+data object FollowedAnimeNavRoute
 
 fun NavGraphBuilder.followedAnimeScreen(
     onAnimeClick: (Int) -> Unit,
     onBackClick: () -> Unit
 ) {
-    composable(
-        route = FollowedAnimeNavRoute,
-        arguments = emptyList(),
-        deepLinks = emptyList(),
-        enterTransition = null,
-        exitTransition = null,
-        popEnterTransition = null,
-        popExitTransition = null,
-    ) {
+    composable<FollowedAnimeNavRoute> {
         FollowedAnimeScreen(
             onAnimeClick = onAnimeClick,
             onBackClick = onBackClick
         )
     }
+}
+
+fun NavHostController.navigateToFollowedAnime() {
+    navigate(FollowedAnimeNavRoute)
 }

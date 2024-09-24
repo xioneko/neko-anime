@@ -31,7 +31,6 @@ class AnimeRepository @androidx.annotation.OptIn(UnstableApi::class)
     animeDataValidator: AnimeDataValidator,
     animeDataFetcher: AnimeDataFetcher,
     private val yhdmDataSource: YhdmDataSource,
-    private val mediaCache: SimpleMediaCache
 ) {
     private val store: Store<AnimeKey, Anime> =
         StoreBuilder.from(
@@ -100,6 +99,5 @@ class AnimeRepository @androidx.annotation.OptIn(UnstableApi::class)
     @OptIn(ExperimentalStoreApi::class)
     suspend fun clearCache() = withContext(Dispatchers.IO) {
         store.clear()
-        mediaCache.clear()
     }
 }

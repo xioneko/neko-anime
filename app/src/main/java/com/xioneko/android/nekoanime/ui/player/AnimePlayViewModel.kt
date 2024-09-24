@@ -16,8 +16,9 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
+import com.xioneko.android.nekoanime.data.AnimeDownloadHelper
+import com.xioneko.android.nekoanime.data.AnimeDownloadManager
 import com.xioneko.android.nekoanime.data.AnimeRepository
-import com.xioneko.android.nekoanime.data.SimpleMediaCache
 import com.xioneko.android.nekoanime.data.UserDataRepository
 import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.model.AnimeShell
@@ -48,6 +49,7 @@ import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEmpty
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
@@ -62,16 +64,17 @@ private const val FOR_YOU_ANIME_GRID_SIZE = 12
 @HiltViewModel(assistedFactory = AnimePlayViewModel.AnimePlayViewModelFactory::class)
 class AnimePlayViewModel @OptIn(UnstableApi::class)
 @AssistedInject constructor(
-    @ApplicationContext context: Context,
     @Assisted animeId: Int,
-    mediaCache: SimpleMediaCache,
+    @Assisted initEpisode: Int?,
+    @ApplicationContext context: Context,
     private val animeRepository: AnimeRepository,
-    private val userDataRepository: UserDataRepository
+    private val userDataRepository: UserDataRepository,
+    private val downloadHelper: AnimeDownloadHelper
 ) : ViewModel() {
 
     @AssistedFactory
     interface AnimePlayViewModelFactory {
-        fun create(animeId: Int): AnimePlayViewModel
+        fun create(animeId: Int, initEpisode: Int? = null): AnimePlayViewModel
     }
 
     private val _loadingState = MutableStateFlow<LoadingState>(LoadingState.IDLE)
@@ -88,11 +91,11 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
 
     val player: ExoPlayer = ExoPlayer.Builder(context)
         .setMediaSourceFactory(run {
-            val cacheDataSourceFactory = CacheDataSource.Factory().apply {
-                setCache(mediaCache.instance)
-                setUpstreamDataSourceFactory(DefaultHttpDataSource.Factory())
-                setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
-            }
+            val cacheDataSourceFactory = CacheDataSource.Factory()
+                .setCache(AnimeDownloadManager.getDownloadCache(context))
+                .setUpstreamDataSourceFactory(DefaultHttpDataSource.Factory())
+                .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
+                .setCacheWriteDataSinkFactory(null) // Read-only
             HlsMediaSource.Factory(cacheDataSourceFactory)
         })
         .build().apply {
@@ -118,6 +121,21 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
             false
         )
 
+    val downloadsState = downloadHelper.downloads
+        .mapNotNull {
+            when (uiState.value) {
+                AnimePlayUiState.Loading -> null
+                is AnimePlayUiState.Data -> it[(uiState.value as AnimePlayUiState.Data).anime.id]
+                    ?.mapValues { (_, value) -> value.state }
+                    ?: emptyMap()
+            }
+        }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            null
+        )
+
     private val orientationRequestFlow = MutableSharedFlow<Pair<Context, Int>>(replay = 1)
 
     val enablePortraitFullscreen = userDataRepository.enablePortraitFullscreen.stateIn(
@@ -126,7 +144,7 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
         null,
     )
 
-    var episode = mutableStateOf<Int?>(null)
+    var episode = mutableStateOf(initEpisode)
 
     lateinit var streamIterator: TrackingIterator<Int>
 
@@ -162,7 +180,9 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
                 .combine(userDataRepository.watchHistory.take(1)) { anime, watchRecords ->
                     streamIterator = anime.streamIds.toSortedSet().iterator().withTracking()
                     _uiState.emit(AnimePlayUiState.Data(anime = anime))
-                    episode.value = watchRecords[animeId]?.recentEpisode ?: 1
+                    if (episode.value == null) {
+                        episode.value = watchRecords[animeId]?.recentEpisode ?: 1
+                    }
 
                     launch { fetchingForYouAnime() }
 
@@ -276,6 +296,12 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
                     ProgressDragState.None
                 }
             }
+        }
+    }
+
+    fun onOfflineCache(context: Context, episode: Int) {
+        with(_uiState.value as AnimePlayUiState.Data) {
+            downloadHelper.sendRequest(context, anime.id, episode)
         }
     }
 

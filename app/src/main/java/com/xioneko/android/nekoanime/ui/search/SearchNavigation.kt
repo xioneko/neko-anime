@@ -14,14 +14,16 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.navOptions
+import kotlinx.serialization.Serializable
 
-const val SearchNavRoute = "search_route"
+@Serializable
+data object SearchNavRoute
 
 fun NavGraphBuilder.searchScreen(
     onAnimeClick: (Int) -> Unit,
     onBackClick: () -> Unit,
 ) {
-    composable(route = SearchNavRoute) {
+    composable<SearchNavRoute> {
         val focusRequester = remember { FocusRequester() }
 
         // 避免屏幕旋转导致搜索框被无意中 focused 并丢失搜索结果
