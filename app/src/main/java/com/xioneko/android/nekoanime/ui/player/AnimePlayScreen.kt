@@ -33,6 +33,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -105,6 +106,7 @@ import com.xioneko.android.nekoanime.ui.util.isOrientationLocked
 import com.xioneko.android.nekoanime.ui.util.isTablet
 import com.xioneko.android.nekoanime.ui.util.setScreenOrientation
 import kotlinx.coroutines.delay
+import kotlin.math.max
 
 @ExperimentalLayoutApi
 @ExperimentalMaterial3Api
@@ -663,6 +665,12 @@ private fun EpisodesList(
     totalEpisodes: Int,
     onEpisodeChange: (Int) -> Unit,
 ) {
+    val (width, _) = currentScreenSizeDp()
+    val lazyListState = rememberLazyListState()
+    LaunchedEffect(currentEpisode) {
+        lazyListState.animateScrollToItem(max(0, currentEpisode - width / (50 + 10) / 2))
+    }
+
     Column(
         Modifier
             .fillMaxWidth()
@@ -676,6 +684,7 @@ private fun EpisodesList(
             style = MaterialTheme.typography.titleSmall
         )
         LazyRow(
+            state = lazyListState,
             contentPadding = PaddingValues(horizontal = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
