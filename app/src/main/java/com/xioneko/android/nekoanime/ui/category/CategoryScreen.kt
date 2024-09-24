@@ -359,7 +359,11 @@ private fun MainFilterDrawer(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         role = Role.Checkbox,
-                        onClick = { onFilter(drawer, option) }
+                        onClick = {
+                            if (filter[drawer] != option) {
+                                onFilter(drawer, option)
+                            }
+                        }
                     ),
                 text = option.second,
                 fontColor = if (filter[drawer] == option) darkPink80 else neutral10
@@ -395,7 +399,11 @@ private fun ExtraFilterDrawer(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,
                                     role = Role.Checkbox,
-                                    onClick = { onFilter(category, option) }
+                                    onClick = {
+                                        if (filter[category] != option) {
+                                            onFilter(category, option)
+                                        }
+                                    }
                                 ),
                             text = option.second,
                             fontColor = if (filter[category] == option) darkPink80 else neutral10

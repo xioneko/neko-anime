@@ -43,7 +43,7 @@ class CategoryViewModel @AssistedInject constructor(
     val filter = mutableStateMapOf<AnimeCategory, Pair<String, String>>()
 
     val fetcherState = object : FetcherState {
-        override var page by mutableIntStateOf(1)
+        override var page by mutableIntStateOf(0)
         override var hasMore by mutableStateOf(true)
         override var loadingPageCount by mutableIntStateOf(0)
     }
@@ -65,13 +65,13 @@ class CategoryViewModel @AssistedInject constructor(
 
     fun fetchAnime() {
         viewModelScope.launch {
-            Log.d("Category", "Fetch Page: ${fetcherState.page}")
+            Log.d("Category", "Fetch Page: ${fetcherState.page + 1}")
             animeRepository.getAnimeBy(
                 type = filter[AnimeCategory.Type]!!.first.toInt(),
                 year = filter[AnimeCategory.Year]!!.first,
                 genre = filter[AnimeCategory.Genre]!!.first,
                 orderBy = filter[AnimeCategory.Order]!!.first,
-                page = fetcherState.page++
+                page = ++fetcherState.page
             )
                 .onEach { animeShells -> animeList.addAll(animeShells) }
                 .onStart { fetcherState.loadingPageCount++ }
