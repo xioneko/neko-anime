@@ -245,7 +245,7 @@ fun AnimePlayScreen(
                                     }
                                 }
                             }
-                            if (showBottomSheet) {
+                            if (showBottomSheet && !isFullscreen.value) {
                                 val downloadState by viewModel.downloadsState.collectAsStateWithLifecycle()
 
                                 OfflineCacheBottomSheet(
@@ -376,7 +376,7 @@ fun rememberFullscreenState(
             Log.d("Player", "setFullscreen: $enableFullscreen")
             // 全屏状态改变时，切换设备方向
             if (enableFullscreen) {
-                context.setScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
+                context.setScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE)
             } else {
                 context.setScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
             }

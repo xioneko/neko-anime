@@ -198,6 +198,7 @@ fun NekoAnimePlayer(
                 .aspectRatio(16f / 9f)
         }
     }
+    var showTopMenu by remember { mutableStateOf(false) }
 
     Box(playerModifier) {
         if (playerState.isLoading) {
@@ -238,9 +239,11 @@ fun NekoAnimePlayer(
                         )
                     }
                 }
-                .pointerInput(player.duration > 0) { // 水平滑动改变播放进度
+                .pointerInput(player.duration > 0, isFullscreen) { // 水平滑动改变播放进度
                     if (player.duration > 0) {
                         val threshold = density / 2
+                        val upperBound = if (isFullscreen) 30 * density else 0f
+
                         var isDragStart = false
                         var positionOffset = 0L
                         var startPosition: Long? = null
@@ -252,10 +255,12 @@ fun NekoAnimePlayer(
                                 startPosition = null
                                 isDragStart = false
                             },
-                            onHorizontalDrag = cb@{ _, dx ->
+                            onHorizontalDrag = cb@{ change, dx ->
+                                val y = change.position.y
+
                                 if (!isDragStart) {
                                     isDragStart = true
-                                    if (abs(dx) > threshold) {
+                                    if (y >= upperBound && abs(dx) > threshold) {
                                         startPosition = player.currentPosition
                                         onDragGesture(
                                             DragGestureEvent.Start(
@@ -276,9 +281,13 @@ fun NekoAnimePlayer(
                         )
                     }
                 }
-                .pointerInput(player.duration > 0) { // 垂直滑动改变音量或亮度
+                .pointerInput(player.duration > 0, isFullscreen) { // 垂直滑动改变音量或亮度
                     if (player.duration > 0) {
                         val threshold = density / 2
+                        val width = screenWidthDp * density
+                        val leftBound = width / 2.5
+                        val rightBound = width / 1.25
+                        val upperBound = if (isFullscreen) 30 * density else 0f
 
                         var isDragStart = false
                         var dragType: DragType? = null
@@ -294,19 +303,21 @@ fun NekoAnimePlayer(
                                 onDragGesture(DragGestureEvent.End)
                             },
                             onVerticalDrag = cb@{ change, dy ->
+                                val (x, y) = change.position
+
                                 if (!isDragStart) {
                                     isDragStart = true
-                                    if (abs(dy) > threshold) offset = 0f
+                                    if (y >= upperBound && abs(dy) > threshold) offset = 0f
                                     else return@cb
                                 }
                                 if (offset == null) return@cb
 
-                                val x = change.position.x
-                                val width = screenWidthDp * density
 
-                                val currDragType = if (x < width / 2.5) DragType.Brightness
-                                else if (x > width / 1.25) DragType.Volume
-                                else null
+                                val currDragType = when {
+                                    x <= leftBound -> DragType.Brightness
+                                    x >= rightBound -> DragType.Volume
+                                    else -> null
+                                }
 
                                 if (currDragType != null) {
                                     if (dragType == null) {
@@ -360,8 +371,10 @@ fun NekoAnimePlayer(
                 title = if (uiState is AnimePlayUiState.Data)
                     "${uiState.anime.name} 第${episode}话" else "",
                 isFullscreen = isFullscreen,
+                showMenu = showTopMenu,
                 onBack = onBack,
                 onDownload = onStartDownloadDrawerOpen,
+                toggleMenu = { showTopMenu = !showTopMenu }
             )
         }
 
@@ -470,42 +483,65 @@ private fun TopController(
     modifier: Modifier = Modifier,
     title: String,
     isFullscreen: Boolean,
+    showMenu: Boolean,
     onBack: () -> Unit,
     onDownload: () -> Unit,
+    toggleMenu: () -> Unit,
 ) {
-    var showMenu by remember { mutableStateOf(false) }
-    Column {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .displayCutoutPadding(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
         Row(
-            modifier = modifier
-                .fillMaxWidth()
-                .displayCutoutPadding(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            Icon(
+                modifier = Modifier
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        role = Role.Button,
+                        onClick = onBack
+                    )
+                    .padding(top = 15.dp, start = 15.dp, bottom = 15.dp),
+                painter = painterResource(NekoAnimeIcons.Player.back),
+                contentDescription = "back",
+                tint = basicWhite
+            )
+            if (isFullscreen)
+            // TODO: 文字溢出，自动滚动
+                Text(
+                    text = title,
+                    maxLines = 1,
+                    color = basicWhite,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+        }
+        Row(
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            AnimatedVisibility(
+                modifier = Modifier.padding(end = 15.dp),
+                visible = showMenu,
+                enter = fadeIn() + slideInHorizontally { it / 2 },
+                exit = fadeOut() + slideOutHorizontally { it / 2 }
             ) {
                 Icon(
-                    modifier = Modifier
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            role = Role.Button,
-                            onClick = onBack
-                        )
-                        .padding(top = 15.dp, start = 15.dp, bottom = 15.dp),
-                    painter = painterResource(NekoAnimeIcons.Player.back),
-                    contentDescription = "back",
+                    modifier =
+                    Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        role = Role.Button,
+                        onClick = onDownload
+                    ),
+                    painter = painterResource(NekoAnimeIcons.Player.download),
+                    contentDescription = "download",
                     tint = basicWhite
                 )
-                if (isFullscreen)
-                // TODO: 文字溢出，自动滚动
-                    Text(
-                        text = title,
-                        maxLines = 1,
-                        color = basicWhite,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
             }
             Icon(
                 modifier = Modifier
@@ -513,9 +549,7 @@ private fun TopController(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         role = Role.Button,
-                        onClick = {
-                            showMenu = !showMenu
-                        }
+                        onClick = toggleMenu
                     )
                     .padding(top = 15.dp, end = 15.dp, bottom = 15.dp),
                 painter = painterResource(NekoAnimeIcons.Player.more),
@@ -523,26 +557,6 @@ private fun TopController(
                 tint = basicWhite
             )
         }
-        AnimatedVisibility(
-            modifier = Modifier
-                .align(Alignment.End)
-                .padding(end = 15.dp),
-            visible = showMenu
-        ) {
-            Icon(
-                modifier =
-                Modifier.clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    role = Role.Button,
-                    onClick = onDownload
-                ),
-                painter = painterResource(NekoAnimeIcons.Player.download),
-                contentDescription = "download",
-                tint = basicWhite
-            )
-        }
-
     }
 }
 
