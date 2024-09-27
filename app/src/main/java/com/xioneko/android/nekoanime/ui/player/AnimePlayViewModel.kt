@@ -25,6 +25,8 @@ import com.xioneko.android.nekoanime.data.model.AnimeShell
 import com.xioneko.android.nekoanime.ui.util.LoadingState
 import com.xioneko.android.nekoanime.ui.util.TrackingIterator
 import com.xioneko.android.nekoanime.ui.util.getRandomElements
+import com.xioneko.android.nekoanime.ui.util.setMediaVolume
+import com.xioneko.android.nekoanime.ui.util.setScreenBrightness
 import com.xioneko.android.nekoanime.ui.util.setScreenOrientation
 import com.xioneko.android.nekoanime.ui.util.withTracking
 import dagger.assisted.Assisted
@@ -78,15 +80,17 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
     }
 
     private val _loadingState = MutableStateFlow<LoadingState>(LoadingState.IDLE)
+    val loadingState: StateFlow<LoadingState> = _loadingState.asStateFlow()
 
-    private val _progressDragState = MutableStateFlow<ProgressDragState>(ProgressDragState.None)
+    private val _dragGestureState = MutableStateFlow<DragGestureState>(DragGestureState.None)
+    val dragGestureState: StateFlow<DragGestureState> = _dragGestureState.asStateFlow()
 
     private val _playerState = MutableStateFlow(NekoAnimePlayerState())
+    val playerState = _playerState.asStateFlow()
 
     private val videoFetchingJob = SupervisorJob(viewModelScope.coroutineContext.job)
 
     private val _uiState = MutableStateFlow<AnimePlayUiState>(AnimePlayUiState.Loading)
-
     val uiState = _uiState.asStateFlow()
 
     val player: ExoPlayer = ExoPlayer.Builder(context)
@@ -103,15 +107,9 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
             pauseAtEndOfMediaItems = true
         }
 
-    val playerState = _playerState.asStateFlow()
-
     var isPausedBeforeLeave: Boolean = player.playWhenReady
 
-    val loadingState: StateFlow<LoadingState> = _loadingState.asStateFlow()
-
     val forYouAnimeStream = MutableStateFlow(List<AnimeShell?>(FOR_YOU_ANIME_GRID_SIZE) { null })
-
-    val progressDragState: StateFlow<ProgressDragState> = _progressDragState.asStateFlow()
 
     val followedFlow = userDataRepository.followedAnimeIds
         .map { animeId in it }
@@ -267,33 +265,52 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
         }
     }
 
-    fun onProgressDrag(event: ProgressDragEvent) {
+    fun onDragGesture(context: Context, event: DragGestureEvent) {
         when (event) {
-            is ProgressDragEvent.Start -> {
-                _progressDragState.update {
-                    ProgressDragState.Data(
-                        startPosition = player.currentPosition,
-                        endPosition = player.currentPosition,
+            is DragGestureEvent.Start -> {
+                _dragGestureState.update {
+                    DragGestureState.Data(
+                        type = event.dragType,
+                        startValue = event.startValue,
+                        endValue = event.startValue,
                     )
                 }
             }
 
-            is ProgressDragEvent.Update -> {
-                _progressDragState.update {
-                    (it as ProgressDragState.Data).copy(endPosition = event.position)
+            is DragGestureEvent.Update -> {
+                _dragGestureState.update {
+                    with(it as DragGestureState.Data) {
+                        when (it.type) {
+                            DragType.Volume -> {
+                                context.setMediaVolume(event.newValue.toFloat())
+                            }
+
+                            DragType.Brightness -> {
+                                context.setScreenBrightness(event.newValue.toFloat())
+                            }
+
+                            else -> {}
+                        }
+                        it.copy(endValue = event.newValue)
+                    }
                 }
             }
 
-            is ProgressDragEvent.End -> {
-                player.seekTo((progressDragState.value as ProgressDragState.Data).endPosition)
-                _progressDragState.update {
-                    ProgressDragState.None
+            is DragGestureEvent.End -> {
+                val endState = dragGestureState.value
+                if (endState is DragGestureState.Data) {
+                    if (endState.type == DragType.Progress) {
+                        player.seekTo(endState.endValue.toLong())
+                    }
+                    _dragGestureState.update {
+                        DragGestureState.None
+                    }
                 }
             }
 
-            is ProgressDragEvent.Cancel -> {
-                _progressDragState.update {
-                    ProgressDragState.None
+            is DragGestureEvent.Cancel -> {
+                _dragGestureState.update {
+                    DragGestureState.None
                 }
             }
         }
@@ -412,21 +429,6 @@ sealed interface AnimePlayUiState {
     data class Data(val anime: Anime) : AnimePlayUiState
 }
 
-sealed class ProgressDragEvent {
-    data class Start(val bySeekBar: Boolean) : ProgressDragEvent()
-    data object End : ProgressDragEvent()
-    data object Cancel : ProgressDragEvent()
-    data class Update(val position: Long) : ProgressDragEvent()
-}
-
-sealed class ProgressDragState {
-    data object None : ProgressDragState()
-    data class Data(
-        val startPosition: Long = 0L,
-        val endPosition: Long = 0L
-    ) : ProgressDragState()
-}
-
 @Stable
 data class NekoAnimePlayerState(
     val isLoading: Boolean = true,
@@ -437,3 +439,23 @@ data class NekoAnimePlayerState(
     val position: Long = 0L,
     val bufferedPercentage: Int = 0
 )
+
+sealed class DragGestureEvent {
+    data class Start(val dragType: DragType, val startValue: Number) : DragGestureEvent()
+    data object End : DragGestureEvent()
+    data object Cancel : DragGestureEvent()
+    data class Update(val newValue: Number) : DragGestureEvent()
+}
+
+sealed class DragGestureState {
+    data object None : DragGestureState()
+    data class Data(
+        val type: DragType,
+        val startValue: Number = 0L,
+        val endValue: Number = 0L
+    ) : DragGestureState()
+}
+
+enum class DragType {
+    Volume, Brightness, Progress
+}

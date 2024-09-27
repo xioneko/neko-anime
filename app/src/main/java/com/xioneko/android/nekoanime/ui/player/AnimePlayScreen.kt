@@ -129,7 +129,7 @@ fun AnimePlayScreen(
     val (_, screenHeight) = currentScreenSizeDp()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val playerState by viewModel.playerState.collectAsStateWithLifecycle()
-    val progressDragState by viewModel.progressDragState.collectAsStateWithLifecycle()
+    val dragGestureState by viewModel.dragGestureState.collectAsStateWithLifecycle()
 
     val enablePortraitFullscreen by viewModel.enablePortraitFullscreen.collectAsStateWithLifecycle()
     val (isFullscreen, setFullscreen) = rememberFullscreenState(enablePortraitFullscreen)
@@ -177,10 +177,10 @@ fun AnimePlayScreen(
                 episode = viewModel.episode.value,
                 playerState = playerState,
                 isFullscreen = isFullscreen.value,
-                progressDragState = progressDragState,
+                dragGestureState = dragGestureState,
                 onFullScreenChange = setFullscreen,
                 onEpisodeChange = viewModel::onEpisodeChange,
-                onProgressDrag = viewModel::onProgressDrag,
+                onDragGesture = { viewModel.onDragGesture(context, it) },
                 onBack = {
                     if (isFullscreen.value) setFullscreen(false)
                     else onBackClick()
@@ -195,12 +195,12 @@ fun AnimePlayScreen(
             Box(
                 Modifier
                     .navigationBarsPadding()
-                    .pointerInput(progressDragState !is ProgressDragState.None) { // 避免多点触控
+                    .pointerInput(dragGestureState !is DragGestureState.None) { // 避免多点触控
                         awaitPointerEventScope {
                             while (true) {
                                 awaitPointerEvent(PointerEventPass.Initial).changes.forEach { change ->
                                     if (change.pressed
-                                        && progressDragState !is ProgressDragState.None
+                                        && dragGestureState !is DragGestureState.None
                                     )
                                         change.consume()
                                 }

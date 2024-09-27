@@ -35,6 +35,9 @@ object NekoAnimeIcons {
         val play = R.drawable.ic_play
         val playNext = R.drawable.ic_play_next
         val thumb = R.drawable.ic_thumb
+        val volume = R.drawable.ic_volume
+        val volumeMute = R.drawable.ic_volume_mute
+        val brightness = R.drawable.ic_brightness
     }
 
     object Animated {

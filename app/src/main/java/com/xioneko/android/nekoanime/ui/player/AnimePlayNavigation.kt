@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -18,6 +17,7 @@ import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
 import com.xioneko.android.nekoanime.R
 import com.xioneko.android.nekoanime.data.model.AnimeShell
+import com.xioneko.android.nekoanime.ui.util.resetScreenBrightness
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -43,13 +43,18 @@ fun NavGraphBuilder.animePlayScreen(
         )
     ) { backStackEntry ->
 
-        val activity = LocalContext.current as? Activity
+        val activity = context as? Activity
 
 //        Log.d("Player", "Before Orientation: " + activity?.requestedOrientation.toString())
 
         // 由于播放页面可通过播放器全屏按钮锁定设备方向，因此需要在此处保存和恢复设备方向
         val previousOrientation = rememberSaveable {
             activity?.requestedOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+
+        val disposeEffect = {
+            activity?.requestedOrientation = previousOrientation
+            context.resetScreenBrightness()
         }
 
         LaunchedEffect(Unit) {
@@ -63,15 +68,15 @@ fun NavGraphBuilder.animePlayScreen(
             episode = navRoute.episode,
             onTagClick = {
                 onTagClick(it)
-                activity?.requestedOrientation = previousOrientation
+                disposeEffect()
             },
             onDownloadedAnimeClick = {
                 onDownloadedAnimeClick(it)
-                activity?.requestedOrientation = previousOrientation
+                disposeEffect()
             },
             onBackClick = {
                 onBackClick()
-                activity?.requestedOrientation = previousOrientation
+                disposeEffect()
             }
         )
     }

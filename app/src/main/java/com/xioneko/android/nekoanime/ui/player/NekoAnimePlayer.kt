@@ -24,6 +24,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,6 +38,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -46,6 +48,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -66,9 +69,11 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.SpanStyle
@@ -85,12 +90,17 @@ import com.xioneko.android.nekoanime.ui.component.LoadingDotsVariant
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeFontFamilies
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
 import com.xioneko.android.nekoanime.ui.theme.basicWhite
+import com.xioneko.android.nekoanime.ui.theme.pink50
 import com.xioneko.android.nekoanime.ui.util.KeepScreenOn
+import com.xioneko.android.nekoanime.ui.util.currentScreenSizeDp
+import com.xioneko.android.nekoanime.ui.util.getMediaVolume
+import com.xioneko.android.nekoanime.ui.util.getScreenBrightness
 import com.xioneko.android.nekoanime.ui.util.isTablet
 import com.xioneko.android.nekoanime.ui.util.vibrate
 import kotlinx.coroutines.delay
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import kotlin.math.abs
 import kotlin.time.Duration.Companion.seconds
 
 
@@ -100,21 +110,23 @@ fun NekoAnimePlayer(
     uiState: AnimePlayUiState,
     episode: Int?,
     playerState: NekoAnimePlayerState,
-    progressDragState: ProgressDragState,
+    dragGestureState: DragGestureState,
     isFullscreen: Boolean,
     onEpisodeChange: (Int) -> Unit,
     onFullScreenChange: (Boolean) -> Unit,
-    onProgressDrag: (ProgressDragEvent) -> Unit,
+    onDragGesture: (DragGestureEvent) -> Unit,
     onStartDownloadDrawerOpen: () -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
+    val density = LocalDensity.current.density
+    val (screenWidthDp, _) = currentScreenSizeDp()
     var userPosition by remember { mutableLongStateOf(0L) }
     var fastForwarding by remember { mutableStateOf(false) }
     var isSeekBarDragging by remember { mutableStateOf(false) }
-    val isDraggingProgress by remember(progressDragState) {
+    val isDraggingProgress by remember(dragGestureState) {
         derivedStateOf {
-            progressDragState !is ProgressDragState.None
+            dragGestureState !is DragGestureState.None
         }
     }
 
@@ -199,12 +211,12 @@ fun NekoAnimePlayer(
             modifier = Modifier
                 .pointerInput(isFullscreen) {
                     detectTapGestures(
-                        onTap = {
+                        onTap = { // 点击屏幕显示/隐藏控件
                             isBottomControllerVisible = !isBottomControllerVisible
                             if (isFullscreen)
                                 isTopControllerVisible = !isTopControllerVisible
                         },
-                        onDoubleTap = {
+                        onDoubleTap = { // 双击屏幕播放/暂停
                             player.playWhenReady = !player.playWhenReady
                             if (!player.playWhenReady) {
                                 isBottomControllerVisible = true
@@ -213,43 +225,113 @@ fun NekoAnimePlayer(
                         },
                     )
                 }
-                .pointerInput(player.duration) {
-                    if (player.duration > 0) {
-                        var positionOffset = 0L
-                        var startPosition = 0L
-                        detectHorizontalDragGestures(
-                            onDragStart = {
-                                onProgressDrag(ProgressDragEvent.Start(false))
-                                startPosition = player.currentPosition
-                            },
-                            onDragEnd = {
-                                onProgressDrag(ProgressDragEvent.End)
-                                positionOffset = 0L
-                                startPosition = 0L
-                            },
-                            onHorizontalDrag = { _, dragAmount ->
-                                positionOffset += dragAmount.toLong() * 500
-                                val newPosition =
-                                    (startPosition + positionOffset).coerceIn(0, player.duration)
-                                onProgressDrag(ProgressDragEvent.Update(newPosition))
-                            },
-                        )
-                    }
-                }
                 .pointerInput(player.isPlaying) {
                     if (player.isPlaying) {
-                        detectDragGesturesAfterLongPress(
+                        detectDragGesturesAfterLongPress( // 长按屏幕快进
                             onDragStart = {
                                 vibrate(context)
                                 fastForwarding = true
                             },
-                            onDragEnd = {
-                                fastForwarding = false
-                            },
-                            onDragCancel = {
-                                fastForwarding = false
-                            },
+                            onDragEnd = { fastForwarding = false },
+                            onDragCancel = { fastForwarding = false },
                             onDrag = { _, _ -> }
+                        )
+                    }
+                }
+                .pointerInput(player.duration > 0) { // 水平滑动改变播放进度
+                    if (player.duration > 0) {
+                        val threshold = density / 2
+                        var isDragStart = false
+                        var positionOffset = 0L
+                        var startPosition: Long? = null
+
+                        detectHorizontalDragGestures(
+                            onDragEnd = {
+                                onDragGesture(DragGestureEvent.End)
+                                positionOffset = 0L
+                                startPosition = null
+                                isDragStart = false
+                            },
+                            onHorizontalDrag = cb@{ _, dx ->
+                                if (!isDragStart) {
+                                    isDragStart = true
+                                    if (abs(dx) > threshold) {
+                                        startPosition = player.currentPosition
+                                        onDragGesture(
+                                            DragGestureEvent.Start(
+                                                DragType.Progress,
+                                                startPosition!!
+                                            )
+                                        )
+                                    } else return@cb
+                                }
+                                if (startPosition == null) return@cb
+
+                                positionOffset += dx.toLong() * 250
+                                val newPosition =
+                                    (startPosition!! + positionOffset)
+                                        .coerceIn(0, player.duration)
+                                onDragGesture(DragGestureEvent.Update(newPosition))
+                            },
+                        )
+                    }
+                }
+                .pointerInput(player.duration > 0) { // 垂直滑动改变音量或亮度
+                    if (player.duration > 0) {
+                        val threshold = density / 2
+
+                        var isDragStart = false
+                        var dragType: DragType? = null
+                        var offset: Float? = null
+                        var startValue = 0f
+
+                        detectVerticalDragGestures(
+                            onDragEnd = {
+                                dragType = null
+                                offset = null
+                                startValue = 0f
+                                isDragStart = false
+                                onDragGesture(DragGestureEvent.End)
+                            },
+                            onVerticalDrag = cb@{ change, dy ->
+                                if (!isDragStart) {
+                                    isDragStart = true
+                                    if (abs(dy) > threshold) offset = 0f
+                                    else return@cb
+                                }
+                                if (offset == null) return@cb
+
+                                val x = change.position.x
+                                val width = screenWidthDp * density
+
+                                val currDragType = if (x < width / 2.5) DragType.Brightness
+                                else if (x > width / 1.25) DragType.Volume
+                                else null
+
+                                if (currDragType != null) {
+                                    if (dragType == null) {
+                                        dragType = currDragType
+                                        startValue = if (currDragType == DragType.Brightness)
+                                            context.getScreenBrightness()
+                                        else context.getMediaVolume()
+
+                                        onDragGesture(
+                                            DragGestureEvent.Start(currDragType, startValue)
+                                        )
+                                    } else if (dragType != currDragType) {
+                                        offset = null
+                                        onDragGesture(DragGestureEvent.End)
+//                                        Log.d("Player", "verticalDrag Conflict")
+                                        return@cb
+                                    }
+                                }
+
+                                if (dragType != null) {
+                                    offset = offset!! - dy / 1000f
+                                    val newValue = (startValue + offset!!).coerceIn(0f, 1f)
+                                    onDragGesture(DragGestureEvent.Update(newValue))
+                                }
+                            }
                         )
                     }
                 },
@@ -284,30 +366,27 @@ fun NekoAnimePlayer(
         }
 
         if (isDraggingProgress) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(Color.Black.copy(0.5f))
-                    .padding(12.dp, 9.dp),
-            ) {
-                val position =
-                    formatMilliseconds((progressDragState as ProgressDragState.Data).endPosition)
-                val duration = formatMilliseconds(player.duration)
-                Text(
-                    text = buildAnnotatedString {
-                        withStyle(style = SpanStyle(color = basicWhite)) {
-                            append(position)
+            with(dragGestureState as DragGestureState.Data) {
+                when (type) {
+                    DragType.Progress -> PlayProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        position = endValue.toLong(),
+                        duration = player.duration
+                    )
+
+                    DragType.Volume,
+                    DragType.Brightness -> DefaultProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        progress = endValue.toFloat(),
+                        iconId = when (type) {
+                            DragType.Volume -> if (endValue.toFloat() > 0)
+                                NekoAnimeIcons.Player.volume
+                            else NekoAnimeIcons.Player.volumeMute
+
+                            else -> NekoAnimeIcons.Player.brightness
                         }
-                        withStyle(style = SpanStyle(color = basicWhite.copy(0.6f))) {
-                            append(" / ")
-                            append(duration)
-                        }
-                    },
-                    style = MaterialTheme.typography.titleMedium,
-                    fontFamily = NekoAnimeFontFamilies.robotoFamily,
-                    fontWeight = FontWeight.Bold,
-                )
+                    )
+                }
             }
         }
 
@@ -384,7 +463,6 @@ fun NekoAnimePlayer(
             )
         }
     }
-
 }
 
 @Composable
@@ -727,7 +805,7 @@ private fun SeekBar(
                         .clip(CircleShape),
                     sliderState = it,
                     colors = SliderDefaults.colors(
-                        activeTrackColor = basicWhite.copy(0.8f),
+                        activeTrackColor = pink50.copy(0.85f),
                         inactiveTrackColor = basicWhite.copy(0.25f)
                     )
                 )
@@ -824,6 +902,88 @@ private fun AnimatedVisibilityScope.EpisodesDrawer(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun PlayProgressIndicator(
+    modifier: Modifier = Modifier,
+    position: Long,
+    duration: Long,
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(Color.Black.copy(0.3f))
+            .padding(12.dp, 9.dp),
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = buildAnnotatedString {
+                    withStyle(style = SpanStyle(color = basicWhite)) {
+                        append(formatMilliseconds(position))
+                    }
+                    withStyle(style = SpanStyle(color = basicWhite.copy(0.6f))) {
+                        append(" / ")
+                        append(formatMilliseconds(duration))
+                    }
+                },
+                style = MaterialTheme.typography.titleMedium,
+                fontFamily = NekoAnimeFontFamilies.robotoFamily,
+                fontWeight = FontWeight.Bold,
+            )
+
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .requiredHeight(2.dp)
+                    .padding(end = 8.dp)
+                    .width(100.dp),
+                progress = { position.toFloat() / duration },
+                color = pink50,
+                trackColor = basicWhite.copy(0.25f),
+                strokeCap = StrokeCap.Round
+            )
+        }
+
+    }
+}
+
+@Composable
+private fun DefaultProgressIndicator(
+    modifier: Modifier = Modifier,
+    progress: Float,
+    iconId: Int,
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(Color.Black.copy(0.3f))
+            .padding(6.dp),
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                modifier = Modifier.size(36.dp),
+                painter = painterResource(iconId),
+                contentDescription = "icon",
+                tint = basicWhite.copy(0.8f)
+            )
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .requiredHeight(2.dp)
+                    .padding(end = 8.dp)
+                    .width(100.dp),
+                progress = { progress },
+                color = pink50,
+                trackColor = basicWhite.copy(0.25f),
+                strokeCap = StrokeCap.Round
+            )
         }
     }
 }
