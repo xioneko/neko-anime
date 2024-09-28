@@ -383,16 +383,16 @@ fun NekoAnimePlayer(
                 when (type) {
                     DragType.Progress -> PlayProgressIndicator(
                         modifier = Modifier.align(Alignment.Center),
-                        position = endValue.toLong(),
+                        position = value.toLong(),
                         duration = player.duration
                     )
 
                     DragType.Volume,
                     DragType.Brightness -> DefaultProgressIndicator(
                         modifier = Modifier.align(Alignment.Center),
-                        progress = endValue.toFloat(),
+                        progress = value.toFloat(),
                         iconId = when (type) {
-                            DragType.Volume -> if (endValue.toFloat() > 0)
+                            DragType.Volume -> if (value.toFloat() > 0)
                                 NekoAnimeIcons.Player.volume
                             else NekoAnimeIcons.Player.volumeMute
 

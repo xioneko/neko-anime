@@ -20,13 +20,6 @@ fun <T : DatedRecord> Map<Int, T>.sortedByDate() =
     entries.sortedByDescending { it.value.date }
 
 @Serializable
-data class DownloadRecord(
-    @Serializable(with = CalendarAsLongSerializer::class)
-    override val date: Calendar,
-    val episode: Int,
-) : DatedRecord
-
-@Serializable
 data class WatchRecord(
     @Serializable(with = CalendarAsLongSerializer::class)
     override val date: Calendar,

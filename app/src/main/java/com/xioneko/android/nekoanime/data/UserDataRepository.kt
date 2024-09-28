@@ -1,14 +1,11 @@
 package com.xioneko.android.nekoanime.data
 
 import com.xioneko.android.nekoanime.data.datastore.UserDataSource
-import com.xioneko.android.nekoanime.data.model.Anime
-import com.xioneko.android.nekoanime.data.model.DownloadRecord
 import com.xioneko.android.nekoanime.data.model.SearchRecord
 import com.xioneko.android.nekoanime.data.model.ThemeConfig
 import com.xioneko.android.nekoanime.data.model.WatchRecord
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import java.util.Calendar
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,11 +18,7 @@ class UserDataRepository @Inject constructor(
 
     val watchHistory: Flow<Map<Int, WatchRecord>> by userDataSource.userData
 
-    val downloadHistory: Flow<Map<Int, DownloadRecord>> by userDataSource.userData
-
     val followedAnimeIds: Flow<List<Int>> by userDataSource.userData
-
-    val interests: Flow<List<String>> by userDataSource.userData
 
     val themeConfig: Flow<ThemeConfig> by userDataSource.userData
 
@@ -34,10 +27,6 @@ class UserDataRepository @Inject constructor(
     val disableLandscapeMode: Flow<Boolean> by userDataSource.userData
 
     val enablePortraitFullscreen: Flow<Boolean> by userDataSource.userData
-
-
-    fun isFollowed(anime: Anime): Flow<Boolean> =
-        followedAnimeIds.map { anime.id in it }
 
     suspend fun addSearchRecord(record: String) =
         userDataSource.addSearchRecord(SearchRecord(record))
@@ -58,16 +47,6 @@ class UserDataRepository @Inject constructor(
     }
 
     suspend fun clearWatchRecord() = userDataSource.clearWatchRecords()
-
-    suspend fun addDownloadRecord(animeId: Int, episode: Int) =
-        userDataSource.addDownloadRecord(
-            animeId,
-            DownloadRecord(Calendar.getInstance(), episode)
-        )
-
-
-    suspend fun setInterests(interests: List<String>) =
-        userDataSource.setInterests(interests)
 
 
     suspend fun addFollowedAnimeId(animeId: Int) =

@@ -6,7 +6,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -93,7 +92,6 @@ import okhttp3.internal.format
 import java.time.DayOfWeek
 import java.time.LocalDate
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ScheduleScreen(
     padding: PaddingValues,
@@ -371,7 +369,6 @@ private fun ItemCard(
     modifier: Modifier = Modifier,
     animeShell: AnimeShell
 ) {
-    val isTablet = isTablet()
     Surface(
         modifier = modifier
             .shadow(

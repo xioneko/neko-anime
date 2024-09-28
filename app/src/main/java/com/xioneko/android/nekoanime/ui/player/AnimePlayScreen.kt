@@ -373,7 +373,7 @@ fun rememberFullscreenState(
                 isFullscreen.value = enableFullscreen
                 return@callback
             }
-            Log.d("Player", "setFullscreen: $enableFullscreen")
+            Log.d("Orientation", "setFullscreen: $enableFullscreen")
             // 全屏状态改变时，切换设备方向
             if (enableFullscreen) {
                 context.setScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE)
@@ -385,7 +385,7 @@ fun rememberFullscreenState(
 
     // 屏幕方向变化时，更新 isFullscreen 状态
     LaunchedEffect(configuration.orientation, enablePortraitFullscreen) {
-        Log.d("Player", "Orientation: ${configuration.orientation}")
+        Log.d("Orientation", "Orientation: ${configuration.orientation}")
         when (configuration.orientation) {
             Configuration.ORIENTATION_LANDSCAPE -> {
                 isFullscreen.value = true

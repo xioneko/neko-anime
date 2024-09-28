@@ -45,7 +45,7 @@ fun NavGraphBuilder.animePlayScreen(
 
         val activity = context as? Activity
 
-//        Log.d("Player", "Before Orientation: " + activity?.requestedOrientation.toString())
+//        Log.d("Orientation", "Before Orientation: " + activity?.requestedOrientation.toString())
 
         // 由于播放页面可通过播放器全屏按钮锁定设备方向，因此需要在此处保存和恢复设备方向
         val previousOrientation = rememberSaveable {

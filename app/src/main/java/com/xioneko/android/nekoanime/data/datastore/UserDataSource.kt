@@ -2,7 +2,6 @@ package com.xioneko.android.nekoanime.data.datastore
 
 import androidx.datastore.core.DataStore
 import com.xioneko.android.nekoanime.data.datastore.model.UserDataProto
-import com.xioneko.android.nekoanime.data.model.DownloadRecord
 import com.xioneko.android.nekoanime.data.model.SearchRecord
 import com.xioneko.android.nekoanime.data.model.ThemeConfig
 import com.xioneko.android.nekoanime.data.model.WatchRecord
@@ -22,12 +21,8 @@ class UserDataSource @Inject constructor(
             dataStore.data.map { it.searchRecords })
         put("watchHistory",
             dataStore.data.map { it.watchRecords })
-        put("downloadHistory",
-            dataStore.data.map { it.downloadRecords })
         put("followedAnimeIds",
             dataStore.data.map { it.followedAnimeIds })
-        put("interests",
-            dataStore.data.map { it.interests })
         put("themeConfig",
             dataStore.data.map { it.themeConfig })
         put("updateAutoCheck",
@@ -69,22 +64,6 @@ class UserDataSource @Inject constructor(
     suspend fun clearWatchRecords() {
         dataStore.updateData { userData ->
             userData.copy(watchRecords = emptyMap())
-        }
-    }
-
-    suspend fun addDownloadRecord(animeId: Int, record: DownloadRecord) {
-        dataStore.updateData { userData ->
-            val origin = userData.downloadRecords.toMutableMap()
-            userData.copy(
-                downloadRecords = origin.apply { put(animeId, record) }
-            )
-        }
-    }
-
-
-    suspend fun setInterests(interests: List<String>) {
-        dataStore.updateData { userData ->
-            userData.copy(interests = interests)
         }
     }
 

@@ -144,7 +144,7 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
 
     var episode = mutableStateOf(initEpisode)
 
-    lateinit var streamIterator: TrackingIterator<Int>
+    private lateinit var streamIterator: TrackingIterator<Int>
 
     init {
         loadingUiState(animeId)
@@ -163,7 +163,7 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
                 .collect { (context, _) ->
                     delay(200) // 避免在设备方向还未就位时提前恢复自动旋转
                     context.setScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
-                    Log.d("Player", "恢复自动旋转")
+                    Log.d("Orientation", "恢复自动旋转")
                 }
         }
     }
@@ -271,8 +271,7 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
                 _dragGestureState.update {
                     DragGestureState.Data(
                         type = event.dragType,
-                        startValue = event.startValue,
-                        endValue = event.startValue,
+                        value = event.startValue,
                     )
                 }
             }
@@ -291,7 +290,7 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
 
                             else -> {}
                         }
-                        it.copy(endValue = event.newValue)
+                        it.copy(value = event.newValue)
                     }
                 }
             }
@@ -300,7 +299,7 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
                 val endState = dragGestureState.value
                 if (endState is DragGestureState.Data) {
                     if (endState.type == DragType.Progress) {
-                        player.seekTo(endState.endValue.toLong())
+                        player.seekTo(endState.value.toLong())
                     }
                     _dragGestureState.update {
                         DragGestureState.None
@@ -399,8 +398,7 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
                 }
 
                 override fun onPlayerError(error: PlaybackException) {
-                    super.onPlayerError(error)
-                    Log.d("Video", "播放出错：${error.message}")
+                    Log.d("Player", "播放出错：${error.message}")
                     tryNextStream()
                 }
             }
@@ -451,8 +449,7 @@ sealed class DragGestureState {
     data object None : DragGestureState()
     data class Data(
         val type: DragType,
-        val startValue: Number = 0L,
-        val endValue: Number = 0L
+        val value: Number = 0L
     ) : DragGestureState()
 }
 
