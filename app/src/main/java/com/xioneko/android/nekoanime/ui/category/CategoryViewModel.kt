@@ -63,7 +63,7 @@ class CategoryViewModel @AssistedInject constructor(
         animeList.clear()
     }
 
-    fun fetchAnime() {
+    fun fetchAnime(onComplete: suspend () -> Unit = {}) {
         viewModelScope.launch {
             Log.d("Category", "Fetch Page: ${fetcherState.page + 1}")
             animeRepository.getAnimeBy(
@@ -75,7 +75,10 @@ class CategoryViewModel @AssistedInject constructor(
             )
                 .onEach { animeShells -> animeList.addAll(animeShells) }
                 .onStart { fetcherState.loadingPageCount++ }
-                .onCompletion { fetcherState.loadingPageCount-- }
+                .onCompletion {
+                    fetcherState.loadingPageCount--
+                    onComplete()
+                }
                 .onEmpty {
                     fetcherState.hasMore = false
                     Log.d("Category", "hasMore = false")

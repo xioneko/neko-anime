@@ -125,7 +125,7 @@ fun CategoryScreen(
                 with(viewModel) {
                     viewModel.fetcherState.reset()
                     viewModel.filter[category] = input
-                    fetchAnime()
+                    fetchAnime(onComplete = { lazyGridState.scrollToItem(0) })
                 }
             }
         )
