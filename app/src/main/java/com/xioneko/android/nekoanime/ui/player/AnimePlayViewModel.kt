@@ -409,9 +409,18 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
 
     private fun tryNextStream() {
         if (streamIterator.hasNext()) {
-            player.update(streamIterator.next())
+            viewModelScope.launch {
+                clearVideoSourceCache(episode.value!!)
+                player.update(streamIterator.next())
+            }
         } else {
             notifyFailure("找不到可用的播放地址")
+        }
+    }
+
+    private suspend fun clearVideoSourceCache(episode: Int) {
+        with(_uiState.value as AnimePlayUiState.Data) {
+            animeRepository.clearVideoSourceCache(anime, episode, streamIterator.current!!)
         }
     }
 

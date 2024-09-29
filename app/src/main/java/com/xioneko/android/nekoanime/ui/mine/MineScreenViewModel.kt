@@ -106,7 +106,7 @@ class MineScreenViewModel @Inject constructor(
     @OptIn(ExperimentalCoilApi::class)
     fun clearAnimeCache(onFinished: suspend () -> Unit = {}) {
         viewModelScope.launch {
-            animeRepository.clearCache()
+            animeRepository.clearAllCache()
             imageLoader.diskCache?.clear()
             imageLoader.memoryCache?.clear()
             onFinished()

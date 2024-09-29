@@ -186,12 +186,12 @@ class AnimeDownloadHelper @OptIn(UnstableApi::class)
                 return null
             }
 
-            suspend fun fetchVideoUrl(sid: Int): String? {
-                val videoUrl = animeRepository.getVideoUrl(anime, episode, sid).firstOrNull()
+            suspend fun fetchVideoUrl(sid: Int, fresh: Boolean = false): String? {
+                val videoUrl = animeRepository.getVideoUrl(anime, episode, sid, fresh).firstOrNull()
                 if (videoUrl == null && sidIterator.hasNext()) {
                     val nextSid = sidIterator.next()
                     Log.d("Download", "Try next sid: $nextSid")
-                    return fetchVideoUrl(nextSid)
+                    return fetchVideoUrl(nextSid, true)
                 }
                 return videoUrl
             }

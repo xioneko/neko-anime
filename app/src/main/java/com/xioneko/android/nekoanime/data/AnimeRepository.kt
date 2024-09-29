@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
-import org.mobilenativefoundation.store.store5.ExperimentalStoreApi
+import org.mobilenativefoundation.store.core5.ExperimentalStoreApi
 import org.mobilenativefoundation.store.store5.Store
 import org.mobilenativefoundation.store.store5.StoreBuilder
 import org.mobilenativefoundation.store.store5.StoreReadRequest
@@ -40,11 +40,8 @@ class AnimeRepository @androidx.annotation.OptIn(UnstableApi::class)
             .validator(animeDataValidator)
             .build()
 
-    fun getAnimeById(
-        animeId: Int,
-        refresh: Boolean = false
-    ): Flow<Anime> = flow {
-        store.stream(StoreReadRequest.cached(AnimeKey.FetchAnime(animeId), refresh))
+    fun getAnimeById(animeId: Int): Flow<Anime> = flow {
+        store.stream(StoreReadRequest.cached(AnimeKey.FetchAnime(animeId), false))
             .firstOrNull { it is StoreReadResponse.Data }
             ?.let { emit((it as StoreReadResponse.Data).value) }
     }
@@ -83,21 +80,24 @@ class AnimeRepository @androidx.annotation.OptIn(UnstableApi::class)
         anime: Anime,
         episode: Int,
         streamId: Int,
-        refresh: Boolean = false,
+        fresh: Boolean = false,
     ): Flow<String> = flow {
         store.stream(
-            StoreReadRequest.cached(
-                AnimeKey.FetchVideo(anime, episode, streamId),
-                refresh
-            )
+            if (fresh) StoreReadRequest.fresh(AnimeKey.FetchVideo(anime, episode, streamId))
+            else StoreReadRequest.cached(AnimeKey.FetchVideo(anime, episode, streamId), false)
         )
             .firstOrNull { it is StoreReadResponse.Data }
             ?.let { emit((it as StoreReadResponse.Data).value.videoSource[episode]!!) }
     }
 
+    suspend fun clearVideoSourceCache(anime: Anime, episode: Int, streamId: Int) =
+        withContext(Dispatchers.IO) {
+            store.clear(AnimeKey.FetchVideo(anime, episode, streamId))
+        }
+
     @androidx.annotation.OptIn(UnstableApi::class)
     @OptIn(ExperimentalStoreApi::class)
-    suspend fun clearCache() = withContext(Dispatchers.IO) {
+    suspend fun clearAllCache() = withContext(Dispatchers.IO) {
         store.clear()
     }
 }
