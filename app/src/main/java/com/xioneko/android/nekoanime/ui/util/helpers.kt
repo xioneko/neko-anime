@@ -16,6 +16,13 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
+import okhttp3.Call
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import java.io.IOException
 import kotlin.random.Random
 
 @Composable
@@ -138,4 +145,22 @@ fun Context.setMediaVolume(volume: Float) {
     } catch (e: SecurityException) {
         Log.w("Player", "Failed to change volume: $e")
     }
+}
+
+fun testConnection(client: OkHttpClient, url: String) = callbackFlow {
+    val request = Request.Builder()
+        .url(url)
+        .build()
+
+    client.newCall(request).enqueue(object : okhttp3.Callback {
+        override fun onFailure(call: Call, e: IOException) {
+            channel.trySend(false)
+        }
+
+        override fun onResponse(call: Call, response: Response) {
+            channel.trySend(response.isSuccessful)
+        }
+    })
+
+    awaitClose {}
 }

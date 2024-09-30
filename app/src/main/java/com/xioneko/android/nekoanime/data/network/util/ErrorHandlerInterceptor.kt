@@ -15,7 +15,7 @@ object ErrorHandlerInterceptor : Interceptor {
                 .body(response.body)
                 .build()
         } catch (e: Exception) {
-            Log.e("Network", "Connect Error: ${e.message}", e)
+            Log.e("Network", "Connect Error: ${e.message}")
             return Response.Builder()
                 .request(chain.request())
                 .protocol(Protocol.HTTP_1_1)

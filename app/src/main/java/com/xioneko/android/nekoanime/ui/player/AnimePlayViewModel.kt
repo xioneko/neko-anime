@@ -12,10 +12,12 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.cache.CacheDataSource
+import androidx.media3.datasource.okhttp.OkHttpDataSource
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
+import androidx.media3.exoplayer.upstream.DefaultLoadErrorHandlingPolicy
 import com.xioneko.android.nekoanime.data.AnimeDownloadHelper
 import com.xioneko.android.nekoanime.data.AnimeDownloadManager
 import com.xioneko.android.nekoanime.data.AnimeRepository
@@ -28,6 +30,7 @@ import com.xioneko.android.nekoanime.ui.util.getRandomElements
 import com.xioneko.android.nekoanime.ui.util.setMediaVolume
 import com.xioneko.android.nekoanime.ui.util.setScreenBrightness
 import com.xioneko.android.nekoanime.ui.util.setScreenOrientation
+import com.xioneko.android.nekoanime.ui.util.testConnection
 import com.xioneko.android.nekoanime.ui.util.withTracking
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -49,6 +52,8 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChangedBy
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
@@ -59,6 +64,7 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
 
 private const val FOR_YOU_ANIME_GRID_SIZE = 12
 
@@ -71,7 +77,8 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
     @ApplicationContext context: Context,
     private val animeRepository: AnimeRepository,
     private val userDataRepository: UserDataRepository,
-    private val downloadHelper: AnimeDownloadHelper
+    private val downloadHelper: AnimeDownloadHelper,
+    private val okHttpClient: OkHttpClient,
 ) : ViewModel() {
 
     @AssistedFactory
@@ -94,13 +101,29 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
     val uiState = _uiState.asStateFlow()
 
     val player: ExoPlayer = ExoPlayer.Builder(context)
+        .setLoadControl(
+            DefaultLoadControl
+                .Builder()
+                .setBufferDurationsMs(
+                    DefaultLoadControl.DEFAULT_MIN_BUFFER_MS,
+                    60_000,
+                    DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
+                    DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS
+                )
+                .build()
+        )
         .setMediaSourceFactory(run {
             val cacheDataSourceFactory = CacheDataSource.Factory()
                 .setCache(AnimeDownloadManager.getDownloadCache(context))
-                .setUpstreamDataSourceFactory(DefaultHttpDataSource.Factory())
+                .setUpstreamDataSourceFactory(OkHttpDataSource.Factory(okHttpClient))
                 .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
                 .setCacheWriteDataSinkFactory(null) // Read-only
             HlsMediaSource.Factory(cacheDataSourceFactory)
+                .setLoadErrorHandlingPolicy(object : DefaultLoadErrorHandlingPolicy() {
+                    override fun getMinimumLoadableRetryCount(dataType: Int): Int {
+                        return 2
+                    }
+                })
         })
         .build().apply {
             playWhenReady = true
@@ -176,7 +199,7 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
                 .onStart { _loadingState.emit(LoadingState.LOADING) }
                 .onEmpty { notifyFailure("数据源似乎出了问题") }
                 .combine(userDataRepository.watchHistory.take(1)) { anime, watchRecords ->
-                    streamIterator = anime.streamIds.toSortedSet().iterator().withTracking()
+                    streamIterator = anime.streamIds.iterator().withTracking()
                     _uiState.emit(AnimePlayUiState.Data(anime = anime))
                     if (episode.value == null) {
                         episode.value = watchRecords[animeId]?.recentEpisode ?: 1
@@ -207,14 +230,15 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
         with(_uiState.value as AnimePlayUiState.Data) {
             clearMediaItems()
             videoFetchingJob.cancelChildren()
-            Log.d("Video", "加载 ${anime.name} 节点 ${episode.value}，播放线路 $streamId")
+            Log.d("Player", "加载 ${anime.name} 节点 ${episode.value}，播放线路 $streamId")
             viewModelScope.launch(videoFetchingJob) {
-                animeRepository.getVideoUrl(anime, episode.value!!, streamId)
+                animeRepository.getVideoUrl(anime, episode.value!!, streamId, true)
                     .onStart { _loadingState.emit(LoadingState.LOADING) }
+                    .filter { testConnection(okHttpClient, it).first() }
                     .onEmpty { tryNextStream() }
                     .collect { url ->
                         addMediaItem(MediaItem.fromUri(url))
-                        Log.d("Video", "添加播放地址: $url")
+                        Log.d("Player", "添加播放地址: $url")
                         prepare()
                         restoreWatchRecord()
                     }
@@ -399,6 +423,10 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
 
                 override fun onPlayerError(error: PlaybackException) {
                     Log.d("Player", "播放出错：${error.message}")
+                    if (player.currentMediaItem != null && player.currentPosition > 1000) {
+                        upsertWatchRecord(episode.value!!)
+                        notifyFailure("当前播放线路不稳定，自动切换播放线路")
+                    }
                     tryNextStream()
                 }
             }
@@ -425,7 +453,7 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
     }
 
     private fun notifyFailure(message: String, error: Throwable? = null) {
-        Log.d("Play", message, error)
+        Log.d("Player", message, error)
         _loadingState.update { LoadingState.FAILURE(message) }
     }
 }
