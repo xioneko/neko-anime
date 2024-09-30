@@ -21,8 +21,8 @@
 Neko Anime 使用樱花动漫 [🌸](https://yhdm6.top/)
 作为数据源，灵感来源于项目 [Imomoe](https://github.com/androiddevnotesforks/Imomoe)。技术栈方面采用了
 Kotlin 搭配 Jetpack
-Compose，遵循了官方指南中的“[现代 Android 应用架构](https://developer.android.com/topic/architecture)
-”最佳实践。同时，为尽可能地提高用户体验，Neko Anime 在 UI/UX 设计上广泛借鉴了相关优秀 app。
+Compose，借鉴了官方指南中的“[现代 Android 应用架构](https://developer.android.com/topic/architecture)
+”最佳实践。同时，为尽可能地提高用户体验，Neko Anime 在 UI/UX 设计上广泛参考了相关优秀 app。
 
 </p>
 
@@ -42,11 +42,12 @@ App 的开发仍在进行中 🚧，但是版本迭代可能会比较慢，可�
 
 ### 功能特色
 
-- 海量番剧在线观看，无任何广告
-- 丰富的搜索和分类检索功能，快速找到你想要观看的番剧
+- 海量番剧在线观看，无任何内部广告
+- 丰富的搜索和分类检索功能
 - 新番动态展示，以及每日更新表
 - 一键追番，收藏你喜爱的番剧
 - 本地观看历史，以及播放进度记忆
+- 离线缓存番剧，摆脱龟速加载
 - ...
 
 ### 应用截图
@@ -56,19 +57,32 @@ App 的开发仍在进行中 🚧，但是版本迭代可能会比较慢，可�
 | ![Home](./docs/images/home.png) | ![Search](./docs/images/search.png) | ![Category](./docs/images/category.png) | ![Player](./docs/images/player.png) | ![Schedule](./docs/images/schedule.png) |
 
 ## 技术特性
- - 参考了[官方指南](https://developer.android.com/topic/architecture)，并借鉴了项目 [nowinandroid](https://github.com/android/nowinandroid/) 的架构设计，UI Layer、Domain Layer 和 Data Layer 三层分离。
+ - 参考了[官方指南](https://developer.android.com/topic/architecture)，并借鉴了 [nowinandroid](https://github.com/android/nowinandroid/) 的模块设计，UI Layer、Domain Layer 和 Data Layer 三层分离。
  - Data Layer 层使用了 Room (database)、Retrofit (http client)、jsoup (HTML 解析器)、jetpack datastore (数据存储)、kotlinx-serialization (数据结构化/序列化) 以及 store5 (“离线优先”解决方案)
- - UI Layer 层基于 Jetpack Compose，使用了 media3 (视频播放器)、coil (图片异步加载) 和 lottie-compose (矢量图形动画)，并在 Accompanist 的支持下实现了 navigation compose 动画以及对 Systerm UI 的控制
- - 使用 Hilt 实现依赖注入
+ - UI Layer 层基于 Jetpack Compose，使用了 material3 (基础 UI 组件)、media3 (视频播放器)、coil (图片异步加载) 和 lottie-compose (矢量图形动画)
+ - 使用 Hilt 实现依赖注入，使用 kotlin flow 实现异步数据流传输
  - ...
 
 ## 构建
 
-- Android Studio Flamingo | 2024.1.1
-- compileSdk 34
+- Android Studio Koala | 2024.1.1 Patch 2
+- compileSdk 35
 - Gradle JDK 17
 
 ## 更新日志
+
+### v0.5.0 (2024-9-30)
+**新增功能**
+- 番剧离线缓存
+- 播放器可通过滑动调节亮度和音量
+
+**改进功能**
+- 番剧视频加载性能优化
+- 剧集列表滚动位置跟踪当前集数
+
+**缺陷修复**
+- 修复番剧数据缓存问题
+- 搜索页和检索页相关问题修复
 
 ### v0.4.0 (2024-6-29)
 **缺陷修复**
@@ -197,5 +211,5 @@ App 的开发仍在进行中 🚧，但是版本迭代可能会比较慢，可�
 
 1. 此软件所展示的所有内容均来自互联网。
 2. 此软件只提供服务，不存储、不制作任何数据内容，不承担任何由于内容的合法性及健康性所引起的争议和法律责任。
-3. 若此软件收录的内容侵犯了您的权益，请联系邮箱 [stnecat@gmail.com](mailto:stnecat@gmail.com)。
+3. 若此软件收录的内容侵犯了您的权益，请联系邮箱 [xioneko@outlook.com](mailto:xioneko@outlook.com)。
 4. 此软件仅可用作学习交流，不得用于商业用途。
