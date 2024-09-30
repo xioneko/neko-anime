@@ -61,7 +61,7 @@ fun ResultsView(
             modifier = Modifier.fillMaxSize(),
             state = lazyGridState,
             columns = GridCells.Fixed(if (isTablet) 4 else if (aspectRatio < 0.56) 6 else 3),
-            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 36.dp, bottom = 12.dp),
+            contentPadding = PaddingValues(12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {

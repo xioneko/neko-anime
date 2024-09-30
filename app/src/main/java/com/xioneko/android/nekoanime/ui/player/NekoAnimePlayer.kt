@@ -6,7 +6,13 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.EnterExitState
+import androidx.compose.animation.animateColor
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.StartOffset
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -410,13 +416,37 @@ fun NekoAnimePlayer(
                     .align(Alignment.TopCenter)
                     .clip(RoundedCornerShape(6.dp))
                     .background(Color.Black.copy(0.5f))
-                    .padding(12.dp, 6.dp)
+                    .padding(12.dp, 8.dp)
             ) {
-                Text(
-                    text = "▶▷▶ 倍速播放中",
-                    color = basicWhite.copy(0.8f),
-                    style = MaterialTheme.typography.bodySmall,
-                )
+                val transition = rememberInfiniteTransition(label = "fastForward")
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    repeat(3) { index ->
+                        val color by transition.animateColor(
+                            initialValue = Color.LightGray.copy(alpha = 0.1f),
+                            targetValue = Color.LightGray,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(durationMillis = 600, easing = LinearEasing),
+                                repeatMode = RepeatMode.Reverse,
+                                initialStartOffset = StartOffset(index * 200)
+                            ),
+                            label = "color",
+                        )
+                        Text(
+                            text = "▶",
+                            color = color,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                    Text(
+                        modifier = Modifier.padding(start = 6.dp),
+                        text = "倍速播放中",
+                        color = basicWhite.copy(0.8f),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
         }
 
