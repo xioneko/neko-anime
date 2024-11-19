@@ -20,9 +20,11 @@ import java.time.DayOfWeek
 import javax.inject.Inject
 import javax.inject.Singleton
 
+// https://yhdm6.top/index.php/vod/search/?wd=y&submit=
+const val ANIME_LIST_PAGE_SIZE = 18
 
-const val ANIME_LIST_PAGE_SIZE = 36
-const val ANIME_GRID_PAGE_SIZE = 60
+// https://yhdm6.top/index.php/vod/show/id/1/page/1/
+const val ANIME_GRID_PAGE_SIZE = 36
 
 @Singleton
 class AnimeRepository @androidx.annotation.OptIn(UnstableApi::class)
