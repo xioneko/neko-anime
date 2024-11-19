@@ -91,12 +91,11 @@ class YhdmDataSource @Inject constructor(
             }
     }
 
-    fun getVideoUrl(anime: Anime, episode: Int, streamId: Int): Flow<Pair<String, String?>> = flow {
+    suspend fun getVideoUrl(anime: Anime, episode: Int, streamId: Int): Pair<String, String?>? =
         yhdmApi.getPlayPage(anime.id, episode, streamId)                // ^episode  ^episode + 1
             .takeIf { it.isSuccessful }
             ?.body()
             ?.let { document ->
-                HtmlParser.parseVideoUrl(document)?.let { emit(it) }
+                HtmlParser.parseVideoUrl(document)
             }
-    }
 }

@@ -88,8 +88,14 @@ class AnimeRepository @androidx.annotation.OptIn(UnstableApi::class)
             if (fresh) StoreReadRequest.fresh(AnimeKey.FetchVideo(anime, episode, streamId))
             else StoreReadRequest.cached(AnimeKey.FetchVideo(anime, episode, streamId), false)
         )
-            .firstOrNull { it is StoreReadResponse.Data }
-            ?.let { emit((it as StoreReadResponse.Data).value.videoSource[episode]!!) }
+            .firstOrNull {
+                it is StoreReadResponse.Data || it is StoreReadResponse.Error
+            }
+            ?.let {
+                if (it is StoreReadResponse.Data) {
+                    emit(it.value.videoSource[episode]!!)
+                }
+            }
     }
 
     suspend fun clearVideoSourceCache(anime: Anime, episode: Int, streamId: Int) =
