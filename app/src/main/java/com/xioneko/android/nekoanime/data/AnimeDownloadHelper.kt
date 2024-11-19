@@ -20,6 +20,7 @@ import com.xioneko.android.nekoanime.data.AnimeDownloadManager.getDownloadNotifi
 import com.xioneko.android.nekoanime.ui.MainActivity
 import com.xioneko.android.nekoanime.ui.download.deepLinkToDownloadedAnime
 import com.xioneko.android.nekoanime.ui.player.deepLinkToAnimePlay
+import com.xioneko.android.nekoanime.ui.util.testConnection
 import com.xioneko.android.nekoanime.ui.util.withTracking
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -30,11 +31,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -45,6 +48,7 @@ class AnimeDownloadHelper @OptIn(UnstableApi::class)
 @Inject constructor(
     @ApplicationContext context: Context,
     private val animeRepository: AnimeRepository,
+    private val okHttpClient: OkHttpClient
 ) {
     companion object {
         const val STOP_REASON_PAUSE = 127
@@ -87,6 +91,7 @@ class AnimeDownloadHelper @OptIn(UnstableApi::class)
                     animeId = animeId,
                     episode = episode,
                     state = it.state,
+                    url = it.request.uri.toString(),
                     stopReason = it.stopReason,
                     failureReason = it.failureReason,
                     bytesDownloaded = it.bytesDownloaded
@@ -138,6 +143,7 @@ class AnimeDownloadHelper @OptIn(UnstableApi::class)
                     DownloadedAnime(
                         animeId = animeId,
                         episode = episode,
+                        url = download.request.uri.toString(),
                         state = download.state,
                         stopReason = download.stopReason,
                         failureReason = download.failureReason,
@@ -187,7 +193,10 @@ class AnimeDownloadHelper @OptIn(UnstableApi::class)
             }
 
             suspend fun fetchVideoUrl(sid: Int, fresh: Boolean = false): String? {
-                val videoUrl = animeRepository.getVideoUrl(anime, episode, sid, fresh).firstOrNull()
+                val videoUrl = animeRepository
+                    .getVideoUrl(anime, episode, sid, fresh)
+                    .firstOrNull { testConnection(okHttpClient, it).first() }
+
                 if (videoUrl == null && sidIterator.hasNext()) {
                     val nextSid = sidIterator.next()
                     Log.d("Download", "Try next sid: $nextSid")
@@ -301,6 +310,7 @@ class AnimeDownloadHelper @OptIn(UnstableApi::class)
     data class DownloadedAnime(
         val animeId: Int,
         val episode: Int,
+        val url: String? = null,
         val state: Int,
         val stopReason: Int,
         val failureReason: Int,
