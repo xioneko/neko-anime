@@ -55,11 +55,13 @@ class HomeViewModel @Inject constructor(
     val forYouAnimeStreams: List<MutableStateFlow<Pair<String?, List<AnimeShell?>>>> =
         List(3) { MutableStateFlow(null to List<AnimeShell?>(FOR_YOU_ANIME_GRID_SIZE) { null }) }
 
-    val followedAnime = getFollowedAnimeUseCase().stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = emptyList(),
-    )
+    val followedAnime = getFollowedAnimeUseCase()
+        .map { followed -> followed.sortedByDescending { it.lastWatchingDate } }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = emptyList(),
+        )
 
     init {
         if (loadingState.value is LoadingState.IDLE) {

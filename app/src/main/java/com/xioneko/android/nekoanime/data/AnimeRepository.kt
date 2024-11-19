@@ -20,9 +20,11 @@ import java.time.DayOfWeek
 import javax.inject.Inject
 import javax.inject.Singleton
 
+// https://yhdm6.top/index.php/vod/search/?wd=y&submit=
+const val ANIME_LIST_PAGE_SIZE = 18
 
-const val ANIME_LIST_PAGE_SIZE = 36
-const val ANIME_GRID_PAGE_SIZE = 60
+// https://yhdm6.top/index.php/vod/show/id/1/page/1/
+const val ANIME_GRID_PAGE_SIZE = 36
 
 @Singleton
 class AnimeRepository @androidx.annotation.OptIn(UnstableApi::class)
@@ -86,8 +88,14 @@ class AnimeRepository @androidx.annotation.OptIn(UnstableApi::class)
             if (fresh) StoreReadRequest.fresh(AnimeKey.FetchVideo(anime, episode, streamId))
             else StoreReadRequest.cached(AnimeKey.FetchVideo(anime, episode, streamId), false)
         )
-            .firstOrNull { it is StoreReadResponse.Data }
-            ?.let { emit((it as StoreReadResponse.Data).value.videoSource[episode]!!) }
+            .firstOrNull {
+                it is StoreReadResponse.Data || it is StoreReadResponse.Error
+            }
+            ?.let {
+                if (it is StoreReadResponse.Data) {
+                    emit(it.value.videoSource[episode]!!)
+                }
+            }
     }
 
     suspend fun clearVideoSourceCache(anime: Anime, episode: Int, streamId: Int) =

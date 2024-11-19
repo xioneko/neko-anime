@@ -44,7 +44,15 @@ fun NavGraphBuilder.topLevelScreen(
                     onNavigateTo = {
                         navController.navigate(
                             route = it.route,
-                            navOptions { launchSingleTop = true })
+                            navOptions {
+                                currentDestination?.route?.let { route ->
+                                    popUpTo(route) {
+                                        inclusive = true
+                                        saveState = true
+                                    }
+                                }
+                                restoreState = true
+                            })
                     }
                 )
             },
