@@ -7,4 +7,5 @@ data class FollowedAnime(
     val imageUrl: String? = null,
     val currentEpisode: Int? = null,
     val isFinished: Boolean? = null,
+    val lastWatchingDate: Long? = null,
 )

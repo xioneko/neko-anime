@@ -197,7 +197,7 @@ fun HomeScreen(
                             contentPadding = PaddingValues(horizontal = 12.dp),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            for (anime in followedAnime.reversed()) {
+                            for (anime in followedAnime) {
                                 item(anime.id) {
                                     FollowedAnimeCard(
                                         modifier = Modifier
