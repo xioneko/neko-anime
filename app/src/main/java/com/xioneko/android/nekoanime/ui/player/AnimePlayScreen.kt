@@ -558,7 +558,7 @@ private fun AnimeDetail(
                 horizontalArrangement = Arrangement.spacedBy(5.dp),
                 contentPadding = PaddingValues(end = 5.dp)
             ) {
-                for (genre in anime.tags) {
+                for (genre in anime.tags.toSet()) {
                     item(genre) {
                         Row(
                             modifier = Modifier
