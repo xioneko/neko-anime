@@ -2,6 +2,8 @@ package com.xioneko.android.nekoanime.data.network
 
 import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.model.AnimeKey
+import com.xioneko.android.nekoanime.data.network.datasource.YhdmDataSource
+import kotlinx.coroutines.flow.firstOrNull
 import org.mobilenativefoundation.store.store5.Fetcher
 import org.mobilenativefoundation.store.store5.FetcherResult
 import javax.inject.Inject
@@ -29,6 +31,7 @@ class AnimeDataFetcher @Inject constructor(
                 is AnimeKey.FetchVideo -> {
                     yhdmDataSource
                         .getVideoUrl(key.anime, key.episode, key.streamId)
+                        .firstOrNull()
                         ?.let { (url, nextUrl) ->
                             FetcherResult.Data(
                                 key.anime.copy(

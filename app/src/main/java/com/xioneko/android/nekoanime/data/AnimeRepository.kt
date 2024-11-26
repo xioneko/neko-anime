@@ -5,7 +5,8 @@ import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.model.AnimeKey
 import com.xioneko.android.nekoanime.data.model.AnimeShell
 import com.xioneko.android.nekoanime.data.network.AnimeDataFetcher
-import com.xioneko.android.nekoanime.data.network.YhdmDataSource
+import com.xioneko.android.nekoanime.data.network.datasource.YhdmDataSource
+import com.xioneko.android.nekoanime.data.network.di.SourceHolder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
@@ -20,11 +21,9 @@ import java.time.DayOfWeek
 import javax.inject.Inject
 import javax.inject.Singleton
 
-// https://yhdm6.top/index.php/vod/search/?wd=y&submit=
-const val ANIME_LIST_PAGE_SIZE = 18
 
-// https://yhdm6.top/index.php/vod/show/id/1/page/1/
-const val ANIME_GRID_PAGE_SIZE = 36
+const val ANIME_LIST_PAGE_SIZE = 36
+const val ANIME_GRID_PAGE_SIZE = 60
 
 @Singleton
 class AnimeRepository @androidx.annotation.OptIn(UnstableApi::class)
@@ -33,6 +32,7 @@ class AnimeRepository @androidx.annotation.OptIn(UnstableApi::class)
     animeDataValidator: AnimeDataValidator,
     animeDataFetcher: AnimeDataFetcher,
     private val yhdmDataSource: YhdmDataSource,
+    private val sourceHolder: SourceHolder
 ) {
     private val store: Store<AnimeKey, Anime> =
         StoreBuilder.from(
@@ -41,6 +41,14 @@ class AnimeRepository @androidx.annotation.OptIn(UnstableApi::class)
         )
             .validator(animeDataValidator)
             .build()
+
+
+    //获取最近更新 TODO 未捕获异常
+    suspend fun getHomeDetail(): Flow<List<AnimeShell>> {
+        val source = sourceHolder.currentSource
+        return source.getHomeData()
+    }
+
 
     fun getAnimeById(animeId: Int): Flow<Anime> = flow {
         store.stream(StoreReadRequest.cached(AnimeKey.FetchAnime(animeId), false))
@@ -88,14 +96,8 @@ class AnimeRepository @androidx.annotation.OptIn(UnstableApi::class)
             if (fresh) StoreReadRequest.fresh(AnimeKey.FetchVideo(anime, episode, streamId))
             else StoreReadRequest.cached(AnimeKey.FetchVideo(anime, episode, streamId), false)
         )
-            .firstOrNull {
-                it is StoreReadResponse.Data || it is StoreReadResponse.Error
-            }
-            ?.let {
-                if (it is StoreReadResponse.Data) {
-                    emit(it.value.videoSource[episode]!!)
-                }
-            }
+            .firstOrNull { it is StoreReadResponse.Data }
+            ?.let { emit((it as StoreReadResponse.Data).value.videoSource[episode]!!) }
     }
 
     suspend fun clearVideoSourceCache(anime: Anime, episode: Int, streamId: Int) =

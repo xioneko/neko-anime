@@ -15,14 +15,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -34,20 +38,24 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
 import androidx.core.text.HtmlCompat
 import com.xioneko.android.nekoanime.R
+import com.xioneko.android.nekoanime.ui.mine.MineScreenViewModel
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeFontFamilies.cuteFontFamily
 import com.xioneko.android.nekoanime.ui.theme.basicBlack
 import com.xioneko.android.nekoanime.ui.theme.basicWhite
 import com.xioneko.android.nekoanime.ui.theme.pink40
 import com.xioneko.android.nekoanime.ui.theme.pink95
 import com.xioneko.android.nekoanime.ui.util.isTablet
+import com.xioneko.android.nekoanime.util.NekoAnimeMode
 
 @Composable
 fun WorkingInProgressDialog(
@@ -218,3 +226,71 @@ fun ConfirmationDialog(
         }
     }
 }
+
+
+//切换数据源
+@Composable
+fun SourceSwitchDialog(
+    onDismissRequest: (Boolean) -> Unit,
+    animeDataSource: String?,
+    viewModel: MineScreenViewModel
+) {
+    val radioMap = NekoAnimeMode.entries.map { it.name }
+
+    Dialog(
+        onDismissRequest = {
+            onDismissRequest(false)
+        }
+    ) {
+        Card(shape = RoundedCornerShape(dimensionResource(R.dimen.lager_corner_radius))) {
+            Column(
+                Modifier
+                    .padding(vertical = dimensionResource(R.dimen.large_padding))
+                    .selectableGroup()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text(
+                    modifier = Modifier.padding(start = dimensionResource(R.dimen.large_padding)),
+                    text = "切换动漫源",
+                    style = MaterialTheme.typography.titleLarge
+                )
+                radioMap.forEach { text ->
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(dimensionResource(R.dimen.radio_button_height))
+                            .padding(start = 24.dp)
+                            .selectable(
+                                selected = (text == animeDataSource),
+                                onClick = {
+                                    if (text != animeDataSource) {
+                                        //用户数据源保存
+                                        viewModel.setAnimeDataSource(text)
+                                        //切换模式加载
+                                        viewModel.switchSource(text)
+                                        //关闭弹窗
+                                        onDismissRequest(false)
+//                                        viewModel.refresh()
+                                    }
+                                },
+                                role = Role.RadioButton
+                            ),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = (text == animeDataSource),
+                            onClick = null
+                        )
+                        Text(
+                            text = text,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(start = 16.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+

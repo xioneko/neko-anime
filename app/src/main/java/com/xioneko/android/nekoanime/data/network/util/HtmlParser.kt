@@ -7,7 +7,6 @@ import org.jsoup.nodes.Element
 import java.net.URLDecoder
 import java.time.DayOfWeek
 import java.util.Calendar
-import kotlin.math.max
 
 internal object HtmlParser {
 
@@ -52,6 +51,38 @@ internal object HtmlParser {
     }
 
     /**
+     * 解析https://www.agedm.org首页
+     */
+    fun parseAgedmHome(document: Document): List<AnimeShell> = buildList {
+        document.select("div.container").select("div.video_list_box")
+            .forEach {
+                val title = it.select("h6").text().replace("更多 »", "")
+                if ("最近更新".equals(title)) {
+                    it.select("div.video_item")
+                        .forEach {
+                            val title = it.select("a").text()
+                            val id = it.select("a").attr("href")
+                                .substringAfter("detail/")
+                                .toInt()
+                            val imgUrl = it.select("img").attr("data-original")
+                            //集数
+                            val episodeName = it.select("span.video_item--info").text()
+                            add(
+                                AnimeShell(
+                                    id = id,
+                                    name = title,
+                                    imageUrl = imgUrl,
+                                    status = episodeName
+                                )
+                            )
+                        }
+                }
+            }
+    }
+
+
+
+    /**
      * 适配页面：https://yhdm6.top/index.php/vod/detail/id/{animeId}/
      */
     fun parseAnime(document: Document, animeId: Int): Anime {
@@ -77,10 +108,8 @@ internal object HtmlParser {
                 .substringBefore("/")
                 .toInt()
             streamIds.add(sid)
-            latestEpisode = if (type == "动漫电影") {
-                1 // 电影只有一个集数?
-            } else {
-                max(div.select("a").size, latestEpisode ?: 0) // 不同播放线路可能有不同集数
+            if (latestEpisode == null) {
+                latestEpisode = if (type == "动漫电影") 1 else div.select("a").size
             }
         }
 
@@ -130,12 +159,12 @@ internal object HtmlParser {
     fun parseVideoUrl(document: Document): Pair<String, String?>? =
         document.selectFirst(".player_video script")!!.html()
             .let { code ->
+//                Log.d("Video", "script: $code")
                 Regex("""url"\s*:\s*"([^"]*)".*"url_next"\s*:\s*"([^"]*)""")
                     .find(code)?.groupValues
                     ?.map { URLDecoder.decode(it, "UTF-8") }
                     ?.let { urls ->
-                        if (urls[1].isEmpty()) null
-                        else urls[1] to (urls[2].takeIf { it.isNotEmpty() })
+                        urls[1] to (urls[2].takeIf { it.isNotEmpty() })
                     }
             }
 }
