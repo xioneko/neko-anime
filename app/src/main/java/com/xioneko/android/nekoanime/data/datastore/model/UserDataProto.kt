@@ -18,4 +18,5 @@ data class UserDataProto @OptIn(ExperimentalSerializationApi::class) constructor
     val updateAutoCheck: Boolean = true,
     val disableLandscapeMode: Boolean = true,
     val enablePortraitFullscreen: Boolean = false,
+    val animeDataSource: String = "Ydmi"
 )

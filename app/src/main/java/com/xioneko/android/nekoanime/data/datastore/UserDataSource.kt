@@ -31,17 +31,20 @@ class UserDataSource @Inject constructor(
             dataStore.data.map { it.disableLandscapeMode })
         put("enablePortraitFullscreen",
             dataStore.data.map { it.enablePortraitFullscreen })
+        put("animeDataSource",
+            dataStore.data.map { it.animeDataSource })
     }
 
     suspend fun addSearchRecord(record: SearchRecord) {
+
         dataStore.updateData { userData ->
             val origin = userData.searchRecords.toMutableList()
             if (record in origin) userData
             else {
-                if (origin.size == SEARCH_HISTORY_MAX_SIZE) origin.removeAt(0)
-                userData.copy(
-                    searchRecords = origin.apply { add(record) }
-                )
+                if (origin.size == SEARCH_HISTORY_MAX_SIZE) {
+                    origin.removeAt(0)
+                }
+                userData.copy(searchRecords = origin.apply { add(record) })
             }
         }
     }
@@ -92,6 +95,12 @@ class UserDataSource @Inject constructor(
         }
     }
 
+    suspend fun setAnimeDataSource(source: String) {
+        dataStore.updateData { userData ->
+            userData.copy(animeDataSource = source)
+        }
+    }
+
     suspend fun setUpdateAutoCheck(enable: Boolean) {
         dataStore.updateData { userData ->
             userData.copy(
@@ -115,5 +124,6 @@ class UserDataSource @Inject constructor(
             )
         }
     }
+
 
 }

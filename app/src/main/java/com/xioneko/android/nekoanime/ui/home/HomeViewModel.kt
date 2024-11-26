@@ -55,13 +55,11 @@ class HomeViewModel @Inject constructor(
     val forYouAnimeStreams: List<MutableStateFlow<Pair<String?, List<AnimeShell?>>>> =
         List(3) { MutableStateFlow(null to List<AnimeShell?>(FOR_YOU_ANIME_GRID_SIZE) { null }) }
 
-    val followedAnime = getFollowedAnimeUseCase()
-        .map { followed -> followed.sortedByDescending { it.lastWatchingDate } }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.Eagerly,
-            initialValue = emptyList(),
-        )
+    val followedAnime = getFollowedAnimeUseCase().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = emptyList(),
+    )
 
     init {
         if (loadingState.value is LoadingState.IDLE) {
@@ -90,12 +88,20 @@ class HomeViewModel @Inject constructor(
     }
 
     private suspend fun fetchRecentUpdates() {
-        animeRepository
-            .getAnimeBy(type = 1, page = 0)
+        animeRepository.getHomeDetail()
             .map { it.take(RECENT_UPDATES_SIZE) }
             .catch { notifyFailure("数据源似乎出了问题", it) }
             .onEach { _recentUpdates.emit(it) }
             .collect()
+
+//        animeRepository
+//            .getAnimeBy(type = 1, page = 0)
+//            .map { it.take(RECENT_UPDATES_SIZE) }
+//            .catch { notifyFailure("数据源似乎出了问题", it) }
+//            .onEach { _recentUpdates.emit(it) }
+//            .collect()
+
+
     }
 
     private suspend fun fetchForYouAnime() = supervisorScope {

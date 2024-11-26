@@ -28,13 +28,21 @@ class UserDataRepository @Inject constructor(
 
     val enablePortraitFullscreen: Flow<Boolean> by userDataSource.userData
 
+    val animeDataSource: Flow<String> by userDataSource.userData
+
+
     suspend fun addSearchRecord(record: String) =
         userDataSource.addSearchRecord(SearchRecord(record))
 
     suspend fun clearSearchRecord() = userDataSource.clearSearchRecord()
 
 
-    suspend fun upsertWatchRecord(animeId: Int, episode: Int, positionMs: Long, percentageProgress: Int) {
+    suspend fun upsertWatchRecord(
+        animeId: Int,
+        episode: Int,
+        positionMs: Long,
+        percentageProgress: Int
+    ) {
         val positions = watchHistory.first()[animeId]?.positions?.toMutableMap() ?: mutableMapOf()
         val progress = watchHistory.first()[animeId]?.progress?.toMutableMap() ?: mutableMapOf()
         userDataSource.addWatchRecord(
@@ -57,6 +65,9 @@ class UserDataRepository @Inject constructor(
 
     suspend fun setThemeConfig(config: ThemeConfig) =
         userDataSource.setThemeConfig(config)
+
+    suspend fun setAnimeDataSource(source: String) =
+        userDataSource.setAnimeDataSource(source)
 
     suspend fun setUpdateAutoCheck(enable: Boolean) =
         userDataSource.setUpdateAutoCheck(enable)

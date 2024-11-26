@@ -17,7 +17,7 @@ import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
-import androidx.media3.exoplayer.offline.Download
+import androidx.media3.exoplayer.upstream.DefaultLoadErrorHandlingPolicy
 import com.xioneko.android.nekoanime.data.AnimeDownloadHelper
 import com.xioneko.android.nekoanime.data.AnimeDownloadManager
 import com.xioneko.android.nekoanime.data.AnimeRepository
@@ -119,6 +119,11 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
                 .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
                 .setCacheWriteDataSinkFactory(null) // Read-only
             HlsMediaSource.Factory(cacheDataSourceFactory)
+                .setLoadErrorHandlingPolicy(object : DefaultLoadErrorHandlingPolicy() {
+                    override fun getMinimumLoadableRetryCount(dataType: Int): Int {
+                        return 2
+                    }
+                })
         })
         .build().apply {
             playWhenReady = true
@@ -189,32 +194,25 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
     fun loadingUiState(animeId: Int) {
         viewModelScope.launch {
             _uiState.emit(AnimePlayUiState.Loading)
-            combine(
-                animeRepository.getAnimeById(animeId),
-                userDataRepository.watchHistory.take(1),
-                downloadHelper.downloads.take(1)
-            ) { anime, watchRecords, downloads ->
-                _uiState.emit(AnimePlayUiState.Data(anime = anime))
-                if (episode.value == null) {
-                    episode.value = watchRecords[animeId]?.recentEpisode ?: 1
-                }
 
-                streamIterator = anime.streamIds.iterator().withTracking()
-
-                launch { fetchingForYouAnime() }
-
-                downloads[anime.id]?.get(episode.value)?.let {
-                    if (it.state == Download.STATE_COMPLETED && it.url != null) {
-                        Log.d("Player", "使用离线缓存播放")
-                        player.prepareNext(it.url)
-                        return@combine
-                    }
-                }
-
-                tryNextStream()
-            }
+            animeRepository.getAnimeById(animeId)
                 .onStart { _loadingState.emit(LoadingState.LOADING) }
                 .onEmpty { notifyFailure("数据源似乎出了问题") }
+                .combine(userDataRepository.watchHistory.take(1)) { anime, watchRecords ->
+                    streamIterator = anime.streamIds.iterator().withTracking()
+                    _uiState.emit(AnimePlayUiState.Data(anime = anime))
+                    if (episode.value == null) {
+                        episode.value = watchRecords[animeId]?.recentEpisode ?: 1
+                    }
+
+                    launch { fetchingForYouAnime() }
+
+                    if (!streamIterator.hasNext()) {
+                        notifyFailure("找不到可用的播放地址")
+                        return@combine
+                    }
+                    player.update(streamIterator.next())
+                }
                 .collect()
         }
     }
@@ -225,9 +223,7 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
 
     fun onEpisodeChange(episode: Int) {
         this.episode.value = episode
-        streamIterator.current?.let {
-            player.update(it)
-        } ?: tryNextStream()
+        player.update(streamIterator.current!!)
     }
 
     private fun ExoPlayer.update(streamId: Int) {
@@ -238,25 +234,16 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
             viewModelScope.launch(videoFetchingJob) {
                 animeRepository.getVideoUrl(anime, episode.value!!, streamId, true)
                     .onStart { _loadingState.emit(LoadingState.LOADING) }
-                    .filter {
-                        Log.d("Player", "测试播放地址 $it")
-                        testConnection(okHttpClient, it).first()
-                    }
-                    .onEmpty {
-                        tryNextStream(true)
-                    }
+                    .filter { testConnection(okHttpClient, it).first() }
+                    .onEmpty { tryNextStream() }
                     .collect { url ->
-                        prepareNext(url)
+                        addMediaItem(MediaItem.fromUri(url))
+                        Log.d("Player", "添加播放地址: $url")
+                        prepare()
+                        restoreWatchRecord()
                     }
             }
         }
-    }
-
-    private fun ExoPlayer.prepareNext(url: String) {
-        Log.d("Player", "添加播放地址: $url")
-        addMediaItem(MediaItem.fromUri(url))
-        prepare()
-        restoreWatchRecord()
     }
 
     override fun onCleared() {
@@ -437,9 +424,10 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
                 override fun onPlayerError(error: PlaybackException) {
                     Log.d("Player", "播放出错：${error.message}")
                     if (player.currentMediaItem != null && player.currentPosition > 1000) {
-                        notifyFailure("尝试优化播放线路")
+                        upsertWatchRecord(episode.value!!)
+                        notifyFailure("当前播放线路不稳定，自动切换播放线路")
                     }
-                    tryNextStream(true)
+                    tryNextStream()
                 }
             }
             player.addListener(playerListener)
@@ -447,11 +435,10 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
             awaitClose { player.removeListener(playerListener) }
         }
 
-    private fun tryNextStream(fresh: Boolean = false) {
+    private fun tryNextStream() {
         if (streamIterator.hasNext()) {
-            Log.d("Player", "尝试下一个播放线路")
             viewModelScope.launch {
-                if (fresh) clearVideoSourceCache(episode.value!!)
+                clearVideoSourceCache(episode.value!!)
                 player.update(streamIterator.next())
             }
         } else {

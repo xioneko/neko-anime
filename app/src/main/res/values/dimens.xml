@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="small_padding">8dp</dimen>
+    <dimen name="medium_padding">16dp</dimen>
+    <dimen name="large_padding">24dp</dimen>
+
+    <dimen name="lager_corner_radius">16dp</dimen>
+    <dimen name="extra_lager_corner_radius">28dp</dimen>
+
+    <dimen name="media_card_corner_radius">18dp</dimen>
+    <dimen name="media_card_text_padding_horizontal">16dp</dimen>
+    <dimen name="media_card_text_padding_vertical">10dp</dimen>
+
+    <dimen name="navigation_bar_height">65dp</dimen>
+
+    <dimen name="banner_height">168dp</dimen>
+    <dimen name="media_card_width">140dp</dimen>
+    <dimen name="min_media_card_width">120dp</dimen>
+    <dimen name="media_card_height">200dp</dimen>
+    <dimen name="media_card_top_padding">96dp</dimen>
+    <dimen name="related_anime_card_width">96dp</dimen>
+    <dimen name="trailer_corner_radius">30dp</dimen>
+
+    <dimen name="edge_gradient_size">8dp</dimen>
+
+    <dimen name="history_item_height">80dp</dimen>
+    <dimen name="history_cover_radius">8dp</dimen>
+
+    <dimen name="image_cover_height">80dp</dimen>
+
+    <dimen name="radio_button_height">56dp</dimen>
+
+    <dimen name="week_item_width">160dp</dimen>
+</resources>
