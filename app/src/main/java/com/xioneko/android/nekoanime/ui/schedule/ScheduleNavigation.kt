@@ -10,7 +10,7 @@ data object ScheduleNavRoute
 
 fun NavGraphBuilder.scheduleScreen(
     padding: PaddingValues,
-    onAnimeClick: (Int) -> Unit
+    onAnimeClick: (Int, Int?, String?) -> Unit
 ) {
     composable<ScheduleNavRoute> {
         ScheduleScreen(

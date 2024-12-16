@@ -96,7 +96,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onCategoryClick: () -> Unit,
     onHistoryClick: () -> Unit,
-    onAnimeClick: (Int) -> Unit,
+    onAnimeClick: (Int, Int?, String?) -> Unit,
     onFollowedAnimeClick: () -> Unit,
     navigateToCategory: (type: Int) -> Unit,
 ) {
@@ -259,7 +259,7 @@ fun HomeScreen(
 
 @Composable
 private fun Carousel(
-    onSlideClick: (Int) -> Unit
+    onSlideClick: (Int, Int?, String?) -> Unit
 ) {
     val slides = Slide.entries.toTypedArray()
     val pagerState = rememberPagerState(
@@ -298,7 +298,7 @@ private fun Carousel(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     role = Role.Button,
-                    onClick = { onSlideClick(slide.animeId) }
+                    onClick = { onSlideClick(slide.animeId, null, null) }
                 )
             ) {
                 Image(

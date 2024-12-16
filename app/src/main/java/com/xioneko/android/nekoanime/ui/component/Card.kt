@@ -54,7 +54,7 @@ fun NarrowAnimeCard(
     modifier: Modifier = Modifier,
     anime: Anime,
     subTitle: String = anime.status,
-    onClick: (Int) -> Unit
+    onClick: (Int, Int?, String?) -> Unit
 ) = NarrowAnimeCard(modifier, anime.asAnimeShell(), subTitle, onClick)
 
 
@@ -63,14 +63,14 @@ fun NarrowAnimeCard(
     modifier: Modifier = Modifier,
     anime: AnimeShell,
     subTitle: String = anime.status,
-    onClick: (Int) -> Unit
+    onClick: (Int, Int?, String?) -> Unit
 ) {
     Column(
         modifier = modifier.clickable(
             interactionSource = remember { MutableInteractionSource() },
             indication = null,
             role = Role.Button,
-            onClick = { onClick(anime.id) }
+            onClick = { onClick(anime.id, null, anime.name) }
         ),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -116,14 +116,14 @@ fun ExpandedAnimeCard(
     modifier: Modifier = Modifier,
     anime: AnimeShell,
     subTitle: String = anime.status,
-    onClick: (Int) -> Unit,
+    onClick: (Int, Int?, String?) -> Unit,
 ) {
     Column(
         modifier = modifier.clickable(
             interactionSource = remember { MutableInteractionSource() },
             indication = null,
             role = Role.Button,
-            onClick = { onClick(anime.id) }
+            onClick = { onClick(anime.id, null, anime.name) }
         ),
     ) {
         AnimeImage(
@@ -243,7 +243,7 @@ private fun Color.increaseLuminanceBy(factor: Float) =
 fun FollowedAnimeCard(
     modifier: Modifier = Modifier,
     anime: FollowedAnime,
-    onClick: (Int) -> Unit,
+    onClick: (Int, Int?, String?) -> Unit,
 ) {
     if (anime.name == null) {
         PlaceholderAnimeCard(modifier)
@@ -253,7 +253,7 @@ fun FollowedAnimeCard(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 role = Role.Button,
-                onClick = { onClick(anime.id) }
+                onClick = { onClick(anime.id, null, null) }
             ),
         ) {
             AnimeImage(

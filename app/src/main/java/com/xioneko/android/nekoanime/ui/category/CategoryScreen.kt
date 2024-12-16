@@ -81,7 +81,7 @@ import com.xioneko.android.nekoanime.ui.util.isTablet
 @Composable
 fun CategoryScreen(
     filter: Map<AnimeCategory, Pair<String, String>>,
-    onAnimeClick: (Int) -> Unit,
+    onAnimeClick: (Int, Int?, String?) -> Unit,
     onSearchClick: () -> Unit,
     onBackClick: () -> Unit,
 ) {

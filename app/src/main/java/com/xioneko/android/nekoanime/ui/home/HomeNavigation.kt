@@ -13,7 +13,7 @@ fun NavGraphBuilder.homeScreen(
     padding: PaddingValues,
     onCategoryClick: () -> Unit,
     onHistoryClick: () -> Unit,
-    onAnimeClick: (Int) -> Unit,
+    onAnimeClick: (Int, Int?, String?) -> Unit,
     onFollowedAnimeClick: () -> Unit,
     navigateToCategory: (type: Int) -> Unit
 ) {

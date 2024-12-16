@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 data object FollowedAnimeNavRoute
 
 fun NavGraphBuilder.followedAnimeScreen(
-    onAnimeClick: (Int) -> Unit,
+    onAnimeClick: (Int, Int?, String?) -> Unit,
     onBackClick: () -> Unit
 ) {
     composable<FollowedAnimeNavRoute> {

@@ -201,7 +201,7 @@ fun AnimePlayBodySkeleton() {
                         modifier = Modifier.requiredHeightIn(max = 960.dp),
                         useExpandCardStyle = false,
                         animeList = List(6) { null },
-                        onAnimeClick = {}
+                        onAnimeClick = { a, b, c -> }
                     )
                 }
 

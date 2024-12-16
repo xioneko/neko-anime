@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 data object WatchHistoryNavRoute
 
 fun NavGraphBuilder.historyScreen(
-    onAnimeClick: (Int) -> Unit,
+    onAnimeClick: (Int, Int?, String?) -> Unit,
     onBackClick: () -> Unit
 ) {
     composable<WatchHistoryNavRoute> {

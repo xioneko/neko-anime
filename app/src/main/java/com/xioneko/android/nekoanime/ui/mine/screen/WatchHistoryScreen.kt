@@ -38,7 +38,7 @@ import com.xioneko.android.nekoanime.ui.util.isTablet
 @Composable
 fun WatchHistoryScreen(
     viewModel: MineScreenViewModel = hiltViewModel(),
-    onAnimeClick: (Int) -> Unit,
+    onAnimeClick: (Int, Int?, String?) -> Unit,
     onBackClick: () -> Unit
 ) {
     val aspectRatio = getAspectRadio()
