@@ -89,7 +89,6 @@ import kotlinx.coroutines.delay
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 
-
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun HomeScreen(
@@ -97,7 +96,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onCategoryClick: () -> Unit,
     onHistoryClick: () -> Unit,
-    onAnimeClick: (Int) -> Unit,
+    onAnimeClick: (Int, Int?, String?) -> Unit,
     onFollowedAnimeClick: () -> Unit,
     navigateToCategory: (type: Int) -> Unit,
 ) {
@@ -197,7 +196,7 @@ fun HomeScreen(
                             contentPadding = PaddingValues(horizontal = 12.dp),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            for (anime in followedAnime) {
+                            for (anime in followedAnime.reversed()) {
                                 item(anime.id) {
                                     FollowedAnimeCard(
                                         modifier = Modifier
@@ -260,7 +259,7 @@ fun HomeScreen(
 
 @Composable
 private fun Carousel(
-    onSlideClick: (Int) -> Unit
+    onSlideClick: (Int, Int?, String?) -> Unit
 ) {
     val slides = Slide.entries.toTypedArray()
     val pagerState = rememberPagerState(
@@ -299,7 +298,7 @@ private fun Carousel(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     role = Role.Button,
-                    onClick = { onSlideClick(slide.animeId) }
+                    onClick = { onSlideClick(slide.animeId, null, null) }
                 )
             ) {
                 Image(

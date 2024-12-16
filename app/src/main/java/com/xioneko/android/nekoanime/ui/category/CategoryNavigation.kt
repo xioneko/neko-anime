@@ -17,7 +17,7 @@ data class CategoryNavRoute(
 )
 
 fun NavGraphBuilder.categoryScreen(
-    onAnimeClick: (Int) -> Unit,
+    onAnimeClick: (Int, Int?, String?) -> Unit,
     onSearchClick: () -> Unit,
     onBackClick: () -> Unit,
 ) {

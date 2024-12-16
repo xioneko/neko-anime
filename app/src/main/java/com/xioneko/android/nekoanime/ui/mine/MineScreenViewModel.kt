@@ -11,6 +11,7 @@ import com.xioneko.android.nekoanime.data.AnimeRepository
 import com.xioneko.android.nekoanime.data.UserDataRepository
 import com.xioneko.android.nekoanime.data.model.ThemeConfig
 import com.xioneko.android.nekoanime.data.model.sortedByDate
+import com.xioneko.android.nekoanime.data.network.di.SourceHolder
 import com.xioneko.android.nekoanime.domain.GetFollowedAnimeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -28,9 +29,11 @@ class MineScreenViewModel @Inject constructor(
     @ApplicationContext context: Context,
     private val animeRepository: AnimeRepository,
     private val userDataRepository: UserDataRepository,
-    getFollowedAnimeUseCase: GetFollowedAnimeUseCase
+    getFollowedAnimeUseCase: GetFollowedAnimeUseCase,
+    private val sourceHolder: SourceHolder
 ) : ViewModel() {
     private val imageLoader = context.imageLoader
+
 
     val themeConfig = userDataRepository.themeConfig
         .stateIn(
@@ -70,6 +73,11 @@ class MineScreenViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = null
     )
+    val animeDataSource = userDataRepository.animeDataSource.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = null
+    )
 
     val disableLandscapeMode = userDataRepository.disableLandscapeMode.stateIn(
         scope = viewModelScope,
@@ -86,6 +94,12 @@ class MineScreenViewModel @Inject constructor(
     fun setTheme(themeConfig: ThemeConfig) {
         viewModelScope.launch {
             userDataRepository.setThemeConfig(themeConfig)
+        }
+    }
+
+    fun setAnimeDataSource(source: String) {
+        viewModelScope.launch {
+            userDataRepository.setAnimeDataSource(source)
         }
     }
 
@@ -127,6 +141,13 @@ class MineScreenViewModel @Inject constructor(
     fun setEnablePortraitFullscreen(enable: Boolean) {
         viewModelScope.launch {
             userDataRepository.setEnablePortraitFullscreen(enable)
+        }
+    }
+
+    //切换数据源
+    fun switchSource(sourceName: String) {
+        viewModelScope.launch {
+            sourceHolder.switchSource(sourceHolder.getSourceByName(sourceName))
         }
     }
 

@@ -29,7 +29,7 @@ fun SearchScreen(
     onEnterExit: (Boolean) -> Unit,
     onCategoryClick: () -> Unit = {},
     onHistoryClick: () -> Unit = {},
-    onAnimeClick: (Int) -> Unit,
+    onAnimeClick: (Int, Int?, String?) -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
     val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher

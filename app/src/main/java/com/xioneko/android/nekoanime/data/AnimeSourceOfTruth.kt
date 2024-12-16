@@ -12,7 +12,7 @@ import javax.inject.Singleton
 
 @Singleton
 class AnimeSourceOfTruth @Inject constructor(
-    private val dao: AnimeDao,
+    private val dao: AnimeDao
 ) {
     operator fun invoke(): SourceOfTruth<AnimeKey, Anime, Anime> = SourceOfTruth.of(
         reader = { key: AnimeKey ->

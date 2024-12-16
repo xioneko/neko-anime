@@ -30,7 +30,7 @@ fun NavGraphBuilder.topLevelScreen(
     navigateToFollowedAnime: () -> Unit,
     navigateToHistory: () -> Unit,
     navigateToDownload: () -> Unit,
-    navigateToAnimePlay: (Int) -> Unit,
+    navigateToAnimePlay: (Int, Int?, String?) -> Unit,
 ) {
     composable<TopLevelNavRoute> {
 

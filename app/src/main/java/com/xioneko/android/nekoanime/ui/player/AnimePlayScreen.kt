@@ -116,13 +116,14 @@ import kotlin.math.max
 fun AnimePlayScreen(
     animeId: Int,
     episode: Int? = null,
+    episodeName: String?,
     onDownloadedAnimeClick: (AnimeShell) -> Unit,
     onTagClick: (String) -> Unit,
     onBackClick: () -> Unit
 ) {
     val viewModel =
         hiltViewModel<AnimePlayViewModel, AnimePlayViewModel.AnimePlayViewModelFactory> { factory ->
-            factory.create(animeId, episode)
+            factory.create(animeId, episode, episodeName)
         }
 
     val context = LocalContext.current
@@ -130,6 +131,8 @@ fun AnimePlayScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val playerState by viewModel.playerState.collectAsStateWithLifecycle()
     val dragGestureState by viewModel.dragGestureState.collectAsStateWithLifecycle()
+    val enabledDanmaku by viewModel.enableDanmu.collectAsStateWithLifecycle()
+    val danmakuSession by viewModel.danmakuSession.collectAsStateWithLifecycle()
 
     val enablePortraitFullscreen by viewModel.enablePortraitFullscreen.collectAsStateWithLifecycle()
     val (isFullscreen, setFullscreen) = rememberFullscreenState(enablePortraitFullscreen)
@@ -177,6 +180,7 @@ fun AnimePlayScreen(
                 episode = viewModel.episode.value,
                 playerState = playerState,
                 isFullscreen = isFullscreen.value,
+                enableDanmu = enabledDanmaku,
                 dragGestureState = dragGestureState,
                 onFullScreenChange = setFullscreen,
                 onEpisodeChange = viewModel::onEpisodeChange,
@@ -190,7 +194,9 @@ fun AnimePlayScreen(
                     if (uiState is AnimePlayUiState.Data) {
                         showBottomSheet = true
                     }
-                }
+                },
+                onDanmakuClick = { viewModel.setEnableDanmuku(it) },
+                danmuSession = danmakuSession
             )
             Box(
                 Modifier
@@ -238,8 +244,8 @@ fun AnimePlayScreen(
                                     item("For You Anime Grid") {
                                         ForYouAnimeGrid(
                                             animeList = forYouAnimeList,
-                                            onAnimeClick = {
-                                                viewModel.loadingUiState(it)
+                                            onAnimeClick = { id, epId, name ->
+                                                viewModel.loadingUiState(id)
                                             }
                                         )
                                     }
@@ -260,6 +266,7 @@ fun AnimePlayScreen(
                                     onDownloadedAnimeClick = { onDownloadedAnimeClick(anime.asAnimeShell()) }
                                 )
                             }
+
                         }
                     }
                 }
@@ -558,7 +565,7 @@ private fun AnimeDetail(
                 horizontalArrangement = Arrangement.spacedBy(5.dp),
                 contentPadding = PaddingValues(end = 5.dp)
             ) {
-                for (genre in anime.tags.toSet()) {
+                for (genre in anime.tags) {
                     item(genre) {
                         Row(
                             modifier = Modifier
@@ -737,7 +744,7 @@ private fun EpisodeBox(
 @Composable
 private fun ForYouAnimeGrid(
     animeList: List<AnimeShell?>,
-    onAnimeClick: (Int) -> Unit,
+    onAnimeClick: (Int, Int?, String?) -> Unit,
 ) {
     Column(
         modifier = Modifier

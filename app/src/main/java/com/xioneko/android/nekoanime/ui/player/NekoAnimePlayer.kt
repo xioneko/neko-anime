@@ -1,5 +1,10 @@
 package com.xioneko.android.nekoanime.ui.player
 
+import android.app.Activity
+import android.content.Context
+import android.content.pm.ActivityInfo
+import android.util.Log
+import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.compose.animation.AnimatedContent
@@ -25,6 +30,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -52,6 +58,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -67,6 +74,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -80,6 +88,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.SpanStyle
@@ -90,23 +99,36 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import com.lanlinju.videoplayer.icons.Subtitles
+import com.lanlinju.videoplayer.icons.SubtitlesOff
+import com.xioneko.android.nekoanime.data.network.danmu.api.DanmuEvent
+import com.xioneko.android.nekoanime.data.network.danmu.api.DanmuSession
+import com.xioneko.android.nekoanime.data.network.danmu.dto.DanmakuPresentation
 import com.xioneko.android.nekoanime.ui.component.LoadingDotsVariant
+import com.xioneko.android.nekoanime.ui.danmu.DanmakuConfigData
+import com.xioneko.android.nekoanime.ui.danmu.rememberDanmakuHostState
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeFontFamilies
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
 import com.xioneko.android.nekoanime.ui.theme.basicWhite
 import com.xioneko.android.nekoanime.ui.theme.pink50
+import com.xioneko.android.nekoanime.ui.util.KEY_DANMAKU_CONFIG_DATA
 import com.xioneko.android.nekoanime.ui.util.KeepScreenOn
 import com.xioneko.android.nekoanime.ui.util.currentScreenSizeDp
 import com.xioneko.android.nekoanime.ui.util.getMediaVolume
 import com.xioneko.android.nekoanime.ui.util.getScreenBrightness
 import com.xioneko.android.nekoanime.ui.util.isTablet
+import com.xioneko.android.nekoanime.ui.util.rememberPreference
 import com.xioneko.android.nekoanime.ui.util.vibrate
 import kotlinx.coroutines.delay
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 
@@ -123,6 +145,9 @@ fun NekoAnimePlayer(
     onDragGesture: (DragGestureEvent) -> Unit,
     onStartDownloadDrawerOpen: () -> Unit,
     onBack: () -> Unit,
+    onDanmakuClick: (Boolean) -> Unit,
+    enableDanmu: Boolean,
+    danmuSession: DanmuSession?
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current.density
@@ -153,6 +178,8 @@ fun NekoAnimePlayer(
     var isTopControllerVisible by remember(isFullscreen) { mutableStateOf(true) }
     var isBottomControllerVisible by remember(isFullscreen) { mutableStateOf(true) }
     var isEpisodesDrawerVisible by remember(isFullscreen) { mutableStateOf(false) }
+    val view = LocalView.current
+    val activity = LocalContext.current as Activity
 
     // 自动隐藏播放控件
     if (isBottomControllerVisible && !isDraggingProgress && !isSeekBarDragging) {
@@ -190,11 +217,13 @@ fun NekoAnimePlayer(
     }
 
 
+
     val playerModifier = remember(isFullscreen) {
         if (isFullscreen) {
             Modifier
                 .fillMaxSize()
                 .background(Color.Black)
+                .adaptiveSize(isFullscreen, view, activity)
         } else {
             Modifier
                 .wrapContentHeight(Alignment.Top)
@@ -206,7 +235,7 @@ fun NekoAnimePlayer(
     }
     var showTopMenu by remember { mutableStateOf(false) }
 
-    Box(playerModifier) {
+    Box(modifier = playerModifier) {
         if (playerState.isLoading) {
             LoadingDotsVariant(
                 Modifier
@@ -214,6 +243,17 @@ fun NekoAnimePlayer(
                     .align(Alignment.Center)
             )
         }
+        //TODO 仿照写的DanmakuHost被重复触发,导致session不断被重组,弹幕无法显示...不知道什么原因
+        AnimatedVisibility(
+            modifier = Modifier
+                .align(Alignment.TopCenter),
+            visible = isFullscreen,
+            enter = slideInVertically(spring()) { -it },
+            exit = slideOutVertically(spring()) { -it }
+        ) {
+            DanmakuHost(playerState, danmuSession, enableDanmu)
+        }
+
         AndroidView(
             modifier = Modifier
                 .pointerInput(isFullscreen) {
@@ -482,7 +522,9 @@ fun NekoAnimePlayer(
                     isBottomControllerVisible = false
                     isTopControllerVisible = false
                     isEpisodesDrawerVisible = true
-                }
+                },
+                onDanmukuClick = onDanmakuClick,
+                enabledDanmuku = enableDanmu
             )
         }
 
@@ -594,6 +636,7 @@ private fun TopController(
 private fun BottomController(
     modifier: Modifier = Modifier,
     isPaused: Boolean,
+    enabledDanmuku: Boolean,
     currentEpisode: Int,
     totalEpisodes: Int,
     currentPosition: Long,
@@ -606,6 +649,7 @@ private fun BottomController(
     onPositionChange: (Long) -> Unit,
     onEpisodeChange: (Int) -> Unit,
     showEpisodesDrawer: () -> Unit,
+    onDanmukuClick: (Boolean) -> Unit,
 ) {
     val totalDuration = remember(totalDurationMs) { formatMilliseconds(totalDurationMs) }
     val currentPos = remember(currentPosition) {
@@ -676,6 +720,9 @@ private fun BottomController(
                         tint = if (currentEpisode < totalEpisodes) basicWhite
                         else basicWhite.copy(0.6f)
                     )
+                    //TODo  加入弹幕开关
+                    DanmakuIcon(onClick = onDanmukuClick, danmakuEnabled = enabledDanmuku)
+
                 }
                 Text(
                     modifier = Modifier.clickable(
@@ -730,6 +777,53 @@ private fun BottomController(
         }
     }
 }
+
+private val MediumIconButtonSize = 42.dp
+
+@Composable
+private fun DanmakuIcon(
+    danmakuEnabled: Boolean,
+    onClick: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AdaptiveIconButton(
+        onClick = { onClick(!danmakuEnabled) },
+        modifier.size(MediumIconButtonSize),
+    ) {
+        if (danmakuEnabled) {
+            Icon(Icons.Rounded.Subtitles, contentDescription = "禁用弹幕")
+        } else {
+            Icon(Icons.Rounded.SubtitlesOff, contentDescription = "启用弹幕")
+        }
+    }
+}
+
+@Composable
+private fun AdaptiveIconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    enabledIndication: Boolean = true,
+    content: @Composable () -> Unit
+) {
+    val indication = LocalIndication.current
+
+    Box(
+        modifier = modifier
+            .clip(CircleShape)
+            .clickable(
+                onClick = onClick,
+                enabled = enabled,
+                interactionSource = interactionSource,
+                indication = if (enabledIndication) indication else null
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        content()
+    }
+}
+
 
 @Composable
 private fun AnimatedPlayPauseButton(
@@ -1049,5 +1143,96 @@ private fun formatMilliseconds(millis: Long, includeHour: Boolean? = null): Stri
         )
     } else {
         String.format(Locale.CHINA, "%02d:%02d", minutes, seconds - minutes * 60)
+    }
+}
+
+
+private fun Modifier.adaptiveSize(
+    fullscreen: Boolean,
+    view: View,
+    activity: Activity
+): Modifier {
+    return if (fullscreen) {
+        requestLandscapeOrientation(view, activity)
+        fillMaxSize()
+    } else {
+        fillMaxWidth().aspectRatio(1.778f)
+    }
+}
+
+private fun requestLandscapeOrientation(view: View, activity: Activity) {
+    hideSystemBars(view, activity)
+
+    if (isWideScreen(activity)) return
+
+    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+}
+
+
+private fun hideSystemBars(view: View, activity: Activity) {
+    val windowInsetsController = WindowCompat.getInsetsController(activity.window, view)
+    // Configure the behavior of the hidden system bars
+    windowInsetsController.systemBarsBehavior =
+        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+    // Hide both the status bar and the navigation bar
+    windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
+}
+
+fun isWideScreen(context: Context): Boolean {
+    val configuration = context.resources.configuration
+    val screenWidthDp = configuration.screenWidthDp
+    val screenHeightDp = configuration.screenHeightDp
+    return screenWidthDp > screenHeightDp
+}
+
+@Composable
+fun DanmakuHost(
+    playerState: NekoAnimePlayerState,
+    session: DanmuSession?,
+    enabled: Boolean
+) {
+    if (!enabled) return
+    val danmakuConfigData by rememberPreference(
+        KEY_DANMAKU_CONFIG_DATA,
+        DanmakuConfigData(),
+        DanmakuConfigData.serializer()
+    )
+    val danmakuHostState =
+        rememberDanmakuHostState(danmakuConfig = danmakuConfigData.toDanmakuConfig())
+
+    if (session != null) {
+        Log.d("danmu", "弹幕流")
+        com.xioneko.android.nekoanime.ui.danmu.DanmakuHost(state = danmakuHostState)
+    }
+
+    LaunchedEffect(playerState.isPlaying) {
+        if (playerState.isPlaying) {
+            danmakuHostState.play()
+        } else {
+            danmakuHostState.pause()
+        }
+    }
+
+    val isPlayingFlow = remember { snapshotFlow { playerState.isPlaying } }
+    LaunchedEffect(session) {
+        danmakuHostState.clearPresentDanmaku()
+        Log.d("danmu", "弹幕重置")
+        session?.at(
+            curTimeMillis = { playerState.position.milliseconds },
+            isPlayingFlow = isPlayingFlow,
+        )?.collect { danmakuEvent ->
+            when (danmakuEvent) {
+                is DanmuEvent.Add -> {
+                    danmakuHostState.trySend(
+                        DanmakuPresentation(
+                            danmakuEvent.danmu,
+                            false
+                        )
+                    )
+                }
+                // 快进/快退
+                is DanmuEvent.Repopulate -> danmakuHostState.repopulate()
+            }
+        }
     }
 }
