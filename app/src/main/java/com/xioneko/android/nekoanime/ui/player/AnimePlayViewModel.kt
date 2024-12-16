@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.annotation.OptIn
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableStateOf
+import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
@@ -18,15 +19,20 @@ import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.upstream.DefaultLoadErrorHandlingPolicy
+import com.xioneko.android.nekoanime.NekoAnimeApplication
 import com.xioneko.android.nekoanime.data.AnimeDownloadHelper
 import com.xioneko.android.nekoanime.data.AnimeDownloadManager
 import com.xioneko.android.nekoanime.data.AnimeRepository
 import com.xioneko.android.nekoanime.data.UserDataRepository
 import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.model.AnimeShell
+import com.xioneko.android.nekoanime.data.network.danmu.api.DanmuSession
+import com.xioneko.android.nekoanime.data.network.repository.DanmuRepository
+import com.xioneko.android.nekoanime.ui.util.KEY_DANMAKU_ENABLED
 import com.xioneko.android.nekoanime.ui.util.LoadingState
 import com.xioneko.android.nekoanime.ui.util.TrackingIterator
 import com.xioneko.android.nekoanime.ui.util.getRandomElements
+import com.xioneko.android.nekoanime.ui.util.preferences
 import com.xioneko.android.nekoanime.ui.util.setMediaVolume
 import com.xioneko.android.nekoanime.ui.util.setScreenBrightness
 import com.xioneko.android.nekoanime.ui.util.setScreenOrientation
@@ -74,16 +80,18 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
 @AssistedInject constructor(
     @Assisted animeId: Int,
     @Assisted initEpisode: Int?,
+    @Assisted episodeName: String?,
     @ApplicationContext context: Context,
     private val animeRepository: AnimeRepository,
     private val userDataRepository: UserDataRepository,
     private val downloadHelper: AnimeDownloadHelper,
     private val okHttpClient: OkHttpClient,
+    private val danmuRepository: DanmuRepository
 ) : ViewModel() {
 
     @AssistedFactory
     interface AnimePlayViewModelFactory {
-        fun create(animeId: Int, initEpisode: Int? = null): AnimePlayViewModel
+        fun create(animeId: Int, initEpisode: Int? = null, episodeName: String?): AnimePlayViewModel
     }
 
     private val _loadingState = MutableStateFlow<LoadingState>(LoadingState.IDLE)
@@ -99,6 +107,15 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
 
     private val _uiState = MutableStateFlow<AnimePlayUiState>(AnimePlayUiState.Loading)
     val uiState = _uiState.asStateFlow()
+
+    //todo 获取保存的配置信息,跟数据源同理
+    private val preferences = NekoAnimeApplication.getInstance().preferences
+    private val _enableDanmu =
+        MutableStateFlow(preferences.getBoolean(KEY_DANMAKU_ENABLED, false))
+    val enableDanmu = _enableDanmu.asStateFlow()
+
+    private val _danmakuSession = MutableStateFlow<DanmuSession?>(null)
+    val danmakuSession = _danmakuSession.asStateFlow()
 
     val player: ExoPlayer = ExoPlayer.Builder(context)
         .setLoadControl(
@@ -166,6 +183,7 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
     )
 
     var episode = mutableStateOf(initEpisode)
+    var episodeName = mutableStateOf(episodeName)
 
     private lateinit var streamIterator: TrackingIterator<Int>
 
@@ -203,6 +221,9 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
                     _uiState.emit(AnimePlayUiState.Data(anime = anime))
                     if (episode.value == null) {
                         episode.value = watchRecords[animeId]?.recentEpisode ?: 1
+                    }
+                    if (_enableDanmu.value) {
+                        _danmakuSession.value = fetchDanmuSession()
                     }
 
                     launch { fetchingForYouAnime() }
@@ -274,6 +295,22 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
                 )
             }
         }
+    }
+
+    //设置弹幕开启
+    fun setEnableDanmuku(enable: Boolean) {
+        _enableDanmu.value = enable
+        preferences.edit { putBoolean(KEY_DANMAKU_ENABLED, enable) }
+        viewModelScope.launch {
+            if (enable && _danmakuSession.value == null) {
+                _danmakuSession.value = fetchDanmuSession()
+            }
+        }
+
+    }
+
+    private suspend fun fetchDanmuSession(): DanmuSession? {
+        return danmuRepository.fetchDanmuSession(episodeName.value!!, episode.value.toString())
     }
 
     fun restoreWatchRecord() {
