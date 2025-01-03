@@ -198,6 +198,9 @@ fun AnimePlayScreen(
                 onDanmakuClick = { viewModel.setEnableDanmuku(it) },
                 danmuSession = danmakuSession
             )
+            if (isFullscreen.value) {
+                DanmakuHost(playerState, danmakuSession, enabledDanmaku, viewModel.player)
+            }
             Box(
                 Modifier
                     .navigationBarsPadding()

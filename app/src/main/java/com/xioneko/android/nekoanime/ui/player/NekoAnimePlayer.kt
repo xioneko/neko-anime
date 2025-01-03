@@ -106,8 +106,8 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.lanlinju.videoplayer.icons.Subtitles
 import com.lanlinju.videoplayer.icons.SubtitlesOff
-import com.xioneko.android.nekoanime.data.network.danmu.api.DanmuEvent
 import com.xioneko.android.nekoanime.data.network.danmu.api.DanmuSession
+import com.xioneko.android.nekoanime.data.network.danmu.api.DanmukuEvent
 import com.xioneko.android.nekoanime.data.network.danmu.dto.DanmakuPresentation
 import com.xioneko.android.nekoanime.ui.component.LoadingDotsVariant
 import com.xioneko.android.nekoanime.ui.danmu.DanmakuConfigData
@@ -243,17 +243,6 @@ fun NekoAnimePlayer(
                     .align(Alignment.Center)
             )
         }
-        //TODO 仿照写的DanmakuHost被重复触发,导致session不断被重组,弹幕无法显示...不知道什么原因
-        AnimatedVisibility(
-            modifier = Modifier
-                .align(Alignment.TopCenter),
-            visible = isFullscreen,
-            enter = slideInVertically(spring()) { -it },
-            exit = slideOutVertically(spring()) { -it }
-        ) {
-            DanmakuHost(playerState, danmuSession, enableDanmu)
-        }
-
         AndroidView(
             modifier = Modifier
                 .pointerInput(isFullscreen) {
@@ -548,6 +537,7 @@ fun NekoAnimePlayer(
             )
         }
     }
+
 }
 
 @Composable
@@ -1189,7 +1179,8 @@ fun isWideScreen(context: Context): Boolean {
 fun DanmakuHost(
     playerState: NekoAnimePlayerState,
     session: DanmuSession?,
-    enabled: Boolean
+    enabled: Boolean,
+    player: ExoPlayer
 ) {
     if (!enabled) return
     val danmakuConfigData by rememberPreference(
@@ -1201,7 +1192,6 @@ fun DanmakuHost(
         rememberDanmakuHostState(danmakuConfig = danmakuConfigData.toDanmakuConfig())
 
     if (session != null) {
-        Log.d("danmu", "弹幕流")
         com.xioneko.android.nekoanime.ui.danmu.DanmakuHost(state = danmakuHostState)
     }
 
@@ -1213,16 +1203,16 @@ fun DanmakuHost(
         }
     }
 
-    val isPlayingFlow = remember { snapshotFlow { playerState.isPlaying } }
+    val isPlayingFlow = remember { snapshotFlow { player.isPlaying } }
     LaunchedEffect(session) {
         danmakuHostState.clearPresentDanmaku()
-        Log.d("danmu", "弹幕重置")
         session?.at(
-            curTimeMillis = { playerState.position.milliseconds },
+            curTimeMillis = { player.currentPosition.milliseconds },
             isPlayingFlow = isPlayingFlow,
         )?.collect { danmakuEvent ->
             when (danmakuEvent) {
-                is DanmuEvent.Add -> {
+                is DanmukuEvent.Add -> {
+                    Log.d("danmu", "拼装弹幕发送")
                     danmakuHostState.trySend(
                         DanmakuPresentation(
                             danmakuEvent.danmu,
@@ -1231,7 +1221,7 @@ fun DanmakuHost(
                     )
                 }
                 // 快进/快退
-                is DanmuEvent.Repopulate -> danmakuHostState.repopulate()
+                is DanmukuEvent.Repopulate -> danmakuHostState.repopulate()
             }
         }
     }

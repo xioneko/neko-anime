@@ -107,6 +107,7 @@ class DanmakuHostState(
 
             DanmukuLocation.TOP -> {
                 val floatingDanmaku = topTracks.firstNotNullOfOrNull {
+                    Log.d("dannmu", "顶端弹幕发送")
                     it.tryPlace(styledDanmaku)
                 }
                 floatingDanmaku?.also(presentFixedDanmaku::add) != null
@@ -162,7 +163,7 @@ class DanmakuHostState(
         val trackCount = floor(hostHeight / trackHeight * config.displayArea)
             .coerceAtLeast(1f)
             .toInt()
-        Log.d("danmu", "弹幕数量$trackCount")
+        Log.d("danmu", "高度变化轨道数量setTrackCount:$trackCount")
         initTrackCount(trackCount, config)
     }
 

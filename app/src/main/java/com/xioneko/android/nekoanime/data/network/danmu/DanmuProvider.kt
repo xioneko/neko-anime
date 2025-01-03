@@ -2,7 +2,7 @@ package com.xioneko.android.nekoanime.data.network.danmu
 
 import com.xioneko.android.nekoanime.data.network.danmu.DandanplayDanmuProvider.Companion.ID
 import com.xioneko.android.nekoanime.data.network.danmu.api.DanmuSession
-import com.xioneko.android.nekoanime.data.network.danmu.api.TimeBasedDanmuSession
+import com.xioneko.android.nekoanime.data.network.danmu.api.TimeBasedDanmukuSession
 import com.xioneko.android.nekoanime.data.network.danmu.dto.toDanmuku
 import kotlinx.coroutines.Dispatchers
 import okhttp3.OkHttpClient
@@ -70,7 +70,7 @@ class DandanplayDanmuProvider @Inject constructor(
 
     private suspend fun createSession(episodeId: Long): DanmuSession? {
         val list = dandanClient.getDanmuList(episodeId)
-        return TimeBasedDanmuSession.create(
+        return TimeBasedDanmukuSession.create(
             list.asSequence().mapNotNull { it.toDanmuku() },
             Dispatchers.Default
         )
