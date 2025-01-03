@@ -107,7 +107,6 @@ class DanmakuHostState(
 
             DanmukuLocation.TOP -> {
                 val floatingDanmaku = topTracks.firstNotNullOfOrNull {
-                    Log.d("dannmu", "顶端弹幕发送")
                     it.tryPlace(styledDanmaku)
                 }
                 floatingDanmaku?.also(presentFixedDanmaku::add) != null

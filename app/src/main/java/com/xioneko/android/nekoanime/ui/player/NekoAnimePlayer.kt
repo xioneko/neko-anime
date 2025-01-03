@@ -3,7 +3,6 @@ package com.xioneko.android.nekoanime.ui.player
 import android.app.Activity
 import android.content.Context
 import android.content.pm.ActivityInfo
-import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -74,7 +73,6 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -107,28 +105,21 @@ import androidx.media3.ui.PlayerView
 import com.lanlinju.videoplayer.icons.Subtitles
 import com.lanlinju.videoplayer.icons.SubtitlesOff
 import com.xioneko.android.nekoanime.data.network.danmu.api.DanmuSession
-import com.xioneko.android.nekoanime.data.network.danmu.api.DanmukuEvent
-import com.xioneko.android.nekoanime.data.network.danmu.dto.DanmakuPresentation
 import com.xioneko.android.nekoanime.ui.component.LoadingDotsVariant
-import com.xioneko.android.nekoanime.ui.danmu.DanmakuConfigData
-import com.xioneko.android.nekoanime.ui.danmu.rememberDanmakuHostState
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeFontFamilies
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
 import com.xioneko.android.nekoanime.ui.theme.basicWhite
 import com.xioneko.android.nekoanime.ui.theme.pink50
-import com.xioneko.android.nekoanime.ui.util.KEY_DANMAKU_CONFIG_DATA
 import com.xioneko.android.nekoanime.ui.util.KeepScreenOn
 import com.xioneko.android.nekoanime.ui.util.currentScreenSizeDp
 import com.xioneko.android.nekoanime.ui.util.getMediaVolume
 import com.xioneko.android.nekoanime.ui.util.getScreenBrightness
 import com.xioneko.android.nekoanime.ui.util.isTablet
-import com.xioneko.android.nekoanime.ui.util.rememberPreference
 import com.xioneko.android.nekoanime.ui.util.vibrate
 import kotlinx.coroutines.delay
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 
@@ -1175,54 +1166,3 @@ fun isWideScreen(context: Context): Boolean {
     return screenWidthDp > screenHeightDp
 }
 
-@Composable
-fun DanmakuHost(
-    playerState: NekoAnimePlayerState,
-    session: DanmuSession?,
-    enabled: Boolean,
-    player: ExoPlayer
-) {
-    if (!enabled) return
-    val danmakuConfigData by rememberPreference(
-        KEY_DANMAKU_CONFIG_DATA,
-        DanmakuConfigData(),
-        DanmakuConfigData.serializer()
-    )
-    val danmakuHostState =
-        rememberDanmakuHostState(danmakuConfig = danmakuConfigData.toDanmakuConfig())
-
-    if (session != null) {
-        com.xioneko.android.nekoanime.ui.danmu.DanmakuHost(state = danmakuHostState)
-    }
-
-    LaunchedEffect(playerState.isPlaying) {
-        if (playerState.isPlaying) {
-            danmakuHostState.play()
-        } else {
-            danmakuHostState.pause()
-        }
-    }
-
-    val isPlayingFlow = remember { snapshotFlow { player.isPlaying } }
-    LaunchedEffect(session) {
-        danmakuHostState.clearPresentDanmaku()
-        session?.at(
-            curTimeMillis = { player.currentPosition.milliseconds },
-            isPlayingFlow = isPlayingFlow,
-        )?.collect { danmakuEvent ->
-            when (danmakuEvent) {
-                is DanmukuEvent.Add -> {
-                    Log.d("danmu", "拼装弹幕发送")
-                    danmakuHostState.trySend(
-                        DanmakuPresentation(
-                            danmakuEvent.danmu,
-                            false
-                        )
-                    )
-                }
-                // 快进/快退
-                is DanmukuEvent.Repopulate -> danmakuHostState.repopulate()
-            }
-        }
-    }
-}

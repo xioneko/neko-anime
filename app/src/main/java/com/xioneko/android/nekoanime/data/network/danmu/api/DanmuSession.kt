@@ -1,6 +1,5 @@
 package com.xioneko.android.nekoanime.data.network.danmu.api
 
-import android.util.Log
 import com.xioneko.android.nekoanime.data.network.danmu.dto.Danmuku
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -260,12 +259,10 @@ internal class DanmukuSessionAlgorithm(val state: DanmukuSessionFlowState) {
 
         useEachDanmuku { item ->
             if (curTimeMillis < item.playTimeMillis) {
-                Log.d("danmu", "时间状态")
                 // 还没有达到弹幕发送时间, 因为 list 是排序的, 这也说明后面的弹幕都还没到时间
                 return
             }
-            if (!sendEvent(DanmukuEvent.Add(item))) {
-                Log.d("danmu", "sendEvent")// Send Add Event
+            if (!sendEvent(DanmukuEvent.Add(item))) {// Send Add Event
                 return // 发送失败, 意味着 channel 满了, 即 flow collector 满了, 下一逻辑帧再尝试
             }
         }

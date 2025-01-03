@@ -19,13 +19,17 @@ fun DanmakuHost(
     modifier: Modifier = Modifier,
 ) {
     BoxWithConstraints(modifier) {
-        state.hostHeight = 1200
-        state.hostWidth = 2400
+        //TODO 状态丢失
+        state.hostHeight = 1000
+        state.hostWidth = 2000
+        Log.d("danmu", "旋转屏幕大小" + state.hostWidth)
+        Log.d("danmu", "旋转屏幕大小" + state.hostHeight)
         DanmakuCanvas {
             Log.d("danmu", "弹幕列表数量1:" + state.presentFloatingDanmaku.size)
             for (danmaku in state.presentFloatingDanmaku) {
                 with(danmaku.danmaku) {
                     Log.d("danmu", "打印弹幕1")
+                    //TODO 打印不到播放器上面
                     draw(
                         screenPosX = { danmaku.screenPosX },
                         screenPosY = { danmaku.screenPosY },
