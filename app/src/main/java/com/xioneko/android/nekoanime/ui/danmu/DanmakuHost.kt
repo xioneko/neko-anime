@@ -19,8 +19,8 @@ fun DanmakuHost(
 ) {
     BoxWithConstraints(modifier) {
         //TODO 状态丢失
-        state.hostHeight = 1000
-        state.hostWidth = 2000
+        state.hostHeight = 1080
+        state.hostWidth = 2400
         DanmakuCanvas {
             for (danmaku in state.presentFloatingDanmaku) {
                 with(danmaku.danmaku) {
