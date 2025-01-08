@@ -1,6 +1,5 @@
 package com.xioneko.android.nekoanime.ui.danmu
 
-import android.util.Log
 import androidx.annotation.UiThread
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -162,7 +161,6 @@ class DanmakuHostState(
         val trackCount = floor(hostHeight / trackHeight * config.displayArea)
             .coerceAtLeast(1f)
             .toInt()
-        Log.d("danmu", "高度变化轨道数量setTrackCount:$trackCount")
         initTrackCount(trackCount, config)
     }
 

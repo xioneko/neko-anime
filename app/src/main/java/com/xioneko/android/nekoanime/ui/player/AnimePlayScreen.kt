@@ -179,6 +179,7 @@ fun AnimePlayScreen(
 
     var showBottomSheet by rememberSaveable { mutableStateOf(false) }
 
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = basicWhite
@@ -208,9 +209,7 @@ fun AnimePlayScreen(
                 onDanmakuClick = { viewModel.setEnableDanmuku(it) },
                 danmuSession = danmakuSession
             )
-            if (isFullscreen.value) {
-                DanmakuHost(playerState, danmakuSession, enabledDanmaku, viewModel.player)
-            }
+
             Box(
                 Modifier
                     .navigationBarsPadding()

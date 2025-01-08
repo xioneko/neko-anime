@@ -225,7 +225,6 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
                     _danmakuSession.value = null
                     if (_enableDanmu.value) {
                         _danmakuSession.value = fetchDanmuSession()
-                        Log.d("danmu", "获取弹幕会话:" + episode.value + ":" + episodeName.value)
                     }
 
                     launch { fetchingForYouAnime() }
