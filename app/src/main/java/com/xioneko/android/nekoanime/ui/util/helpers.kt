@@ -33,6 +33,10 @@ import okhttp3.Response
 import java.io.IOException
 import kotlin.random.Random
 
+//AnimeSource
+const val KEY_SOURCE_MODE = "animeSourceMode"
+
+
 // danmaku
 const val KEY_DANMAKU_ENABLED = "danmakuEnabled"
 const val KEY_DANMAKU_CONFIG_DATA = "danmakuConfigData"

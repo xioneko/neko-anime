@@ -465,13 +465,8 @@ fun MineTopBar(
                 SourceSwitchDialog(
                     onDismissRequest = { isRefresh ->
                         showSourceSwitchDialog = false
-//                        if (isRefresh) {
-//                            //TODO 更换数据源后刷新页面
-//                            viewModel.refresh()
-//                        }
                     },
-                    animeDataSource = animeDataSource,
-                    viewModel = viewModel
+                    animeDataSource = animeDataSource
                 )
             }
         }

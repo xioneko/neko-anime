@@ -10,10 +10,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class AnimeDataFetcher @Inject constructor(
-    private val yhdmDataSource: YhdmDataSource
-) {
-
+class AnimeDataFetcher @Inject constructor() {
+    val yhdmDataSource = YhdmDataSource
     operator fun invoke(): Fetcher<AnimeKey, Anime> =
         Fetcher.ofResult { key ->
             when (key) {

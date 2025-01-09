@@ -11,7 +11,6 @@ import com.xioneko.android.nekoanime.data.AnimeRepository
 import com.xioneko.android.nekoanime.data.UserDataRepository
 import com.xioneko.android.nekoanime.data.model.ThemeConfig
 import com.xioneko.android.nekoanime.data.model.sortedByDate
-import com.xioneko.android.nekoanime.data.network.di.SourceHolder
 import com.xioneko.android.nekoanime.domain.GetFollowedAnimeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -29,8 +28,7 @@ class MineScreenViewModel @Inject constructor(
     @ApplicationContext context: Context,
     private val animeRepository: AnimeRepository,
     private val userDataRepository: UserDataRepository,
-    getFollowedAnimeUseCase: GetFollowedAnimeUseCase,
-    private val sourceHolder: SourceHolder
+    getFollowedAnimeUseCase: GetFollowedAnimeUseCase
 ) : ViewModel() {
     private val imageLoader = context.imageLoader
 
@@ -144,12 +142,6 @@ class MineScreenViewModel @Inject constructor(
         }
     }
 
-    //切换数据源
-    fun switchSource(sourceName: String) {
-        viewModelScope.launch {
-            sourceHolder.switchSource(sourceHolder.getSourceByName(sourceName))
-        }
-    }
 
 }
 

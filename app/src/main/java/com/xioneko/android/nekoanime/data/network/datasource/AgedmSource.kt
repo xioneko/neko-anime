@@ -4,6 +4,7 @@ import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.model.AnimeShell
 import com.xioneko.android.nekoanime.data.model.model2.dto.VideoBean
 import com.xioneko.android.nekoanime.data.network.api.AgedmApi
+import com.xioneko.android.nekoanime.data.network.di.NetworkModule
 import com.xioneko.android.nekoanime.data.network.repository.AnimeSource
 import com.xioneko.android.nekoanime.data.network.util.HtmlParser
 import com.xioneko.android.nekoanime.data.network.util.JsoupConverterFactory
@@ -11,17 +12,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
 import retrofit2.HttpException
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
-import javax.inject.Inject
 
-class AgedmSource @Inject constructor(
-    httpClient: OkHttpClient
-) : AnimeSource {
+object AgedmSource : AnimeSource {
     private val agedmApi = Retrofit.Builder()
-        .client(httpClient)
+        .client(NetworkModule.createHttpClient())
         .baseUrl(AgedmApi.BASE_URL)
         .addConverterFactory(JsoupConverterFactory)
         .addConverterFactory(Json.asConverterFactory("application/json".toMediaType()))

@@ -30,9 +30,7 @@ class AnimeRepository @androidx.annotation.OptIn(UnstableApi::class)
 @Inject constructor(
     animeSourceOfTruth: AnimeSourceOfTruth,
     animeDataValidator: AnimeDataValidator,
-    animeDataFetcher: AnimeDataFetcher,
-    private val yhdmDataSource: YhdmDataSource,
-    private val sourceHolder: SourceHolder
+    animeDataFetcher: AnimeDataFetcher
 ) {
     private val store: Store<AnimeKey, Anime> =
         StoreBuilder.from(
@@ -42,10 +40,11 @@ class AnimeRepository @androidx.annotation.OptIn(UnstableApi::class)
             .validator(animeDataValidator)
             .build()
 
+    val yhdmDataSource = YhdmDataSource
 
-    //获取最近更新 TODO 未捕获异常
+    //获取最近更新
     suspend fun getHomeDetail(): Flow<List<AnimeShell>> {
-        val source = sourceHolder.currentSource
+        val source = SourceHolder.currentSource
         return source.getHomeData()
     }
 

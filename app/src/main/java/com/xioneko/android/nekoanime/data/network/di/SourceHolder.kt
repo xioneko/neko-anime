@@ -1,21 +1,20 @@
 package com.xioneko.android.nekoanime.data.network.di
 
+import com.xioneko.android.nekoanime.NekoAnimeApplication
 import com.xioneko.android.nekoanime.data.network.datasource.AgedmSource
 import com.xioneko.android.nekoanime.data.network.datasource.YhdmDataSource
 import com.xioneko.android.nekoanime.data.network.repository.AnimeSource
-import com.xioneko.android.nekoanime.util.NekoAnimeMode
-import okhttp3.OkHttpClient
-import javax.inject.Inject
+import com.xioneko.android.nekoanime.ui.util.KEY_SOURCE_MODE
+import com.xioneko.android.nekoanime.ui.util.getEnum
+import com.xioneko.android.nekoanime.ui.util.preferences
 import javax.inject.Singleton
 
 @Singleton
-class SourceHolder @Inject constructor(
-    private val httpClient: OkHttpClient
-) {
+object SourceHolder {
     private lateinit var _currentSource: AnimeSource
     private lateinit var _currentSourceMode: NekoAnimeMode
 
-    //获取用户数据源 TODO 初始化获取配置文件信息
+    //获取用户数据源
     var DEFAULT_ANIME_SOURCE = NekoAnimeMode.Ydmi
 
     val currentSource: AnimeSource
@@ -23,8 +22,11 @@ class SourceHolder @Inject constructor(
     val currentSourceMode: NekoAnimeMode
         get() = _currentSourceMode
 
+    var isSourceChanged = false
+
     init {
-        initDefalutSource(DEFAULT_ANIME_SOURCE)
+        val preferences = NekoAnimeApplication.getInstance().preferences
+        initDefalutSource(preferences.getEnum(KEY_SOURCE_MODE, DEFAULT_ANIME_SOURCE))
     }
 
     private fun initDefalutSource(mode: NekoAnimeMode) {
@@ -40,17 +42,15 @@ class SourceHolder @Inject constructor(
 
     fun getSource(mode: NekoAnimeMode): AnimeSource {
         return when (mode) {
-            NekoAnimeMode.Ydmi -> YhdmDataSource(httpClient)
-            NekoAnimeMode.Agedm -> AgedmSource(httpClient)
+            NekoAnimeMode.Ydmi -> YhdmDataSource
+            NekoAnimeMode.Agedm -> AgedmSource
         }
     }
 
-    fun getSourceByName(mode: String): NekoAnimeMode {
-        return when (mode) {
-            "Ydmi" -> NekoAnimeMode.Ydmi
-            "Agedm" -> NekoAnimeMode.Agedm
-            else -> NekoAnimeMode.Agedm
-        }
-    }
 
+}
+
+enum class NekoAnimeMode {
+    Ydmi,
+    Agedm
 }

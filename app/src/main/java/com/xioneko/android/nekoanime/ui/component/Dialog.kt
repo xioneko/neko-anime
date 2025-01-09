@@ -22,7 +22,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
@@ -30,7 +29,10 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,17 +47,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.ui.window.Dialog
 import androidx.core.text.HtmlCompat
 import com.xioneko.android.nekoanime.R
-import com.xioneko.android.nekoanime.ui.mine.MineScreenViewModel
+import com.xioneko.android.nekoanime.data.network.di.NekoAnimeMode
+import com.xioneko.android.nekoanime.data.network.di.SourceHolder
+import com.xioneko.android.nekoanime.data.network.di.SourceHolder.DEFAULT_ANIME_SOURCE
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeFontFamilies.cuteFontFamily
 import com.xioneko.android.nekoanime.ui.theme.basicBlack
 import com.xioneko.android.nekoanime.ui.theme.basicWhite
 import com.xioneko.android.nekoanime.ui.theme.pink40
 import com.xioneko.android.nekoanime.ui.theme.pink95
+import com.xioneko.android.nekoanime.ui.util.KEY_SOURCE_MODE
 import com.xioneko.android.nekoanime.ui.util.isTablet
-import com.xioneko.android.nekoanime.util.NekoAnimeMode
+import com.xioneko.android.nekoanime.ui.util.rememberPreference
 
 @Composable
 fun WorkingInProgressDialog(
@@ -232,65 +236,89 @@ fun ConfirmationDialog(
 @Composable
 fun SourceSwitchDialog(
     onDismissRequest: (Boolean) -> Unit,
-    animeDataSource: String?,
-    viewModel: MineScreenViewModel
+    animeDataSource: String?
 ) {
-    val radioMap = NekoAnimeMode.entries.map { it.name }
+    var currentSourceMode by rememberPreference(KEY_SOURCE_MODE, DEFAULT_ANIME_SOURCE)
+    val (selectedOption, onOptionSelected) = remember { mutableStateOf(currentSourceMode.name) }
 
-    Dialog(
+    val radioMap = NekoAnimeMode.entries.map { it.name }
+    AlertDialog(
         onDismissRequest = {
             onDismissRequest(false)
-        }
-    ) {
-        Card(shape = RoundedCornerShape(dimensionResource(R.dimen.lager_corner_radius))) {
+        },
+        title = {
+            Text(text = "切换动漫源")
+        },
+        text = {
             Column(
-                Modifier
-                    .padding(vertical = dimensionResource(R.dimen.large_padding))
+                modifier = Modifier
                     .selectableGroup()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Text(
-                    modifier = Modifier.padding(start = dimensionResource(R.dimen.large_padding)),
-                    text = "切换动漫源",
-                    style = MaterialTheme.typography.titleLarge
-                )
-                radioMap.forEach { text ->
+                radioMap.forEachIndexed { index, text ->
+                    val topCorner = if (index == 0) 24.dp else 4.dp
+                    val bottomCorner = if (index == radioMap.lastIndex) 24.dp else 4.dp
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .height(dimensionResource(R.dimen.radio_button_height))
-                            .padding(start = 24.dp)
+                            .height(dimensionResource(id = R.dimen.radio_button_height))
+                            .clip(
+                                RoundedCornerShape(
+                                    topStart = topCorner,
+                                    topEnd = topCorner,
+                                    bottomStart = bottomCorner,
+                                    bottomEnd = bottomCorner
+                                )
+                            )
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
                             .selectable(
-                                selected = (text == animeDataSource),
+                                selected = (text == selectedOption),
                                 onClick = {
-                                    if (text != animeDataSource) {
-                                        //用户数据源保存
-                                        viewModel.setAnimeDataSource(text)
-                                        //切换模式加载
-                                        viewModel.switchSource(text)
-                                        //关闭弹窗
-                                        onDismissRequest(false)
-//                                        viewModel.refresh()
-                                    }
+                                    onOptionSelected(text)
                                 },
                                 role = Role.RadioButton
-                            ),
+                            )
+                            .padding(start = dimensionResource(id = R.dimen.large_padding)),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(
-                            selected = (text == animeDataSource),
+                            selected = (text == selectedOption),
                             onClick = null
                         )
                         Text(
                             text = text,
                             style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(start = 16.dp)
+                            modifier = Modifier.padding(start = dimensionResource(id = R.dimen.medium_padding))
                         )
                     }
                 }
             }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val mode = NekoAnimeMode.valueOf(selectedOption)
+                    currentSourceMode = mode
+                    SourceHolder.isSourceChanged = true
+                    SourceHolder.switchSource(mode)
+                    onDismissRequest(false)
+                }
+            ) {
+                Text("确认")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = {
+                onDismissRequest(false)
+            }) {
+                Text("取消")
+            }
         }
-    }
+
+
+    )
+
 }
 
 
