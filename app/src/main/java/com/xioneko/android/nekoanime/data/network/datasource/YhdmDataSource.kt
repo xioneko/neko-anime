@@ -2,7 +2,6 @@ package com.xioneko.android.nekoanime.data.network.datasource
 
 import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.model.AnimeShell
-import com.xioneko.android.nekoanime.data.model.model2.dto.VideoBean
 import com.xioneko.android.nekoanime.data.network.api.YhdmApi
 import com.xioneko.android.nekoanime.data.network.api.YhdmApi.Companion.BASE_URL
 import com.xioneko.android.nekoanime.data.network.di.NetworkModule
@@ -10,6 +9,7 @@ import com.xioneko.android.nekoanime.data.network.repository.AnimeSource
 import com.xioneko.android.nekoanime.data.network.util.HtmlParser
 import com.xioneko.android.nekoanime.data.network.util.JsoupConverterFactory
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -40,14 +40,32 @@ object YhdmDataSource : AnimeSource {
         }
     }
 
-    override suspend fun getAnimeDetail(animeId: Int): Flow<Anime> {
-        TODO("Not yet implemented")
+    override suspend fun getAnimeDetail(id: Int): Anime? {
+        val document: Document = yhdmApi
+            .getAnimeDetailPage(id)
+            .body()
+            ?: return null
+        return HtmlParser.parseAnime(document, id)
     }
 
-    override suspend fun getVideoData(episodeUrl: String): Flow<VideoBean> {
-        TODO("Not yet implemented")
+    override suspend fun searchAnime(query: String, page: Int): List<AnimeShell> {
+        return getSearchResults(query, "", "", page).first()
     }
 
+    override suspend fun getVideoData(
+        anime: Anime,
+        episode: Int,
+        streamId: Int
+    ): Pair<String, String?>? {
+        var anm: Pair<String, String?>? = null
+        yhdmApi.getPlayPage(anime.id, episode, streamId)                // ^episode  ^episode + 1
+            .takeIf { it.isSuccessful }
+            ?.body()
+            ?.let { document ->
+                anm = HtmlParser.parseVideoUrl(document)
+            }
+        return anm
+    }
 
     suspend fun getAnimeById(animeId: Int): Anime? {
         val document: Document = yhdmApi

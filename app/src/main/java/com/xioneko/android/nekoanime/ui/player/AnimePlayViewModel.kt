@@ -13,15 +13,10 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.cache.CacheDataSource
-import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.hls.HlsMediaSource
-import androidx.media3.exoplayer.upstream.DefaultLoadErrorHandlingPolicy
 import com.xioneko.android.nekoanime.NekoAnimeApplication
 import com.xioneko.android.nekoanime.data.AnimeDownloadHelper
-import com.xioneko.android.nekoanime.data.AnimeDownloadManager
 import com.xioneko.android.nekoanime.data.AnimeRepository
 import com.xioneko.android.nekoanime.data.UserDataRepository
 import com.xioneko.android.nekoanime.data.model.Anime
@@ -129,19 +124,19 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
                 )
                 .build()
         )
-        .setMediaSourceFactory(run {
-            val cacheDataSourceFactory = CacheDataSource.Factory()
-                .setCache(AnimeDownloadManager.getDownloadCache(context))
-                .setUpstreamDataSourceFactory(OkHttpDataSource.Factory(okHttpClient))
-                .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
-                .setCacheWriteDataSinkFactory(null) // Read-only
-            HlsMediaSource.Factory(cacheDataSourceFactory)
-                .setLoadErrorHandlingPolicy(object : DefaultLoadErrorHandlingPolicy() {
-                    override fun getMinimumLoadableRetryCount(dataType: Int): Int {
-                        return 2
-                    }
-                })
-        })
+//        .setMediaSourceFactory(run {
+//            val cacheDataSourceFactory = CacheDataSource.Factory()
+//                .setCache(AnimeDownloadManager.getDownloadCache(context))
+//                .setUpstreamDataSourceFactory(OkHttpDataSource.Factory(okHttpClient))
+//                .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
+//                .setCacheWriteDataSinkFactory(null) // Read-only
+//            HlsMediaSource.Factory(cacheDataSourceFactory)
+//                .setLoadErrorHandlingPolicy(object : DefaultLoadErrorHandlingPolicy() {
+//                    override fun getMinimumLoadableRetryCount(dataType: Int): Int {
+//                        return 2
+//                    }
+//                })
+//        })
         .build().apply {
             playWhenReady = true
             pauseAtEndOfMediaItems = true
@@ -262,7 +257,7 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
                         addMediaItem(MediaItem.fromUri(url))
                         Log.d("Player", "添加播放地址: $url")
                         prepare()
-                        restoreWatchRecord()
+//                        restoreWatchRecord()
                     }
             }
         }

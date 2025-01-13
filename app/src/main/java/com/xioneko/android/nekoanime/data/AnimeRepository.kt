@@ -48,7 +48,17 @@ class AnimeRepository @androidx.annotation.OptIn(UnstableApi::class)
         return source.getHomeData()
     }
 
+    //搜索
+    suspend fun searchAnime(
+        query: String,
+        page: Int
+    ): Flow<List<AnimeShell>> = flow {
+        val source = SourceHolder.currentSource
+        emit(source.searchAnime(query, page))
+    }
 
+
+    //详细动漫页
     fun getAnimeById(animeId: Int): Flow<Anime> = flow {
         store.stream(StoreReadRequest.cached(AnimeKey.FetchAnime(animeId), false))
             .firstOrNull { it is StoreReadResponse.Data }
