@@ -15,7 +15,7 @@ object SourceHolder {
     private lateinit var _currentSourceMode: NekoAnimeMode
 
     //获取用户数据源
-    var DEFAULT_ANIME_SOURCE = NekoAnimeMode.Ydmi
+    var DEFAULT_ANIME_SOURCE = NekoAnimeMode.Agedm
 
     val currentSource: AnimeSource
         get() = _currentSource

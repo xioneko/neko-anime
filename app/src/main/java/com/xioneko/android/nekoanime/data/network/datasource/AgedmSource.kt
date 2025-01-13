@@ -6,7 +6,6 @@ import com.xioneko.android.nekoanime.data.model.model2.dto.EpisodeBean
 import com.xioneko.android.nekoanime.data.network.di.NetworkModule
 import com.xioneko.android.nekoanime.data.network.repository.AnimeSource
 import com.xioneko.android.nekoanime.data.network.util.HtmlParser
-import com.xioneko.android.nekoanime.ui.danmu.log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -89,8 +88,8 @@ object AgedmSource : AnimeSource {
         val status = detailBoxList[7].text().split("：")[1]
         val playlist = document.select("div.tab-content").select("div.tab-pane")
         val channels = getAnimeEpisodes(playlist)
-        val relatedAnimes =
-            getAnimeList(document.select("div.video_list_box").select("div.video_item"))
+//        val relatedAnimes =
+//            getAnimeList(document.select("div.video_list_box").select("div.video_item"))
         val episodeBeans = channels.get(0)
         //多线路ID
         val streamIds = mutableSetOf<Int>()
@@ -126,7 +125,6 @@ object AgedmSource : AnimeSource {
             withContext(Dispatchers.IO) {
                 var response: Response<ResponseBody>? = null
                 try {
-                    "predicate $requestUrl".log(LOG_TAG)
                     response = NetworkModule.request(requestUrl)
                     response.isSuccessful && response.isVideoType()
                 } catch (_: Exception) {
@@ -143,8 +141,6 @@ object AgedmSource : AnimeSource {
             predicate = predicate,
             filterRequestUrl = filterReqUrl
         )
-        return ""
-
     }
 
     private fun Response<*>.isVideoType(): Boolean {
@@ -165,8 +161,9 @@ object AgedmSource : AnimeSource {
 private suspend fun getAnimeEpisodes(elements: Elements): Map<Int, List<EpisodeBean>> {
     val channels = mutableMapOf<Int, List<EpisodeBean>>()
 
-    val episodes = mutableListOf<EpisodeBean>()
+
     elements.forEachIndexed { i, e ->
+        val episodes = mutableListOf<EpisodeBean>()
         e.select("li").forEach { el ->
             val name = el.text()
             val url = el.select("a").attr("href")
@@ -185,7 +182,6 @@ private suspend fun getAnimeList(elements: Elements): List<Anime> {
 //        val url = el.select("a").attr("href")
 //        val imgUrl = el.select("img").attr("data-original")
 //        val episodeName = el.select("span.video_item--info").text()
-//        animeList.add(Anime(title = title, img = imgUrl, url = url, episodeName))
 //    }
     return animeList
 }

@@ -234,9 +234,6 @@ fun NekoAnimePlayer(
                     .align(Alignment.Center)
             )
         }
-        if (isFullscreen) {
-            DanmakuHost(playerState, danmuSession, enableDanmu, player)
-        }
         AndroidView(
             modifier = Modifier
                 .pointerInput(isFullscreen) {
@@ -385,7 +382,9 @@ fun NekoAnimePlayer(
                     )
                 }
             })
-
+        if (isFullscreen) {
+            DanmakuHost(playerState, danmuSession, enableDanmu, player)
+        }
         AnimatedVisibility(
             modifier = Modifier
                 .align(Alignment.TopCenter),

@@ -257,7 +257,7 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
                         addMediaItem(MediaItem.fromUri(url))
                         Log.d("Player", "添加播放地址: $url")
                         prepare()
-//                        restoreWatchRecord()
+                        restoreWatchRecord()
                     }
             }
         }
