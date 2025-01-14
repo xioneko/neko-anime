@@ -32,7 +32,7 @@ import kotlinx.coroutines.flow.update
 @Composable
 fun ResultsView(
     uiState: ResultsViewState,
-    onAnimeClick: (Int) -> Unit,
+    onAnimeClick: (Int, Int?, String?) -> Unit,
 ) {
     val aspectRatio = getAspectRadio()
     val isTablet = isTablet()

@@ -6,27 +6,28 @@ import android.util.Log
 import androidx.annotation.OptIn
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableStateOf
+import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.cache.CacheDataSource
-import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.hls.HlsMediaSource
-import androidx.media3.exoplayer.offline.Download
+import com.xioneko.android.nekoanime.NekoAnimeApplication
 import com.xioneko.android.nekoanime.data.AnimeDownloadHelper
-import com.xioneko.android.nekoanime.data.AnimeDownloadManager
 import com.xioneko.android.nekoanime.data.AnimeRepository
 import com.xioneko.android.nekoanime.data.UserDataRepository
 import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.model.AnimeShell
+import com.xioneko.android.nekoanime.data.network.danmu.api.DanmuSession
+import com.xioneko.android.nekoanime.data.network.repository.DanmuRepository
+import com.xioneko.android.nekoanime.ui.util.KEY_DANMAKU_ENABLED
 import com.xioneko.android.nekoanime.ui.util.LoadingState
 import com.xioneko.android.nekoanime.ui.util.TrackingIterator
 import com.xioneko.android.nekoanime.ui.util.getRandomElements
+import com.xioneko.android.nekoanime.ui.util.preferences
 import com.xioneko.android.nekoanime.ui.util.setMediaVolume
 import com.xioneko.android.nekoanime.ui.util.setScreenBrightness
 import com.xioneko.android.nekoanime.ui.util.setScreenOrientation
@@ -74,16 +75,18 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
 @AssistedInject constructor(
     @Assisted animeId: Int,
     @Assisted initEpisode: Int?,
+    @Assisted episodeName: String?,
     @ApplicationContext context: Context,
     private val animeRepository: AnimeRepository,
     private val userDataRepository: UserDataRepository,
     private val downloadHelper: AnimeDownloadHelper,
     private val okHttpClient: OkHttpClient,
+    private val danmuRepository: DanmuRepository
 ) : ViewModel() {
 
     @AssistedFactory
     interface AnimePlayViewModelFactory {
-        fun create(animeId: Int, initEpisode: Int? = null): AnimePlayViewModel
+        fun create(animeId: Int, initEpisode: Int? = null, episodeName: String?): AnimePlayViewModel
     }
 
     private val _loadingState = MutableStateFlow<LoadingState>(LoadingState.IDLE)
@@ -100,6 +103,15 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
     private val _uiState = MutableStateFlow<AnimePlayUiState>(AnimePlayUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
+    //todo 获取保存的配置信息,跟数据源同理
+    private val preferences = NekoAnimeApplication.getInstance().preferences
+    private val _enableDanmu =
+        MutableStateFlow(preferences.getBoolean(KEY_DANMAKU_ENABLED, false))
+    val enableDanmu = _enableDanmu.asStateFlow()
+
+    private val _danmakuSession = MutableStateFlow<DanmuSession?>(null)
+    val danmakuSession = _danmakuSession.asStateFlow()
+
     val player: ExoPlayer = ExoPlayer.Builder(context)
         .setLoadControl(
             DefaultLoadControl
@@ -112,14 +124,19 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
                 )
                 .build()
         )
-        .setMediaSourceFactory(run {
-            val cacheDataSourceFactory = CacheDataSource.Factory()
-                .setCache(AnimeDownloadManager.getDownloadCache(context))
-                .setUpstreamDataSourceFactory(OkHttpDataSource.Factory(okHttpClient))
-                .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
-                .setCacheWriteDataSinkFactory(null) // Read-only
-            HlsMediaSource.Factory(cacheDataSourceFactory)
-        })
+//        .setMediaSourceFactory(run {
+//            val cacheDataSourceFactory = CacheDataSource.Factory()
+//                .setCache(AnimeDownloadManager.getDownloadCache(context))
+//                .setUpstreamDataSourceFactory(OkHttpDataSource.Factory(okHttpClient))
+//                .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
+//                .setCacheWriteDataSinkFactory(null) // Read-only
+//            HlsMediaSource.Factory(cacheDataSourceFactory)
+//                .setLoadErrorHandlingPolicy(object : DefaultLoadErrorHandlingPolicy() {
+//                    override fun getMinimumLoadableRetryCount(dataType: Int): Int {
+//                        return 2
+//                    }
+//                })
+//        })
         .build().apply {
             playWhenReady = true
             pauseAtEndOfMediaItems = true
@@ -161,6 +178,7 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
     )
 
     var episode = mutableStateOf(initEpisode)
+    var episodeName = mutableStateOf(episodeName)
 
     private lateinit var streamIterator: TrackingIterator<Int>
 
@@ -189,32 +207,29 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
     fun loadingUiState(animeId: Int) {
         viewModelScope.launch {
             _uiState.emit(AnimePlayUiState.Loading)
-            combine(
-                animeRepository.getAnimeById(animeId),
-                userDataRepository.watchHistory.take(1),
-                downloadHelper.downloads.take(1)
-            ) { anime, watchRecords, downloads ->
-                _uiState.emit(AnimePlayUiState.Data(anime = anime))
-                if (episode.value == null) {
-                    episode.value = watchRecords[animeId]?.recentEpisode ?: 1
-                }
 
-                streamIterator = anime.streamIds.iterator().withTracking()
-
-                launch { fetchingForYouAnime() }
-
-                downloads[anime.id]?.get(episode.value)?.let {
-                    if (it.state == Download.STATE_COMPLETED && it.url != null) {
-                        Log.d("Player", "使用离线缓存播放")
-                        player.prepareNext(it.url)
-                        return@combine
-                    }
-                }
-
-                tryNextStream()
-            }
+            animeRepository.getAnimeById(animeId)
                 .onStart { _loadingState.emit(LoadingState.LOADING) }
                 .onEmpty { notifyFailure("数据源似乎出了问题") }
+                .combine(userDataRepository.watchHistory.take(1)) { anime, watchRecords ->
+                    streamIterator = anime.streamIds.iterator().withTracking()
+                    _uiState.emit(AnimePlayUiState.Data(anime = anime))
+                    if (episode.value == null) {
+                        episode.value = watchRecords[animeId]?.recentEpisode ?: 1
+                    }
+                    _danmakuSession.value = null
+                    if (_enableDanmu.value) {
+                        _danmakuSession.value = fetchDanmuSession()
+                    }
+
+                    launch { fetchingForYouAnime() }
+
+                    if (!streamIterator.hasNext()) {
+                        notifyFailure("找不到可用的播放地址")
+                        return@combine
+                    }
+                    player.update(streamIterator.next())
+                }
                 .collect()
         }
     }
@@ -225,9 +240,7 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
 
     fun onEpisodeChange(episode: Int) {
         this.episode.value = episode
-        streamIterator.current?.let {
-            player.update(it)
-        } ?: tryNextStream()
+        player.update(streamIterator.current!!)
     }
 
     private fun ExoPlayer.update(streamId: Int) {
@@ -238,25 +251,16 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
             viewModelScope.launch(videoFetchingJob) {
                 animeRepository.getVideoUrl(anime, episode.value!!, streamId, true)
                     .onStart { _loadingState.emit(LoadingState.LOADING) }
-                    .filter {
-                        Log.d("Player", "测试播放地址 $it")
-                        testConnection(okHttpClient, it).first()
-                    }
-                    .onEmpty {
-                        tryNextStream(true)
-                    }
+                    .filter { testConnection(okHttpClient, it).first() }
+                    .onEmpty { tryNextStream() }
                     .collect { url ->
-                        prepareNext(url)
+                        addMediaItem(MediaItem.fromUri(url))
+                        Log.d("Player", "添加播放地址: $url")
+                        prepare()
+                        restoreWatchRecord()
                     }
             }
         }
-    }
-
-    private fun ExoPlayer.prepareNext(url: String) {
-        Log.d("Player", "添加播放地址: $url")
-        addMediaItem(MediaItem.fromUri(url))
-        prepare()
-        restoreWatchRecord()
     }
 
     override fun onCleared() {
@@ -287,6 +291,22 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
                 )
             }
         }
+    }
+
+    //设置弹幕开启
+    fun setEnableDanmuku(enable: Boolean) {
+        _enableDanmu.value = enable
+        preferences.edit { putBoolean(KEY_DANMAKU_ENABLED, enable) }
+        viewModelScope.launch {
+            if (enable && _danmakuSession.value == null) {
+                _danmakuSession.value = fetchDanmuSession()
+            }
+        }
+
+    }
+
+    private suspend fun fetchDanmuSession(): DanmuSession? {
+        return danmuRepository.fetchDanmuSession(episodeName.value!!, episode.value.toString())
     }
 
     fun restoreWatchRecord() {
@@ -437,9 +457,10 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
                 override fun onPlayerError(error: PlaybackException) {
                     Log.d("Player", "播放出错：${error.message}")
                     if (player.currentMediaItem != null && player.currentPosition > 1000) {
-                        notifyFailure("尝试优化播放线路")
+                        upsertWatchRecord(episode.value!!)
+                        notifyFailure("当前播放线路不稳定，自动切换播放线路")
                     }
-                    tryNextStream(true)
+                    tryNextStream()
                 }
             }
             player.addListener(playerListener)
@@ -447,11 +468,10 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
             awaitClose { player.removeListener(playerListener) }
         }
 
-    private fun tryNextStream(fresh: Boolean = false) {
+    private fun tryNextStream() {
         if (streamIterator.hasNext()) {
-            Log.d("Player", "尝试下一个播放线路")
             viewModelScope.launch {
-                if (fresh) clearVideoSourceCache(episode.value!!)
+                clearVideoSourceCache(episode.value!!)
                 player.update(streamIterator.next())
             }
         } else {

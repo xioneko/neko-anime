@@ -32,6 +32,7 @@ class MineScreenViewModel @Inject constructor(
 ) : ViewModel() {
     private val imageLoader = context.imageLoader
 
+
     val themeConfig = userDataRepository.themeConfig
         .stateIn(
             scope = viewModelScope,
@@ -70,6 +71,11 @@ class MineScreenViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = null
     )
+    val animeDataSource = userDataRepository.animeDataSource.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = null
+    )
 
     val disableLandscapeMode = userDataRepository.disableLandscapeMode.stateIn(
         scope = viewModelScope,
@@ -86,6 +92,12 @@ class MineScreenViewModel @Inject constructor(
     fun setTheme(themeConfig: ThemeConfig) {
         viewModelScope.launch {
             userDataRepository.setThemeConfig(themeConfig)
+        }
+    }
+
+    fun setAnimeDataSource(source: String) {
+        viewModelScope.launch {
+            userDataRepository.setAnimeDataSource(source)
         }
     }
 
@@ -129,6 +141,7 @@ class MineScreenViewModel @Inject constructor(
             userDataRepository.setEnablePortraitFullscreen(enable)
         }
     }
+
 
 }
 

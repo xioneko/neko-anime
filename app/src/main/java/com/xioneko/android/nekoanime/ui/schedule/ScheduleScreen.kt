@@ -96,7 +96,7 @@ import java.time.LocalDate
 fun ScheduleScreen(
     padding: PaddingValues,
     viewModel: ScheduleViewModel = hiltViewModel(),
-    onAnimeClick: (Int) -> Unit
+    onAnimeClick: (Int, Int?, String?) -> Unit
 ) {
     val context = LocalContext.current
     val isTablet = isTablet()
@@ -265,7 +265,13 @@ fun ScheduleScreen(
                                                         interactionSource = remember { MutableInteractionSource() },
                                                         indication = null,
                                                         role = Role.Button,
-                                                        onClick = { onAnimeClick(animeShell.id) }
+                                                        onClick = {
+                                                            onAnimeClick(
+                                                                animeShell.id,
+                                                                null,
+                                                                null
+                                                            )
+                                                        }
                                                     ),
                                                 animeShell = animeShell,
                                                 onAnimeClick = onAnimeClick
@@ -318,7 +324,7 @@ private fun DayBox(
 private fun ScheduleItem(
     modifier: Modifier = Modifier,
     animeShell: AnimeShell,
-    onAnimeClick: (Int) -> Unit,
+    onAnimeClick: (Int, Int?, String?) -> Unit,
 ) {
     Row(
         modifier = modifier,
@@ -332,7 +338,7 @@ private fun ScheduleItem(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     role = Role.Button,
-                    onClick = { onAnimeClick(animeShell.id) }
+                    onClick = { onAnimeClick(animeShell.id, null, null) }
                 ),
             animeShell = animeShell
         )

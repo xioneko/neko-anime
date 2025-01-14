@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,7 +18,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
@@ -37,17 +41,20 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xioneko.android.nekoanime.ui.component.AnimatedSwitchButton
-import com.xioneko.android.nekoanime.ui.component.TransparentTopBar
+import com.xioneko.android.nekoanime.ui.component.SourceSwitchDialog
 import com.xioneko.android.nekoanime.ui.component.WorkingInProgressDialog
+import com.xioneko.android.nekoanime.ui.theme.NekoAnimeFontFamilies
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
 import com.xioneko.android.nekoanime.ui.theme.basicBlack
 import com.xioneko.android.nekoanime.ui.theme.basicWhite
 import com.xioneko.android.nekoanime.ui.theme.pink10
 import com.xioneko.android.nekoanime.ui.theme.pink50
+import com.xioneko.android.nekoanime.ui.theme.pink95
 import com.xioneko.android.nekoanime.ui.theme.pink99
 import com.xioneko.android.nekoanime.ui.util.getAspectRadio
 import com.xioneko.android.nekoanime.ui.util.isTablet
@@ -69,11 +76,13 @@ fun MineScreen(
 //    val themeConfig by viewModel.themeConfig.collectAsStateWithLifecycle()
 //    val isSystemInDarkTheme = isSystemInDarkTheme()
 
+
     val updateAutoCheck by viewModel.updateAutoCheck.collectAsStateWithLifecycle()
 
     val disableLandscapeMode by viewModel.disableLandscapeMode.collectAsStateWithLifecycle()
 
     val enablePortraitFullscreen by viewModel.enablePortraitFullscreen.collectAsStateWithLifecycle()
+
 
     var showWorkingInProgressDialog by remember { mutableStateOf(false) }
     if (showWorkingInProgressDialog) {
@@ -85,11 +94,19 @@ fun MineScreen(
     Scaffold(
         modifier = Modifier.padding(padding),
         topBar = {
-            TransparentTopBar(
+            //添加下拉框
+            MineTopBar(
                 title = greeting(LocalTime.now()),
-                iconId = NekoAnimeIcons.light,
-                onIconClick = { /* TODO: 主题模式切换 */  showWorkingInProgressDialog = true }
+                viewModel = viewModel,
+                showWorkingInProgressDialog = { showWorkingInProgressDialog = true }
             )
+//            TransparentTopBar(
+//                title = greeting(LocalTime.now()),
+//                iconId = NekoAnimeIcons.light,
+//                onIconClick = { /* TODO: 主题模式切换 */  showWorkingInProgressDialog = true }
+//            )
+
+
         },
         containerColor = pink99,
         contentWindowInsets = WindowInsets(0)
@@ -388,5 +405,70 @@ private fun greeting(currentTime: LocalTime) = currentTime.run {
         isBefore(LocalTime.of(13, 0)) -> "中午好！"
         isBefore(LocalTime.of(18, 0)) -> "下午好！"
         else -> "晚上好！"
+    }
+}
+
+@Composable
+fun MineTopBar(
+    title: String,
+    viewModel: MineScreenViewModel,
+    showWorkingInProgressDialog: () -> Unit
+) {
+    var showSourceSwitchDialog by remember { mutableStateOf(false) }
+    val animeDataSource by viewModel.animeDataSource.collectAsStateWithLifecycle()
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(20.dp, 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = title,
+            fontFamily = NekoAnimeFontFamilies.heiFontFamily,
+            fontWeight = FontWeight.Normal,
+            style = MaterialTheme.typography.titleLarge
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
+        Box(
+            modifier = Modifier
+                .clip(CircleShape)
+                .background(pink95)
+                .clickable(role = Role.Button, onClick = showWorkingInProgressDialog)
+                .padding(10.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(NekoAnimeIcons.light),
+                contentDescription = null,
+                tint = basicBlack
+            )
+        }
+        Spacer(modifier = Modifier.width(10.dp))
+        Box(
+            modifier = Modifier
+                .clip(CircleShape)
+                .background(pink95)
+                .clickable(role = Role.Button, onClick = { showSourceSwitchDialog = true })
+                .padding(10.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                painter = painterResource(NekoAnimeIcons.tag),
+                contentDescription = null,
+                tint = basicBlack
+            )
+            //切换数据源
+            if (showSourceSwitchDialog) {
+                SourceSwitchDialog(
+                    onDismissRequest = { isRefresh ->
+                        showSourceSwitchDialog = false
+                    },
+                    animeDataSource = animeDataSource
+                )
+            }
+        }
     }
 }

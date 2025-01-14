@@ -20,7 +20,7 @@ import kotlinx.serialization.Serializable
 data object SearchNavRoute
 
 fun NavGraphBuilder.searchScreen(
-    onAnimeClick: (Int) -> Unit,
+    onAnimeClick: (Int, Int?, String?) -> Unit,
     onBackClick: () -> Unit,
 ) {
     composable<SearchNavRoute> {

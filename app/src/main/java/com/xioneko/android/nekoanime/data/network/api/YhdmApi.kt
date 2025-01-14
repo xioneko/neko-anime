@@ -45,12 +45,12 @@ interface YhdmApi {
 
     @GET("/index.php/vod/show/")
     suspend fun filterAnimeBy(
-        @Query("id") type: Int,
-        @Query("by") orderBy: String,
-        @Query("class") genre: String,
-        @Query("year") year: String,
-        @Query("letter") letter: String,
-        @Query("page") page: Int,
+        @Query("id") type: Int?,
+        @Query("by") orderBy: String?,
+        @Query("class") genre: String?,
+        @Query("year") year: String?,
+        @Query("letter") letter: String?,
+        @Query("page") page: Int?,
     ): Response<Document>
 
     @GET("/index.php/vod/play/id/{animeId}/sid/{sid}/nid/{nid}/")
@@ -59,4 +59,5 @@ interface YhdmApi {
         @Path("nid") nid: Int,
         @Path("sid") sid: Int,
     ): Response<Document>
+
 }

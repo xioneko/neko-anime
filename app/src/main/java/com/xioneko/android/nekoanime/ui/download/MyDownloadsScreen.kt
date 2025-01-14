@@ -84,7 +84,7 @@ fun MyDownloadsScreen(
                     ExpandedAnimeCard(
                         anime = item.anime.asAnimeShell(),
                         subTitle = "${item.numberOfDownloads} 个内容",
-                        onClick = { onDownloadedAnimeClick(item.anime.asAnimeShell()) }
+                        onClick = { a, b, c -> onDownloadedAnimeClick(item.anime.asAnimeShell()) }
                     )
                 }
             }

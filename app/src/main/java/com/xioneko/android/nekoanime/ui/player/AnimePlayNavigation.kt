@@ -24,6 +24,7 @@ import kotlinx.serialization.Serializable
 data class AnimePlayNavRoute(
     val animeId: Int,
     val episode: Int? = null,
+    val episodeName: String? = ""
 )
 
 
@@ -66,6 +67,7 @@ fun NavGraphBuilder.animePlayScreen(
         AnimePlayScreen(
             animeId = navRoute.animeId,
             episode = navRoute.episode,
+            episodeName = navRoute.episodeName,
             onTagClick = {
                 onTagClick(it)
                 disposeEffect()
@@ -82,8 +84,12 @@ fun NavGraphBuilder.animePlayScreen(
     }
 }
 
-fun NavHostController.navigateToAnimePlay(animeId: Int, episode: Int? = null) {
-    navigate(AnimePlayNavRoute(animeId, episode))
+fun NavHostController.navigateToAnimePlay(
+    animeId: Int,
+    episode: Int? = null,
+    episodeName: String? = ""
+) {
+    navigate(AnimePlayNavRoute(animeId, episode, episodeName))
 }
 
 fun deepLinkToAnimePlay(context: Context, animeId: Int, episode: Int? = null): Uri {

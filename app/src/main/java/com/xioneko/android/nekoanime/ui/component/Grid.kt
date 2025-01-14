@@ -24,7 +24,7 @@ fun LazyAnimeGrid(
     horizontalSpacing: Dp = 12.dp,
     verticalSpacing: Dp = 5.dp,
     animeList: List<AnimeShell?>,
-    onAnimeClick: (Int) -> Unit,
+    onAnimeClick: (Int, Int?, String?) -> Unit,
 ) {
     val isTablet = isTablet()
     val minCardWidth: Dp = remember(isTablet) {

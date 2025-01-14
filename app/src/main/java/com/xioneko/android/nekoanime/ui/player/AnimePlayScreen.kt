@@ -52,6 +52,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -75,6 +76,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.offline.Download.STATE_COMPLETED
 import androidx.media3.exoplayer.offline.Download.STATE_DOWNLOADING
 import androidx.media3.exoplayer.offline.Download.STATE_QUEUED
@@ -84,9 +86,14 @@ import com.xioneko.android.nekoanime.data.AnimeDownloadHelper.Companion.STATE_PR
 import com.xioneko.android.nekoanime.data.model.Anime
 import com.xioneko.android.nekoanime.data.model.AnimeShell
 import com.xioneko.android.nekoanime.data.model.asAnimeShell
+import com.xioneko.android.nekoanime.data.network.danmu.api.DanmuSession
+import com.xioneko.android.nekoanime.data.network.danmu.api.DanmukuEvent
+import com.xioneko.android.nekoanime.data.network.danmu.dto.DanmakuPresentation
 import com.xioneko.android.nekoanime.ui.component.AnimatedFollowIcon
 import com.xioneko.android.nekoanime.ui.component.BottomSheet
 import com.xioneko.android.nekoanime.ui.component.LazyAnimeGrid
+import com.xioneko.android.nekoanime.ui.danmu.DanmakuConfigData
+import com.xioneko.android.nekoanime.ui.danmu.rememberDanmakuHostState
 import com.xioneko.android.nekoanime.ui.theme.NekoAnimeIcons
 import com.xioneko.android.nekoanime.ui.theme.basicBlack
 import com.xioneko.android.nekoanime.ui.theme.basicWhite
@@ -100,13 +107,16 @@ import com.xioneko.android.nekoanime.ui.theme.pink50
 import com.xioneko.android.nekoanime.ui.theme.pink60
 import com.xioneko.android.nekoanime.ui.theme.pink70
 import com.xioneko.android.nekoanime.ui.theme.pink97
+import com.xioneko.android.nekoanime.ui.util.KEY_DANMAKU_CONFIG_DATA
 import com.xioneko.android.nekoanime.ui.util.LoadingState
 import com.xioneko.android.nekoanime.ui.util.currentScreenSizeDp
 import com.xioneko.android.nekoanime.ui.util.isOrientationLocked
 import com.xioneko.android.nekoanime.ui.util.isTablet
+import com.xioneko.android.nekoanime.ui.util.rememberPreference
 import com.xioneko.android.nekoanime.ui.util.setScreenOrientation
 import kotlinx.coroutines.delay
 import kotlin.math.max
+import kotlin.time.Duration.Companion.milliseconds
 
 @ExperimentalLayoutApi
 @ExperimentalMaterial3Api
@@ -116,13 +126,14 @@ import kotlin.math.max
 fun AnimePlayScreen(
     animeId: Int,
     episode: Int? = null,
+    episodeName: String?,
     onDownloadedAnimeClick: (AnimeShell) -> Unit,
     onTagClick: (String) -> Unit,
     onBackClick: () -> Unit
 ) {
     val viewModel =
         hiltViewModel<AnimePlayViewModel, AnimePlayViewModel.AnimePlayViewModelFactory> { factory ->
-            factory.create(animeId, episode)
+            factory.create(animeId, episode, episodeName)
         }
 
     val context = LocalContext.current
@@ -130,6 +141,8 @@ fun AnimePlayScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val playerState by viewModel.playerState.collectAsStateWithLifecycle()
     val dragGestureState by viewModel.dragGestureState.collectAsStateWithLifecycle()
+    val enabledDanmaku by viewModel.enableDanmu.collectAsStateWithLifecycle()
+    val danmakuSession by viewModel.danmakuSession.collectAsStateWithLifecycle()
 
     val enablePortraitFullscreen by viewModel.enablePortraitFullscreen.collectAsStateWithLifecycle()
     val (isFullscreen, setFullscreen) = rememberFullscreenState(enablePortraitFullscreen)
@@ -166,6 +179,7 @@ fun AnimePlayScreen(
 
     var showBottomSheet by rememberSaveable { mutableStateOf(false) }
 
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = basicWhite
@@ -177,6 +191,7 @@ fun AnimePlayScreen(
                 episode = viewModel.episode.value,
                 playerState = playerState,
                 isFullscreen = isFullscreen.value,
+                enableDanmu = enabledDanmaku,
                 dragGestureState = dragGestureState,
                 onFullScreenChange = setFullscreen,
                 onEpisodeChange = viewModel::onEpisodeChange,
@@ -190,8 +205,11 @@ fun AnimePlayScreen(
                     if (uiState is AnimePlayUiState.Data) {
                         showBottomSheet = true
                     }
-                }
+                },
+                onDanmakuClick = { viewModel.setEnableDanmuku(it) },
+                danmuSession = danmakuSession
             )
+
             Box(
                 Modifier
                     .navigationBarsPadding()
@@ -238,8 +256,8 @@ fun AnimePlayScreen(
                                     item("For You Anime Grid") {
                                         ForYouAnimeGrid(
                                             animeList = forYouAnimeList,
-                                            onAnimeClick = {
-                                                viewModel.loadingUiState(it)
+                                            onAnimeClick = { id, epId, name ->
+                                                viewModel.loadingUiState(id)
                                             }
                                         )
                                     }
@@ -260,6 +278,7 @@ fun AnimePlayScreen(
                                     onDownloadedAnimeClick = { onDownloadedAnimeClick(anime.asAnimeShell()) }
                                 )
                             }
+
                         }
                     }
                 }
@@ -558,7 +577,7 @@ private fun AnimeDetail(
                 horizontalArrangement = Arrangement.spacedBy(5.dp),
                 contentPadding = PaddingValues(end = 5.dp)
             ) {
-                for (genre in anime.tags.toSet()) {
+                for (genre in anime.tags) {
                     item(genre) {
                         Row(
                             modifier = Modifier
@@ -737,7 +756,7 @@ private fun EpisodeBox(
 @Composable
 private fun ForYouAnimeGrid(
     animeList: List<AnimeShell?>,
-    onAnimeClick: (Int) -> Unit,
+    onAnimeClick: (Int, Int?, String?) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -905,6 +924,57 @@ private fun OfflineCacheEpisodesGrid(
                 }
             }
 
+        }
+    }
+}
+
+@Composable
+fun DanmakuHost(
+    playerState: NekoAnimePlayerState,
+    session: DanmuSession?,
+    enabled: Boolean,
+    player: ExoPlayer
+) {
+    if (!enabled) return
+    val danmakuConfigData by rememberPreference(
+        KEY_DANMAKU_CONFIG_DATA,
+        DanmakuConfigData(),
+        DanmakuConfigData.serializer()
+    )
+    val danmakuHostState =
+        rememberDanmakuHostState(danmakuConfig = danmakuConfigData.toDanmakuConfig())
+
+    if (session != null) {
+        com.xioneko.android.nekoanime.ui.danmu.DanmakuHost(state = danmakuHostState)
+    }
+
+    LaunchedEffect(playerState.isPlaying) {
+        if (playerState.isPlaying) {
+            danmakuHostState.play()
+        } else {
+            danmakuHostState.pause()
+        }
+    }
+
+    val isPlayingFlow = remember { snapshotFlow { player.isPlaying } }
+    LaunchedEffect(session) {
+        danmakuHostState.clearPresentDanmaku()
+        session?.at(
+            curTimeMillis = { player.currentPosition.milliseconds },
+            isPlayingFlow = isPlayingFlow,
+        )?.collect { danmakuEvent ->
+            when (danmakuEvent) {
+                is DanmukuEvent.Add -> {
+                    danmakuHostState.trySend(
+                        DanmakuPresentation(
+                            danmakuEvent.danmu,
+                            false
+                        )
+                    )
+                }
+                // 快进/快退
+                is DanmukuEvent.Repopulate -> danmakuHostState.repopulate()
+            }
         }
     }
 }
