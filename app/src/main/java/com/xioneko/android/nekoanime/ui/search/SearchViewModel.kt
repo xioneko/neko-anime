@@ -97,7 +97,13 @@ class SearchViewModel @Inject constructor(
                 launch {
                     animeRepository.searchAnime(keyword, page = pageIndex)
                         .onStart { resultsViewState.loadingPageCount.value++ }
-                        .onEach { resultsViewState.results.addAll(it) }
+                        .onEach { items ->
+                            val combineMap =
+                                (resultsViewState.results + items).associateBy { it.id }
+                            resultsViewState.results.clear()
+                            resultsViewState.results.addAll(combineMap.values)
+//                            resultsViewState.results.addAll(it)
+                        }
                         .onCompletion { resultsViewState.loadingPageCount.value-- }
                         .onEmpty { resultsViewState.hasMore.value = false }
                         .collect()
