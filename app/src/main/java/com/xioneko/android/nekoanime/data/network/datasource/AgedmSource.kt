@@ -46,8 +46,11 @@ object AgedmSource : AnimeSource {
         val html1 = NetworkModule.getHtml("$BASE_URL/play/${anime.id}/$streamId/$episode")
         val document = Jsoup.parse(html1)
         val videoUrl1 = getVideoUrl(document)
-        val html2 = NetworkModule.getHtml("$BASE_URL/play/${anime.id}/$streamId/${episode + 1}")
-        val videoUrl2 = getVideoUrl(Jsoup.parse(html2))
+        var videoUrl2: String = ""
+        if (episode != anime.latestEpisode) {
+            val html2 = NetworkModule.getHtml("$BASE_URL/play/${anime.id}/$streamId/${episode + 1}")
+            videoUrl2 = getVideoUrl(Jsoup.parse(html2))
+        }
         return videoUrl1 to (videoUrl2.takeIf { it.isNotEmpty() })
     }
 
