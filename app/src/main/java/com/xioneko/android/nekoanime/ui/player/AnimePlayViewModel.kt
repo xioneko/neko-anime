@@ -242,9 +242,8 @@ class AnimePlayViewModel @OptIn(UnstableApi::class)
                         Log.d("Player", "测试播放地址 $it")
                         testConnection(okHttpClient, it).first()
                     }
-                    .onEmpty {
-                        tryNextStream(true)
-                    }
+                    .catch { tryNextStream(true) }
+                    .onEmpty { tryNextStream(true) }
                     .collect { url ->
                         prepareNext(url)
                     }

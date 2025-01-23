@@ -127,7 +127,7 @@ internal object HtmlParser {
     /**
      * 适配页面：https://yhdm6.top/index.php/vod/play/id/{animeId}/sid/{streamId}/nid/{episode}/
      */
-    fun parseVideoUrl(document: Document): Pair<String, String?>? =
+    fun parseEncryptedVideoUrl(document: Document): Pair<String, String?>? =
         document.selectFirst(".player_video script")!!.html()
             .let { code ->
                 Regex("""url"\s*:\s*"([^"]*)".*"url_next"\s*:\s*"([^"]*)""")
